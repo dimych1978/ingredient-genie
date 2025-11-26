@@ -1,32 +1,34 @@
 'use server';
 
-import {
-  generateIngredientOrderList,
-  type GenerateIngredientOrderListInput,
-} from '@/ai/flows/generate-ingredient-order-list';
 import { z } from 'zod';
 
-const machineSchema = z.object({
-  type: z.string(),
-  count: z.number().int().positive(),
+export async function handleGetRealMachines() {
+  // Реальный API call к Telemetron
+  const response = await fetch(`${process.env.TELEMETRON_API_URL}/machines`, {
+    headers: {
+      'Authorization': `Basic ${btoa(process.env.TELEMETRON_EMAIL + ':' + process.env.TELEMETRON_PASSWORD)}`
+    }
+  });
+  
+  return await response.json();
+}
+
+const loginFormSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
 });
 
-const formSchema = z.object({
-  machines: z.array(machineSchema),
-});
-
-export async function handleGenerateOrderList(input: GenerateIngredientOrderListInput) {
-  const parsedInput = formSchema.safeParse(input);
-
-  if (!parsedInput.success) {
-    throw new Error('Invalid input');
+export async function handleLogin(credentials: z.infer<typeof loginFormSchema>) {
+  const parsedCredentials = loginFormSchema.safeParse(credentials);
+  if (!parsedCredentials.success) {
+    return { success: false, error: 'Неверные данные.' };
   }
 
-  try {
-    const output = await generateIngredientOrderList(parsedInput.data);
-    return output;
-  } catch (error) {
-    console.error('Error generating ingredient order list:', error);
-    throw new Error('Failed to generate order list due to a server error.');
+  const { email, password } = parsedCredentials.data;
+  
+  if (email === process.env.TELEMETRON_EMAIL && password === process.env.TELEMETRON_PASSWORD) {
+    return { success: true };
+  } else {
+    return { success: false, error: 'Неверный email или пароль.' };
   }
 }

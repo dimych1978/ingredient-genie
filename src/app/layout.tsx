@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { Providers } from '@/components/providers';
+
+export const viewport = 'width=device-width, initial-scale=1, maximum-scale=1'
 
 export const metadata: Metadata = {
-  title: 'Telemetron Sales App',
-  description: 'Generate ingredient order lists for production machines.',
+  title: 'Telemetron',
+  description: 'Панель управления вендинговыми аппаратами.',
 };
 
 export default function RootLayout({
@@ -13,17 +16,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="ru" className="dark" translate="no" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@400;700&display=swap"
           rel="stylesheet"
         />
       </head>
       <body className="font-body antialiased">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster />
       </body>
     </html>

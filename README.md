@@ -8,4 +8,4 @@ To get started, run the development server:
 npm run dev
 ```
 
-Then open [http://localhost:9002](http://localhost:9002) in your browser. The main application interface is located in `src/app/page.tsx`.
+Then open [http://localhost:9003](http://localhost:9003) in your browser. The main application interface is located in `src/app/page.tsx`.
