@@ -1,8 +1,11 @@
-// hooks/useTeletmetronApi.ts
+// hooks/useTelemetronApi.ts (с прокси)
 "use client";
 
 import { useCallback } from 'react';
 import { useTeletmetronAuth } from './useTelemetronAuth';
+
+// Используем наш прокси вместо прямого вызова
+const PROXY_BASE_URL = '/api/telemetron';
 
 export const useTeletmetronApi = () => {
   const { getToken } = useTeletmetronAuth();
@@ -10,7 +13,10 @@ export const useTeletmetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     const token = await getToken();
     
-    const response = await fetch(`https://my.telemetron.net${endpoint}`, {
+    // Убираем начальный /api/ если есть, так как прокси уже добавляет его
+    const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint.slice(5) : endpoint;
+    
+    const response = await fetch(`${PROXY_BASE_URL}/${cleanEndpoint}`, {
       ...options,
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -29,17 +35,24 @@ export const useTeletmetronApi = () => {
 
   const getSalesByProducts = useCallback((vmId: string, dateFrom: string, dateTo: string) => {
     return apiRequest(
-      `/api/reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFrom}&date_to=${dateTo}`
+      `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFrom}&date_to=${dateTo}`
     );
   }, [apiRequest]);
 
-  const getMachineInfo = useCallback((vmId: string) => {
-    return apiRequest(`/api/modems/${vmId}`);
+  // Новый метод для тестирования найденного эндпоинта
+  const getMachineDetails = useCallback((vmId: string) => {
+    return apiRequest(`reports/vending_machines/vms/${vmId}`);
+  }, [apiRequest]);
+
+  // Универсальный метод для любых эндпоинтов
+  const testEndpoint = useCallback((endpoint: string) => {
+    return apiRequest(endpoint);
   }, [apiRequest]);
 
   return {
     getSalesByProducts,
-    getMachineInfo,
+    getMachineDetails,
+    testEndpoint,
     apiRequest
   };
 };
