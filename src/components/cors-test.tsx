@@ -14,78 +14,48 @@ export const CorsTest = () => {
   const { getMachineDetails, testEndpoint } = useTeletmetronApi();
   const { toast } = useToast();
 
-  const endpointsToTest = [   
-     {
-      name: 'Работающий запрос',
-      endpoint: 'reports/sales-by-products?vm_id=51211&sale_type=4&date_from=2025-11-26T00:00:00.000&date_to=2025-11-29T23:59:59.999',
-      description: 'Этот запрос работает'
-    },
-
-    {
-      name: 'Информация об аппарате',
-      endpoint: '/vending_machines/vms/51211',
-      description: 'Найденный эндпоинт с CORS ошибкой'
-    },
-    {
-      name: 'Продажи по товарам',
-      endpoint: 'reports/sales-by-products?vm_id=51211&sale_type=4&date_from=2025-11-20T00:00:00.000&date_to=2025-11-27T23:59:59.999',
-      description: 'Известный рабочий эндпоинт'
-    },
-    {
-      name: 'Список аппаратов',
-      endpoint: 'reports/vending_machines/vms',
-      description: 'Возможный эндпоинт для списка аппаратов'
-    },
-    {
-      name: 'История загрузок',
-      endpoint: 'reports/refill-history?vm_id=51211',
-      description: 'Потенциальный эндпоинт истории загрузок'
-    },
-    {
-      name: 'Модемы',
-      endpoint: 'modems/51211',
-      description: 'Что-то про модемы'
-    },
-    {
-    name: 'Продажи по товарам',
+// В компоненте CorsTest обновите endpointsToTest:
+// components/simple-proxy-test.tsx
+// В endpointsToTest замените на:
+// В components/cors-test.tsx обновите endpointsToTest:
+const endpointsToTest = [
+  {
+    name: 'Sales by Products (рабочий)',
     endpoint: 'reports/sales-by-products?vm_id=51211&sale_type=4&date_from=2025-11-26T00:00:00.000&date_to=2025-11-29T23:59:59.999',
-    description: 'Рабочий эндпоинт'
+    description: 'Известный рабочий JSON API'
   },
   {
-    name: 'Модемы', 
-    endpoint: 'modems/51211',
-    description: 'Рабочий эндпоинт'
-  },
-
-  // Добавляй сюда новые для тестирования:
-  {
-    name: 'Список аппаратов',
-    endpoint: 'vms',
-    description: 'Возможный эндпоинт списка аппаратов'
+    name: 'Vending Machines API',
+    endpoint: 'vending_machines/vms/51211',
+    description: 'Возможный API эндпоинт'
   },
   {
-    name: 'Информация об аппарате',
-    endpoint: 'vms/51211',
-    description: 'Инфа по конкретному аппарату'
+    name: 'Vending Machines List',
+    endpoint: 'vending_machines/vms',
+    description: 'Список аппаратов API'
   },
   {
-    name: 'История загрузок',
-    endpoint: 'reports/refill-history',
-    description: 'История пополнений'
+    name: 'Refill History',
+    endpoint: 'reports/refill-history?vm_id=51211',
+    description: 'История загрузок API'
   },
   {
-    name: 'События аппарата', 
+    name: 'Machine Events',
     endpoint: 'vms/51211/events',
-    description: 'События и уведомления'
+    description: 'События аппарата API'
   },
   {
-    name: 'Остатки товаров',
+    name: 'Machine Stock',
     endpoint: 'vms/51211/stock',
-    description: 'Текущие остатки'
+    description: 'Остатки товаров API'
   },
-  ];
-
-  const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) => {
+  {
+    name: 'Machines API',
+    endpoint: 'machines/51211',
+    description: 'Прямой эндпоинт machines'
+  }
+];
+const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) => {
     setLoading(true);
     try {
       const result = await testEndpoint(endpoint.endpoint);

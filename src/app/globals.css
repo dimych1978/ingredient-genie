@@ -82,3 +82,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Добавьте в ваш globals.css или модуль CSS */
+input, textarea, select, .input-bg {
+  background-color: #1f2937 !important;
+}
+
+pre, code, .code-bg {
+  background-color: #1d1f20 !important;
+}
+
+/* Для темной темы можно добавить */
+@media (prefers-color-scheme: dark) {
+  input, textarea, select, .input-bg {
+    background-color: #1f2937 !important;
+    color: white !important;
+  }
+  
+  pre, code, .code-bg {
+    background-color: #374151 !important;
+    color: white !important;
+  }
+}
