@@ -4,25 +4,26 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Icons } from '@/components/icons';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Server, BarChart } from 'lucide-react';
 import Link from 'next/link';
 import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
 import { useTeletmetronAuth } from '@/hooks/useTelemetronAuth';
+import { Button } from '@/components/ui/button';
 
 export default function MachineStatusPage() {
   const params = useParams();
   const id = params.id as string;
   const [data, setData] = useState<any | null>(null);
+  const [machineInfo, setMachineInfo] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { getSalesByProducts } = useTeletmetronApi();
+  const { getSalesByProducts, getMachineOverview } = useTeletmetronApi();
   const { token } = useTeletmetronAuth();
   
   useEffect(() => {
     const fetchStatus = async () => {
-      // Ждем, пока id и token не будут доступны.
-      // Если их нет, ничего не делаем. Эффект перезапустится, когда они появятся.
       if (!id || !token) {
         return;
       }
@@ -49,10 +50,62 @@ export default function MachineStatusPage() {
     };
 
     fetchStatus();
-    
-    // Используем только стабильные зависимости: `id` и `token`.
-    // `getSalesByProducts` нестабилен и вызывает бесконечный цикл.
   }, [id, token]);
+
+  // Тестовые функции
+  const testMachineOverview = async () => {
+    if (!id) return;
+    
+    setTesting(true);
+    setError(null);
+    try {
+      console.log(`🧪 Тестируем machines-overview для аппарата #${id}...`);
+      const result = await getMachineOverview(id);
+      console.log('✅ Результат:', result);
+      setMachineInfo(result);
+      
+      // Показываем основную информацию в alert
+      if (result?.data?.machine) {
+        alert(`✅ Машина: ${result.data.machine.name}\nID: ${result.data.machine.id}\nЛокация: ${result.data.location?.address || 'Нет данных'}`);
+      }
+    } catch (e) {
+      const err = e instanceof Error ? e.message : 'Ошибка теста';
+      console.error('❌ Ошибка теста:', err);
+      setError(err);
+      alert(`❌ Ошибка: ${err}`);
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const testSalesReport = async () => {
+    if (!id) return;
+    
+    setTesting(true);
+    setError(null);
+    try {
+      const dateFrom = '2025-11-30T00:00:00.000';
+      const dateTo = '2025-12-07T23:59:59.999';
+      
+      console.log(`🧪 Тестируем sales-by-products для аппарата #${id}...`);
+      const result = await getSalesByProducts(id, dateFrom, dateTo);
+      console.log('✅ Результат:', result);
+      
+      // Показываем статистику в alert
+      if (result?.data) {
+        const totalItems = result.data.reduce((sum: number, item: any) => sum + item.number, 0);
+        const totalSales = result.data.reduce((sum: number, item: any) => sum + item.value, 0);
+        alert(`✅ Отчет по продажам:\nТоваров продано: ${totalItems}\nОбщая сумма: ${totalSales} ₽`);
+      }
+    } catch (e) {
+      const err = e instanceof Error ? e.message : 'Ошибка теста';
+      console.error('❌ Ошибка теста:', err);
+      setError(err);
+      alert(`❌ Ошибка: ${err}`);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   if (isLoading && (!token || !id)) {
     return (
@@ -110,6 +163,57 @@ export default function MachineStatusPage() {
           </p>
         </header>
 
+        {/* Тестовые кнопки */}
+        <Card className="mb-6 shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl flex items-center gap-2">
+              <Server className="h-5 w-5" />
+              Тестирование API (временные кнопки)
+            </CardTitle>
+            <CardDescription>
+              Проверьте работу эндпоинтов перед добавлением основного функционала
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={testMachineOverview}
+                disabled={testing || !id}
+                variant="outline"
+                className="flex-1"
+              >
+                {testing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Server className="mr-2 h-4 w-4" />}
+                Тест: Информация об аппарате
+              </Button>
+              
+              <Button
+                onClick={testSalesReport}
+                disabled={testing || !id}
+                variant="outline"
+                className="flex-1"
+              >
+                {testing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <BarChart className="mr-2 h-4 w-4" />}
+                Тест: Отчет по продажам
+              </Button>
+            </div>
+            
+            {machineInfo && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                <div className="font-medium text-green-800">✅ Информация об аппарате получена</div>
+                <div className="text-sm text-green-700 mt-1">
+                  {machineInfo.data?.machine?.name && (
+                    <div>Название: {machineInfo.data.machine.name}</div>
+                  )}
+                  {machineInfo.data?.location?.address && (
+                    <div>Адрес: {machineInfo.data.location.address}</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Основные данные */}
         <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">JSON Ответ</CardTitle>
