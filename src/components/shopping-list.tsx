@@ -1,36 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
 import { calculateShoppingList, type ShoppingListItem } from '@/lib/shopping-calculator';
 import type { TelemetronSalesResponse } from '@/types/telemetron';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, ShoppingCart, Calendar, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 interface ShoppingListProps {
-  machineId?: string;
-  defaultPeriod?: { from: Date; to: Date };
+  machineId: string;
+  defaultStartDate?: string; // ISO строка
+  defaultEndDate?: string;   // ISO строка
 }
 
-export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) => {
+export const ShoppingList = ({ 
+  machineId, 
+  defaultStartDate, 
+  defaultEndDate 
+}: ShoppingListProps) => {
   const [loading, setLoading] = useState(false);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
-  const [period, setPeriod] = useState<{ from: Date; to: Date }>(
-    defaultPeriod || {
-      from: new Date(new Date().setDate(new Date().getDate() - 7)),
-      to: new Date()
-    }
-  );
-  const [vmId, setVmId] = useState<string>(machineId || '');
+  const [period, setPeriod] = useState<{ from: Date; to: Date }>({
+    from: defaultStartDate ? new Date(defaultStartDate) : new Date(new Date().setDate(new Date().getDate() - 7)),
+    to: defaultEndDate ? new Date(defaultEndDate) : new Date()
+  });
+  const [vmId, setVmId] = useState<string>(machineId);
   const { getSalesByProducts } = useTeletmetronApi();
 
+  // Обновить vmId при изменении machineId
+  useEffect(() => {
+    setVmId(machineId);
+  }, [machineId]);
+
+  // Обновить период при изменении default дат
+  useEffect(() => {
+    if (defaultStartDate) {
+      setPeriod(prev => ({ ...prev, from: new Date(defaultStartDate) }));
+    }
+    if (defaultEndDate) {
+      setPeriod(prev => ({ ...prev, to: new Date(defaultEndDate) }));
+    }
+  }, [defaultStartDate, defaultEndDate]);
+
   const loadShoppingList = async () => {
-    if (!vmId) return;
-    
     setLoading(true);
     setShoppingList([]);
     
@@ -76,52 +91,56 @@ export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) =>
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ShoppingCart className="h-5 w-5" />
-          Shopping List
+    <Card className="w-full bg-gray-900 border-gray-700 text-white">
+      <CardHeader className="border-b border-gray-700">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-yellow-400" />
+            Shopping List
+          </div>
+          {shoppingList.length > 0 && (
+            <div className="text-sm font-normal text-gray-300">
+              {shoppingList.length} позиций
+            </div>
+          )}
         </CardTitle>
-        <CardDescription>
-          Создайте список ингредиентов для загрузки аппарата
-        </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="p-4 space-y-4">
         {/* Параметры */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">ID аппарата</label>
-            <Input
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-gray-800 rounded-lg">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">ID аппарата</label>
+            <input
               value={vmId}
               onChange={(e) => setVmId(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
               placeholder="58690"
-              disabled={!!machineId}
             />
           </div>
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium">С</label>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">С</label>
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <input
                 type="date"
                 value={format(period.from, 'yyyy-MM-dd')}
                 onChange={(e) => setPeriod(prev => ({ ...prev, from: new Date(e.target.value) }))}
-                className="w-full"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
               />
             </div>
           </div>
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium">По</label>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">По</label>
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <input
                 type="date"
                 value={format(period.to, 'yyyy-MM-dd')}
                 onChange={(e) => setPeriod(prev => ({ ...prev, to: new Date(e.target.value) }))}
-                className="w-full"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
               />
             </div>
           </div>
@@ -131,8 +150,8 @@ export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) =>
         <div className="flex gap-3">
           <Button
             onClick={loadShoppingList}
-            disabled={loading || !vmId}
-            className="flex-1"
+            disabled={loading}
+            className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-700"
           >
             {loading ? <Loader2 className="animate-spin mr-2" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
             {loading ? 'Загружаем...' : 'Создать Shopping List'}
@@ -142,9 +161,10 @@ export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) =>
             <Button
               onClick={downloadList}
               variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               <Download className="mr-2 h-4 w-4" />
-              Скачать
+              Скачать список
             </Button>
           )}
         </div>
@@ -152,11 +172,11 @@ export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) =>
         {/* Shopping List */}
         {shoppingList.length > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted rounded">
+            <div className="flex items-center justify-between p-3 bg-gray-800 rounded">
               <div className="font-medium">
                 Что брать с собой к аппарату {vmId}:
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-gray-400">
                 {formatDate(period.from)} - {formatDate(period.to)}
               </div>
             </div>
@@ -165,18 +185,18 @@ export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) =>
               {shoppingList.map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex justify-between items-center p-3 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-750 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 flex items-center justify-center bg-primary/10 rounded">
-                      <span className="text-sm font-bold text-primary">{index + 1}</span>
+                    <div className="w-8 h-8 flex items-center justify-center bg-gray-700 rounded">
+                      <span className="text-sm font-bold text-yellow-400">{index + 1}</span>
                     </div>
                     <div>
                       <div className="font-medium">{item.name}</div>
-                      <div className="text-xs text-muted-foreground">Единица: {item.unit}</div>
+                      <div className="text-xs text-gray-400">Единица: {item.unit}</div>
                     </div>
                   </div>
-                  <div className="text-lg font-bold text-green-600">
+                  <div className="text-lg font-bold text-green-400">
                     {item.amount.toLocaleString('ru-RU')} {item.unit}
                   </div>
                 </div>
@@ -187,8 +207,8 @@ export const ShoppingList = ({ machineId, defaultPeriod }: ShoppingListProps) =>
 
         {loading && shoppingList.length === 0 && (
           <div className="text-center py-8">
-            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mb-3" />
-            <div className="text-muted-foreground">Загружаем данные о продажах...</div>
+            <Loader2 className="animate-spin h-8 w-8 text-yellow-400 mx-auto mb-3" />
+            <div className="text-gray-400">Загружаем данные о продажах...</div>
           </div>
         )}
       </CardContent>

@@ -3,109 +3,85 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Icons } from '@/components/icons';
+import { ShoppingList } from '@/components/shopping-list';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Server, BarChart } from 'lucide-react';
+import { Loader2, MapPin, Calendar, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
 import { useTeletmetronAuth } from '@/hooks/useTelemetronAuth';
-import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
+
+interface MachineOverview {
+  machine: {
+    id: number;
+    name: string;
+  };
+  location?: {
+    name: string;
+    address: string;
+  };
+  cache?: {
+    last_collection_at: string | null;
+  };
+}
 
 export default function MachineStatusPage() {
   const params = useParams();
   const id = params.id as string;
-  const [data, setData] = useState<any | null>(null);
-  const [machineInfo, setMachineInfo] = useState<any | null>(null);
+  const [machineOverview, setMachineOverview] = useState<MachineOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { getSalesByProducts, getMachineOverview } = useTeletmetronApi();
+  const { getMachineOverview } = useTeletmetronApi();
   const { token } = useTeletmetronAuth();
-  
+
+  // Форматирование даты из Telemetron
+  const formatTelemetronDate = (dateString: string | null) => {
+    if (!dateString) return 'Не указана';
+    try {
+      const date = new Date(dateString);
+      return format(date, 'dd.MM.yyyy', { locale: ru });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Получение завтрашней даты
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  };
+
   useEffect(() => {
-    const fetchStatus = async () => {
+    const fetchMachineData = async () => {
       if (!id || !token) {
         return;
       }
       
       setIsLoading(true);
       setError(null);
+      
       try {
-        const dateFrom = '2025-11-17T00:00:00.000';
-        const dateTo = '2025-11-23T23:59:59.999';
-
-        console.log(`Запрос данных о продажах для аппарата #${id}...`);
-        const result = await getSalesByProducts(id, dateFrom, dateTo);
+        console.log(`Запрос информации об аппарате #${id}...`);
         
-        console.log('Ответ от API Telemetron:', result);
-        setData(result);
-
+        const result = await getMachineOverview(id);
+        console.log('Информация об аппарате:', result);
+        
+        setMachineOverview(result.data);
+        
       } catch (e) {
-        const err = e instanceof Error ? e.message : 'An unknown error occurred.';
-        console.error('Ошибка при загрузке данных:', err);
+        const err = e instanceof Error ? e.message : 'Ошибка при загрузке данных аппарата';
+        console.error('Ошибка:', err);
         setError(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchStatus();
-  }, [id, token]);
-
-  // Тестовые функции
-  const testMachineOverview = async () => {
-    if (!id) return;
-    
-    setTesting(true);
-    setError(null);
-    try {
-      console.log(`🧪 Тестируем machines-overview для аппарата #${id}...`);
-      const result = await getMachineOverview(id);
-      console.log('✅ Результат:', result);
-      setMachineInfo(result);
-      
-      // Показываем основную информацию в alert
-      if (result?.data?.machine) {
-        alert(`✅ Машина: ${result.data.machine.name}\nID: ${result.data.machine.id}\nЛокация: ${result.data.location?.address || 'Нет данных'}`);
-      }
-    } catch (e) {
-      const err = e instanceof Error ? e.message : 'Ошибка теста';
-      console.error('❌ Ошибка теста:', err);
-      setError(err);
-      alert(`❌ Ошибка: ${err}`);
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const testSalesReport = async () => {
-    if (!id) return;
-    
-    setTesting(true);
-    setError(null);
-    try {
-      const dateFrom = '2025-11-30T00:00:00.000';
-      const dateTo = '2025-12-07T23:59:59.999';
-      
-      console.log(`🧪 Тестируем sales-by-products для аппарата #${id}...`);
-      const result = await getSalesByProducts(id, dateFrom, dateTo);
-      console.log('✅ Результат:', result);
-      
-      // Показываем статистику в alert
-      if (result?.data) {
-        const totalItems = result.data.reduce((sum: number, item: any) => sum + item.number, 0);
-        const totalSales = result.data.reduce((sum: number, item: any) => sum + item.value, 0);
-        alert(`✅ Отчет по продажам:\nТоваров продано: ${totalItems}\nОбщая сумма: ${totalSales} ₽`);
-      }
-    } catch (e) {
-      const err = e instanceof Error ? e.message : 'Ошибка теста';
-      console.error('❌ Ошибка теста:', err);
-      setError(err);
-      alert(`❌ Ошибка: ${err}`);
-    } finally {
-      setTesting(false);
-    }
-  };
+    fetchMachineData();
+  }, [id, token, getMachineOverview]);
 
   if (isLoading && (!token || !id)) {
     return (
@@ -154,81 +130,69 @@ export default function MachineStatusPage() {
             <Link href="/" aria-label="Вернуться на главную">
                 <Icons.logo className="h-10 w-10 text-primary" />
             </Link>
-            <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">
-              Отчет о продажах для аппарата #{id}
-            </h1>
-          </div>
-          <p className="text-muted-foreground">
-            JSON Ответ
-          </p>
-        </header>
-
-        {/* Тестовые кнопки */}
-        <Card className="mb-6 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl flex items-center gap-2">
-              <Server className="h-5 w-5" />
-              Тестирование API (временные кнопки)
-            </CardTitle>
-            <CardDescription>
-              Проверьте работу эндпоинтов перед добавлением основного функционала
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={testMachineOverview}
-                disabled={testing || !id}
-                variant="outline"
-                className="flex-1"
-              >
-                {testing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Server className="mr-2 h-4 w-4" />}
-                Тест: Информация об аппарате
-              </Button>
+            <div>
+              <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">
+                Аппарат #{id}
+              </h1>
               
-              <Button
-                onClick={testSalesReport}
-                disabled={testing || !id}
-                variant="outline"
-                className="flex-1"
-              >
-                {testing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <BarChart className="mr-2 h-4 w-4" />}
-                Тест: Отчет по продажам
-              </Button>
-            </div>
-            
-            {machineInfo && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-                <div className="font-medium text-green-800">✅ Информация об аппарате получена</div>
-                <div className="text-sm text-green-700 mt-1">
-                  {machineInfo.data?.machine?.name && (
-                    <div>Название: {machineInfo.data.machine.name}</div>
-                  )}
-                  {machineInfo.data?.location?.address && (
-                    <div>Адрес: {machineInfo.data.location.address}</div>
-                  )}
+              {machineOverview?.machine?.name && (
+                <div className="flex items-center gap-2 mt-1">
+                  <Package className="h-5 w-5 text-muted-foreground" />
+                  <div className="text-lg font-medium text-foreground">
+                    {machineOverview.machine.name}
+                  </div>
+                </div>
+              )}
+              
+              {machineOverview?.location && (
+                <div className="flex items-start gap-2 mt-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <div className="font-medium">{machineOverview.location.name}</div>
+                    <div>{machineOverview.location.address}</div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Период для Shopping List */}
+              <div className="flex items-start gap-2 mt-4 text-sm">
+                <Calendar className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                <div>
+                  <div className="font-medium text-foreground">Период для загрузки:</div>
+                  <div className="text-muted-foreground">
+                    {machineOverview?.cache?.last_collection_at ? (
+                      <>
+                        с {formatTelemetronDate(machineOverview.cache.last_collection_at)} 
+                        по {format(getTomorrowDate(), 'dd.MM.yyyy', { locale: ru })}
+                      </>
+                    ) : (
+                      'Последняя неделя'
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        </header>
 
-        {/* Основные данные */}
-        <Card className="shadow-lg">
+        {/* Shopping List */}
+        <div className="space-y-6">
+          <Card className="shadow-lg">
             <CardHeader>
-              <CardTitle className="font-headline text-2xl">JSON Ответ</CardTitle>
-              <CardDescription>Данные о продажах, полученные от сервера.</CardDescription>
+              <CardTitle className="font-headline text-2xl">Что брать с собой к аппарату</CardTitle>
+              <CardDescription>
+                Список расходников на основе продаж за период
+              </CardDescription>
             </CardHeader>
             <CardContent>
-                {data ? (
-                    <pre className="bg-muted/30 p-4 rounded-lg overflow-x-auto text-sm">
-                        {JSON.stringify(data, null, 2)}
-                    </pre>
-                ) : (
-                    <p>Нет данных для отображения. Возможно, токен еще не был получен или ID аппарата не указан.</p>
-                )}
+              <ShoppingList 
+                machineId={id} 
+                defaultStartDate={machineOverview?.cache?.last_collection_at || undefined}
+                defaultEndDate={getTomorrowDate().toISOString()}
+              />
             </CardContent>
           </Card>
+        </div>
       </div>
     </main>
   );
