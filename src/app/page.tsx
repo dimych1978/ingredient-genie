@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BasicTest } from '@/components/basic-test';
 import { WorkingApisTest } from '@/components/working-apis-test';
 import { AccessTest } from '@/components/access-test';
+import { ShoppingList } from '@/components/shopping-list';
 import { ExtendedAccessTest } from '@/components/extended-access-test';
 import { ModemVmConnection } from '@/components/modem-vm-connection';
 import { RefillCollectionViewer } from '@/components/refill-collection-viewer';
@@ -28,6 +29,7 @@ export default function Home() {
             <TabsTrigger value="token">Токен</TabsTrigger>
             <TabsTrigger value="proxy">Прокси</TabsTrigger>
             <TabsTrigger value="cors">Эндпоинты</TabsTrigger>
+             <TabsTrigger value="shopping">Shopping List</TabsTrigger>
           </TabsList>
 
           <TabsContent value="token">
@@ -44,6 +46,7 @@ export default function Home() {
             <CorsTest />
             <RefillCollectionViewer />
             <SimpleRefillTest />
+            <ShoppingList />
           </TabsContent>
         </Tabs>
       </div>
