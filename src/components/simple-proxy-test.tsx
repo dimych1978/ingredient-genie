@@ -23,7 +23,7 @@ export const SimpleProxyTest = () => {
       
       // Тестируем разные эндпоинты для диагностики
       const testEndpoints = [
-        'machines/51211?tab=overview',
+        'machines-overview',
         'reports/sales-by-products?vm_id=51211&sale_type=4&date_from=2025-11-26T00:00:00.000&date_to=2025-11-29T23:59:59.999',
         'vms/51211'
       ];

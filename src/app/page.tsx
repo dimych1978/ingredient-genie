@@ -12,6 +12,7 @@ import { ExtendedAccessTest } from '@/components/extended-access-test';
 import { ModemVmConnection } from '@/components/modem-vm-connection';
 import { RefillCollectionViewer } from '@/components/refill-collection-viewer';
 import { SimpleRefillTest } from '@/components/simple-refill-test';
+import { MachinesOverviewTest } from '@/components/machines-overview-test';
 
 export default function Home() {
   return (
@@ -40,13 +41,14 @@ export default function Home() {
 
           <TabsContent value="proxy">
             <SimpleProxyTest />
+            <MachinesOverviewTest />
           </TabsContent>
 
           <TabsContent value="cors">
             <CorsTest />
-            <RefillCollectionViewer />
+            {/* <RefillCollectionViewer />
             <SimpleRefillTest />
-            <ShoppingList />
+            <ShoppingList /> */}
           </TabsContent>
         </Tabs>
       </div>

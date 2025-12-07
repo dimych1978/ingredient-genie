@@ -157,8 +157,8 @@ export async function POST(
     console.log('🔄 POST прокси запрос к:', url);
 
     const authHeader = request.headers.get('authorization');
-    const body = await request.text();
-
+    const contentType = request.headers.get('content-type');
+    
     if (!authHeader) {
       return NextResponse.json(
         { error: 'No authorization header provided' },
@@ -166,21 +166,46 @@ export async function POST(
       );
     }
 
+    console.log('📄 Content-Type запроса:', contentType);
+
+    // Подготавливаем заголовки
+    const headers: HeadersInit = {
+      'Authorization': authHeader,
+      'Accept': 'application/json',
+    };
+
+    let body: BodyInit;
+    
+    // Обработка FormData
+    if (contentType?.includes('multipart/form-data')) {
+      // Для FormData получаем как FormData
+      const formData = await request.formData();
+      body = formData;
+      // Не добавляем Content-Type - браузер сам установит boundary
+      console.log('📦 FormData поля:', Object.fromEntries(formData.entries()));
+    } else {
+      // Для JSON и других типов
+      headers['Content-Type'] = contentType || 'application/json';
+      const textBody = await request.text();
+      body = textBody;
+      console.log('📦 Тело запроса:', textBody.substring(0, 200));
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: body,
     });
 
-    console.log('📡 POST ответ от Telemetron:', response.status, response.statusText);
+    console.log('📡 POST ответ от Telemetron:', {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get('content-type')
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ POST ошибка Telemetron:', response.status, errorText);
+      console.error('❌ POST ошибка Telemetron:', response.status, errorText.substring(0, 200));
       return NextResponse.json(
         { 
           error: `Telemetron API error: ${response.status}`,
@@ -190,10 +215,36 @@ export async function POST(
       );
     }
 
-    const data = await response.json();
-    console.log('✅ POST успех! Данные получены');
+    // Обработка ответа
+    const responseText = await response.text();
+    const responseContentType = response.headers.get('content-type');
     
-    return NextResponse.json(data);
+    // Пробуем распарсить как JSON
+    try {
+      const data = JSON.parse(responseText);
+      console.log('✅ POST успех! Данные получены');
+      return NextResponse.json(data);
+    } catch {
+      // Если не JSON, пробуем извлечь JSON из HTML
+      console.log('⚠️ Ответ не JSON, пытаемся извлечь из HTML...');
+      try {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const jsonString = jsonMatch[0];
+          const data = JSON.parse(jsonString);
+          console.log('✅ JSON извлечен из HTML');
+          return NextResponse.json(data);
+        }
+      } catch (error) {
+        console.log('❌ Не удалось извлечь JSON');
+      }
+      
+      return NextResponse.json({ 
+        message: 'Response is not JSON',
+        contentType: responseContentType,
+        rawResponse: responseText.substring(0, 1000) 
+      });
+    }
 
   } catch (error) {
     console.error('❌ POST прокси ошибка:', error);

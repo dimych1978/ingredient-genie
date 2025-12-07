@@ -2,63 +2,84 @@
 'use client';
 
 import { useState } from 'react';
-import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle, Network } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTeletmetronAuth } from '@/hooks/useTelemetronAuth';
 
 export const CorsTest = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{ [key: string]: any }>({});
-  const { getMachineDetails, testEndpoint } = useTeletmetronApi();
+  const { getToken } = useTeletmetronAuth();
   const { toast } = useToast();
 
-// В компоненте CorsTest обновите endpointsToTest:
-// components/simple-proxy-test.tsx
-// В endpointsToTest замените на:
-// В components/cors-test.tsx обновите endpointsToTest:
-const endpointsToTest = [
-  {
-    name: 'Sales by Products (рабочий)',
-    endpoint: 'reports/sales-by-products?vm_id=51211&sale_type=4&date_from=2025-11-26T00:00:00.000&date_to=2025-11-29T23:59:59.999',
-    description: 'Известный рабочий JSON API'
-  },
-  {
-    name: 'Vending Machines API',
-    endpoint: 'vending_machines/vms/51211',
-    description: 'Возможный API эндпоинт'
-  },
-  {
-    name: 'Vending Machines List',
-    endpoint: 'vending_machines/vms',
-    description: 'Список аппаратов API'
-  },
-  {
-    name: 'Refill History',
-    endpoint: 'reports/refill-history?vm_id=51211',
-    description: 'История загрузок API'
-  },
-  {
-    name: 'Machine Events',
-    endpoint: 'vms/51211/events',
-    description: 'События аппарата API'
-  },
-  {
-    name: 'Machine Stock',
-    endpoint: 'vms/51211/stock',
-    description: 'Остатки товаров API'
-  },
-  {
-    name: 'Machines API',
-    endpoint: 'machines/51211',
-    description: 'Прямой эндпоинт machines'
-  }
-];
-const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) => {
+  // Тестируем только 2 эндпоинта через универсальный прокси
+  const endpointsToTest = [
+    {
+      name: 'Machines Overview (POST FormData)',
+      endpoint: 'machines-overview',
+      description: 'POST с FormData для получения информации об аппарате',
+      type: 'POST_FORM',
+      vmId: '58690'
+    },
+    {
+      name: 'Sales by Products (GET JSON)',
+      endpoint: 'reports/sales-by-products',
+      query: '?vm_id=58690&sale_type=4&date_from=2025-11-30T00:00:00.000&date_to=2025-12-07T23:59:59.999',
+      description: 'GET JSON отчет по продажам за период',
+      type: 'GET'
+    }
+  ];
+
+  const testSingleEndpoint = async (endpoint: { 
+    name: string; 
+    endpoint: string;
+    type: string;
+    vmId?: string;
+    query?: string;
+  }) => {
     setLoading(true);
     try {
-      const result = await testEndpoint(endpoint.endpoint);
+      let result;
+      const token = await getToken();
+      
+      if (endpoint.type === 'POST_FORM') {
+        // Для machines-overview используем FormData через универсальный прокси
+        const formData = new FormData();
+        formData.append('_method', 'get');
+        formData.append('data[id]', endpoint.vmId || '58690');
+        
+        const response = await fetch(`/api/telemetron/${endpoint.endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        result = await response.json();
+      } else {
+        // Для sales-by-products используем GET через универсальный прокси
+        const fullPath = `${endpoint.endpoint}${endpoint.query || ''}`;
+        const response = await fetch(`/api/telemetron/${fullPath}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        result = await response.json();
+      }
       
       setResults(prev => ({
         ...prev,
@@ -99,13 +120,44 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
     
     for (const endpoint of endpointsToTest) {
       try {
-        const result = await testEndpoint(endpoint.endpoint);
+        let result;
+        const token = await getToken();
+        
+        if (endpoint.type === 'POST_FORM') {
+          const formData = new FormData();
+          formData.append('_method', 'get');
+          formData.append('data[id]', endpoint.vmId || '58690');
+          
+          const response = await fetch(`/api/telemetron/${endpoint.endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData,
+          });
+          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          result = await response.json();
+        } else {
+          const fullPath = `${endpoint.endpoint}${endpoint.query || ''}`;
+          const response = await fetch(`/api/telemetron/${fullPath}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+            },
+          });
+          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          result = await response.json();
+        }
+        
         newResults[endpoint.name] = { success: true, data: result };
         console.log(`✅ ${endpoint.name}`);
       } catch (error) {
         newResults[endpoint.name] = { 
           success: false, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
+          error: error instanceof Error ? error.message : String(error) 
         };
         console.log(`❌ ${endpoint.name}`);
       }
@@ -127,7 +179,7 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Network className="h-5 w-5" />
-          Тестирование через прокси (CORS решение)
+          Тестирование через универсальный прокси
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -136,8 +188,12 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
           disabled={loading}
           className="w-full"
         >
-          {loading ? <Loader2 className="animate-spin" /> : 'Тестировать все эндпоинты'}
-          {loading ? 'Тестирование...' : 'Тестировать все эндпоинты'}
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin mr-2 h-4 w-4" />
+              Тестирование...
+            </>
+          ) : 'Тестировать оба эндпоинта'}
         </Button>
 
         <div className="grid gap-3">
@@ -153,7 +209,11 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
                   {endpoint.name}
                 </div>
                 <div className="text-sm text-gray-600">{endpoint.description}</div>
-                <div className="text-xs text-gray-500 font-mono mt-1">{endpoint.endpoint}</div>
+                <div className="text-xs text-gray-500 font-mono mt-1 break-all">
+                  {endpoint.type === 'POST_FORM' 
+                    ? `POST /api/telemetron/${endpoint.endpoint}` 
+                    : `GET /api/telemetron/${endpoint.endpoint}${endpoint.query}`}
+                </div>
               </div>
               <Button
                 onClick={() => testSingleEndpoint(endpoint)}
@@ -161,7 +221,7 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
                 size="sm"
                 variant="outline"
               >
-                Тест
+                Тест ({endpoint.type === 'POST_FORM' ? 'POST' : 'GET'})
               </Button>
             </div>
           ))}
@@ -170,7 +230,7 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
         {/* Результаты */}
         {Object.keys(results).length > 0 && (
           <div>
-            <h4 className="font-semibold mb-2">Результаты через прокси:</h4>
+            <h4 className="font-semibold mb-2">Результаты тестирования:</h4>
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {Object.entries(results).map(([name, result]) => (
                 <details key={name} className="border rounded">
@@ -190,12 +250,12 @@ const testSingleEndpoint = async (endpoint: { name: string; endpoint: string }) 
         )}
 
         <div className="text-sm text-gray-600 p-3 bg-blue-50 rounded">
-          <div className="font-medium mb-1">Как это работает:</div>
+          <div className="font-medium mb-1">Как работает универсальный прокси:</div>
           <ul className="list-disc list-inside space-y-1">
-            <li>Запросы идут через Next.js API Route (/api/telemetron/...)</li>
-            <li>Сервер делает запрос к Telemetron (нет CORS ограничений)</li>
-            <li>Данные возвращаются обратно клиенту</li>
-            <li>Теперь мы можем тестировать любые эндпоинты!</li>
+            <li>Все запросы идут через <code>/api/telemetron/[...path]</code></li>
+            <li>POST запросы с FormData обрабатываются правильно</li>
+            <li>GET запросы передают query-параметры</li>
+            <li>Один прокси для всех 250+ аппаратов!</li>
           </ul>
         </div>
       </CardContent>
