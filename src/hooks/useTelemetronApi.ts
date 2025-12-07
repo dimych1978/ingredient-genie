@@ -37,9 +37,21 @@ export const useTeletmetronApi = () => {
     return apiRequest(`/api/modems/${vmId}`);
   }, [apiRequest]);
 
+const getMachineOverview = useCallback((vmId: string) => {
+  const formData = new FormData();
+  formData.append('_method', 'get');
+  formData.append('data[id]', vmId);
+
+  return apiRequest(`/api/telemetron/machines-overview`, {
+    method: 'POST',
+    body: formData
+  });
+}, [apiRequest]);
+
   return {
     getSalesByProducts,
     getMachineInfo,
+    getMachineOverview,
     apiRequest
   };
 };

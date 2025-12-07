@@ -1,18 +1,31 @@
-// // types/teletmetron.ts
-// export interface AuthCredentials {
-//   username: string;
-//   password: string;
-// }
+export interface TelemetronIngredient {
+  name: string;
+  unit: number; // 1=штука, 2=миллилитр, 3=грамм
+  volume: number;
+}
 
-// export interface AuthResponse {
-//   access_token: string;
-//   token_type: string;
-//   expires_in: number;
-//   refresh_token?: string;
-// }
+export interface TelemetronPlanogram {
+  id: number;
+  name: string;
+  receipt: boolean;
+  ingredients: TelemetronIngredient[] | null;
+}
 
-// export interface AuthConfig {
-//   clientId: string;
-//   clientSecret: string;
-//   baseUrl: string;
-// }
+export interface TelemetronSaleItem {
+  product_number: string;
+  planogram: TelemetronPlanogram;
+  number: number; // количество продаж
+  value: number; // выручка в рублях
+  attribute: any;
+  currency: string;
+  price: number;
+  summary_rate: number;
+}
+
+export interface TelemetronSalesResponse {
+  data: TelemetronSaleItem[];
+  total: {
+    quantity: number;
+    sales: number;
+  };
+}
