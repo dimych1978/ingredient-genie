@@ -57,37 +57,42 @@ const getDisplayUnit = (unitCode: number, amount: number): { unit: string; displ
 };
 
 export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] }): ShoppingListItem[] => {
-  // 1. Адаптируем и фильтруем данные
-  const adaptedData = salesData.data
-    .map(adaptSaleItem)
-    .filter(item => item.planogram.ingredients.length > 0);
+  // 1. Адаптируем данные
+  const adaptedData = salesData.data.map(adaptSaleItem);
   
   if (adaptedData.length === 0) return [];
   
   // 2. Считаем totals
-  const totals: Record<string, number> = {};
+  const totals: Record<string, { amount: number; unitCode: number }> = {};
 
   adaptedData.forEach(sale => {
     const quantity = sale.number;
     
-    sale.planogram.ingredients.forEach(ingredient => {
-      const normalizedName = normalizeIngredientName(ingredient.name);
-      const amount = ingredient.volume * quantity;
-      totals[normalizedName] = (totals[normalizedName] || 0) + amount;
-    });
+    // Если есть ингредиенты (напитки)
+    if (sale.planogram.ingredients.length > 0) {
+      sale.planogram.ingredients.forEach(ingredient => {
+        const normalizedName = normalizeIngredientName(ingredient.name);
+        const amount = ingredient.volume * quantity;
+        
+        if (!totals[normalizedName]) {
+          totals[normalizedName] = { amount: 0, unitCode: ingredient.unit };
+        }
+        totals[normalizedName].amount += amount;
+      });
+    } 
+    // Если ингредиентов нет (снеки, бутылки)
+    else {
+      const productName = sale.planogram.name;
+      if (!totals[productName]) {
+        totals[productName] = { amount: 0, unitCode: 1 }; // unitCode 1 = штуки
+      }
+      totals[productName].amount += quantity;
+    }
   });
   
   // 3. Конвертируем в ShoppingListItem[]
-  return Object.entries(totals).map(([name, amount]) => {
-    // Находим единицу измерения из первого попавшегося ингредиента
-    const sampleIngredient = adaptedData
-      .flatMap(sale => sale.planogram.ingredients)
-      .find(ing => normalizeIngredientName(ing.name) === name);
-    
-    const { unit, displayAmount } = getDisplayUnit(
-      sampleIngredient?.unit || 1,
-      amount
-    );
+  return Object.entries(totals).map(([name, data]) => {
+    const { unit, displayAmount } = getDisplayUnit(data.unitCode, data.amount);
     
     return {
       name,
