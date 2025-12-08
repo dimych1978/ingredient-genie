@@ -84,6 +84,7 @@ export const GroupedShoppingLists = ({ machineIds, specialMachineDates }: Groupe
               showControls={false}
               forceLoad
               specialMachineDates={specialMachineDates}
+              sort="alphabetical"
             />
           );
         }

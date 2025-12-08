@@ -1,3 +1,4 @@
+
 import type { TelemetronSaleItem, TelemetronIngredient } from '@/types/telemetron';
 
 export interface ShoppingListItem {
@@ -5,6 +6,8 @@ export interface ShoppingListItem {
   amount: number;
   unit: string;
 }
+
+export type SortType = 'grouped' | 'alphabetical';
 
 // Адаптер для конвертации TelemetronSaleItem в внутренний формат
 interface AdaptedSaleItem {
@@ -56,7 +59,29 @@ const getDisplayUnit = (unitCode: number, amount: number): { unit: string; displ
   }
 };
 
-export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] }): ShoppingListItem[] => {
+const COFFEE_GROUP_INGREDIENTS = [
+  'кофе',
+  'сливки',
+  'шоколад',
+  'ваниль',
+  'стаканы',
+  'крышки',
+  'размешиватели',
+  'сахар'
+];
+
+const getSortPriority = (name: string): number => {
+  const lowerName = name.toLowerCase();
+  for (let i = 0; i < COFFEE_GROUP_INGREDIENTS.length; i++) {
+    if (lowerName.includes(COFFEE_GROUP_INGREDIENTS[i])) {
+      return i; // Возвращаем индекс как приоритет
+    }
+  }
+  return COFFEE_GROUP_INGREDIENTS.length; // Все остальное идет после
+};
+
+
+export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] }, sort: SortType = 'grouped'): ShoppingListItem[] => {
   // 1. Адаптируем данные
   const adaptedData = salesData.data.map(adaptSaleItem);
   
@@ -91,7 +116,7 @@ export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] })
   });
   
   // 3. Конвертируем в ShoppingListItem[]
-  return Object.entries(totals).map(([name, data]) => {
+  const list = Object.entries(totals).map(([name, data]) => {
     const { unit, displayAmount } = getDisplayUnit(data.unitCode, data.amount);
     
     return {
@@ -100,4 +125,22 @@ export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] })
       unit
     };
   });
+
+  // 4. Сортируем
+  if (sort === 'alphabetical') {
+    list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  } else { // 'grouped'
+    list.sort((a, b) => {
+      const priorityA = getSortPriority(a.name);
+      const priorityB = getSortPriority(b.name);
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      // Если приоритет одинаковый, сортируем по алфавиту внутри группы
+      return a.name.localeCompare(b.name, 'ru');
+    });
+  }
+
+  return list;
 };

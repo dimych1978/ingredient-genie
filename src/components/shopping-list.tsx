@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
-import { calculateShoppingList, type ShoppingListItem } from '@/lib/shopping-calculator';
+import { calculateShoppingList, type ShoppingListItem, type SortType } from '@/lib/shopping-calculator';
 import type { TelemetronSalesResponse, TelemetronSaleItem } from '@/types/telemetron';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +22,7 @@ interface ShoppingListProps {
   forceLoad?: boolean;
   specialMachineDates?: Record<string, string>;
   onDateChange?: (date: string) => void;
+  sort?: SortType;
 }
 
 export const ShoppingList = ({ 
@@ -31,7 +32,8 @@ export const ShoppingList = ({
   showControls = true,
   forceLoad = false,
   specialMachineDates = {},
-  onDateChange
+  onDateChange,
+  sort = 'grouped'
 }: ShoppingListProps) => {
   const [loading, setLoading] = useState(false);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
@@ -86,7 +88,7 @@ export const ShoppingList = ({
     
     try {
       const allSales: TelemetronSaleItem[] = [];
-      const dateTo = format(new Date(), "yyyy-MM-dd'T'23:59:59.999");
+      const dateTo = new Date(); // Всегда сегодня
 
       for (const vmId of machineIds) {
           try {
@@ -105,10 +107,10 @@ export const ShoppingList = ({
               }
               
               const dateFromStr = format(startDate, "yyyy-MM-dd'T'00:00:00.000");
+              const dateToStr = format(dateTo, "yyyy-MM-dd'T'23:59:59.999");
               
-              console.log(`[ShoppingList] Расчет для аппарата #${vmId}. Период: с ${dateFromStr} по ${dateTo}`);
-
-              const salesData: TelemetronSalesResponse = await getSalesByProducts(vmId, dateFromStr, dateTo);
+              const salesData: TelemetronSalesResponse = await getSalesByProducts(vmId, dateFromStr, dateToStr);
+              
               if (salesData && salesData.data) {
                   allSales.push(...salesData.data);
               }
@@ -123,7 +125,8 @@ export const ShoppingList = ({
       }
       
       const combinedSalesData = { data: allSales };
-      const list = calculateShoppingList(combinedSalesData);
+      const list = calculateShoppingList(combinedSalesData, sort);
+      
       setShoppingList(list);
       
       if(list.length === 0 && allSales.length > 0){
@@ -144,7 +147,7 @@ export const ShoppingList = ({
     } finally {
       setLoading(false);
     }
-  }, [machineIds, getSalesByProducts, getMachineOverview, toast, dateFrom, specialMachineDates]);
+  }, [machineIds, getSalesByProducts, getMachineOverview, toast, dateFrom, specialMachineDates, sort]);
 
   useEffect(() => {
     if (forceLoad) {
