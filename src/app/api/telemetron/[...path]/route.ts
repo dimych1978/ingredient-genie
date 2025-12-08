@@ -15,8 +15,6 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const url = `${TELEMETRON_BASE_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
     
-    console.log('🔄 Прокси запрос к:', url);
-
     const authHeader = request.headers.get('authorization');
     
     if (!authHeader) {
@@ -35,13 +33,6 @@ export async function GET(
       },
     });
 
-    console.log('📡 Ответ от Telemetron:', {
-      status: response.status,
-      statusText: response.statusText,
-      contentType: response.headers.get('content-type'),
-      url: url
-    });
-
     if (!response.ok) {
       let errorBody;
       try {
@@ -49,13 +40,6 @@ export async function GET(
       } catch {
         errorBody = 'Не удалось прочитать тело ошибки';
       }
-
-      console.error('❌ Ошибка от Telemetron:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorBody.substring(0, 500)
-      });
-
       return NextResponse.json(
         { 
           error: `Telemetron API error: ${response.status} ${response.statusText}`,
@@ -71,18 +55,14 @@ export async function GET(
 
     // Если это HTML, пытаемся извлечь JSON
     if (contentType?.includes('text/html')) {
-      console.log('⚠️ Ответ в HTML формате, пытаемся извлечь JSON...');
-      
       try {
         // Пытаемся найти JSON в HTML
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const jsonString = jsonMatch[0];
           const data = JSON.parse(jsonString);
-          console.log('✅ JSON извлечен из HTML');
           return NextResponse.json(data);
         } else {
-          console.log('❌ Не удалось найти JSON в HTML');
           return NextResponse.json(
             { 
               message: 'HTML response without JSON',
@@ -93,7 +73,6 @@ export async function GET(
           );
         }
       } catch (parseError) {
-        console.error('❌ Ошибка парсинга JSON из HTML:', parseError);
         return NextResponse.json(
           { 
             error: 'Failed to parse JSON from HTML response',
@@ -109,10 +88,8 @@ export async function GET(
     if (contentType?.includes('application/json')) {
       try {
         const data = JSON.parse(responseText);
-        console.log('✅ JSON данные получены');
         return NextResponse.json(data);
       } catch (parseError) {
-        console.error('❌ Ошибка парсинга JSON:', parseError);
         return NextResponse.json(
           { error: 'Failed to parse JSON response' },
           { status: 500 }
@@ -121,7 +98,6 @@ export async function GET(
     }
 
     // Если другой content-type
-    console.log('⚠️ Неизвестный content-type:', contentType);
     return NextResponse.json(
       { 
         message: 'Unknown response format',
@@ -132,7 +108,6 @@ export async function GET(
     );
 
   } catch (error) {
-    console.error('❌ Прокси ошибка:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error in proxy', 
@@ -154,8 +129,6 @@ export async function POST(
     const searchParams = request.nextUrl.searchParams.toString();
     const url = `${TELEMETRON_BASE_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
     
-    console.log('🔄 POST прокси запрос к:', url);
-
     const authHeader = request.headers.get('authorization');
     const contentType = request.headers.get('content-type');
     
@@ -165,8 +138,6 @@ export async function POST(
         { status: 401 }
       );
     }
-
-    console.log('📄 Content-Type запроса:', contentType);
 
     // Подготавливаем заголовки
     const headers: HeadersInit = {
@@ -182,13 +153,11 @@ export async function POST(
       const formData = await request.formData();
       body = formData;
       // Не добавляем Content-Type - браузер сам установит boundary
-      console.log('📦 FormData поля:', Object.fromEntries(formData.entries()));
     } else {
       // Для JSON и других типов
       headers['Content-Type'] = contentType || 'application/json';
       const textBody = await request.text();
       body = textBody;
-      console.log('📦 Тело запроса:', textBody.substring(0, 200));
     }
 
     const response = await fetch(url, {
@@ -197,15 +166,8 @@ export async function POST(
       body: body,
     });
 
-    console.log('📡 POST ответ от Telemetron:', {
-      status: response.status,
-      statusText: response.statusText,
-      contentType: response.headers.get('content-type')
-    });
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ POST ошибка Telemetron:', response.status, errorText.substring(0, 200));
       return NextResponse.json(
         { 
           error: `Telemetron API error: ${response.status}`,
@@ -222,21 +184,18 @@ export async function POST(
     // Пробуем распарсить как JSON
     try {
       const data = JSON.parse(responseText);
-      console.log('✅ POST успех! Данные получены');
       return NextResponse.json(data);
     } catch {
       // Если не JSON, пробуем извлечь JSON из HTML
-      console.log('⚠️ Ответ не JSON, пытаемся извлечь из HTML...');
       try {
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const jsonString = jsonMatch[0];
           const data = JSON.parse(jsonString);
-          console.log('✅ JSON извлечен из HTML');
           return NextResponse.json(data);
         }
       } catch (error) {
-        console.log('❌ Не удалось извлечь JSON');
+        // не удалось извлечь
       }
       
       return NextResponse.json({ 
@@ -247,7 +206,6 @@ export async function POST(
     }
 
   } catch (error) {
-    console.error('❌ POST прокси ошибка:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: String(error) },
       { status: 500 }

@@ -157,13 +157,15 @@ export default function MachineStatusPage() {
       <div className="container mx-auto px-4 py-8 md:py-12">
         <header className="mb-8 md:mb-12">
           <div className="flex items-center gap-4 mb-2">
-            <Link href="/" aria-label="Вернуться на главную">
-                <Icons.logo className="h-10 w-10 text-primary" />
-            </Link>
+         
+         
             <div>
-              <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">
-                Аппарат #{id}
-              </h1>
+              <Link href="/" className="flex items-center gap-2 mb-4 w-fit">
+                <Icons.logo className="h-8 w-8 text-primary" />
+                <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary">
+                  Аппарат #{id}
+                </h1>
+              </Link>
               
               {machineOverview.machine?.name && (
                 <div className="flex items-center gap-2 mt-1">

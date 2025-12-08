@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -7,16 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { GroupedShoppingLists } from '@/components/grouped-shopping-lists';
-import { Calendar as CalendarIcon, X, PlusCircle, Eye } from 'lucide-react';
+import { Calendar as CalendarIcon, X, PlusCircle, Eye, Check, ChevronsUpDown } from 'lucide-react';
 import Link from 'next/link';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { getSpecialMachineDates, setSpecialMachineDate } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const isSpecialMachine = (machine: Machine | undefined): boolean => {
   if (!machine) return false;
@@ -36,6 +36,9 @@ export const TomorrowsMachines = () => {
   const [specialMachineDates, setSpecialMachineDates] = useState<Record<string, string>>({});
   
   const { toast } = useToast();
+
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+
 
   // State for date confirmation dialog
   const [dialogState, setDialogState] = useState<{
@@ -233,18 +236,59 @@ export const TomorrowsMachines = () => {
         )}
         
         <div className="flex gap-2 items-center p-2 border rounded-lg">
-             <Select onValueChange={setMachineToAdd} value={machineToAdd || ''}>
-                <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Выберите аппарат для добавления..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {unselectedMachines.map(machine => (
-                        <SelectItem key={machine.id} value={machine.id}>
-                            {machine.name} (#{machine.id}) - {machine.location}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+             <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className="w-full justify-between"
+                >
+                  {machineToAdd
+                    ? unselectedMachines.find((machine) => machine.id === machineToAdd)?.name
+                    : "Выберите аппарат для добавления..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command
+                  filter={(value, search) => {
+                    if (value.toLowerCase().includes(search.toLowerCase())) return 1
+                    return 0
+                  }}
+                >
+                  <CommandInput 
+                    placeholder="Поиск по названию или локации..."
+                  />
+                  <CommandList>
+                    <CommandEmpty>Аппарат не найден.</CommandEmpty>
+                    <CommandGroup>
+                      {unselectedMachines.map((machine) => (
+                        <CommandItem
+                          key={machine.id}
+                          value={`${machine.name} ${machine.location} ${machine.id}`}
+                          onSelect={() => {
+                            setMachineToAdd(machine.id);
+                            setComboboxOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              machineToAdd === machine.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div>
+                              <p>{machine.name} (#{machine.id})</p>
+                              <p className="text-xs text-muted-foreground">{machine.location}</p>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
              <Button onClick={handleAddMachineClick} disabled={!machineToAdd}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Добавить
