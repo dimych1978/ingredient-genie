@@ -1,12 +1,6 @@
 
-import Link from 'next/link';
-import { TeletmetronUpload } from '@/components/telemetron-upload';
 import { Icons } from '@/components/icons';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye } from 'lucide-react';
-import { allMachines } from '@/lib/data';
+import { TomorrowsMachines } from '@/components/tomorrows-machines';
 
 export default function Home() {
   return (
@@ -24,49 +18,9 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-8">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">Список аппаратов</CardTitle>
-                <CardDescription>
-                  Просмотр состояния и управление вашими аппаратами.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Название</TableHead>
-                      <TableHead>Местоположение</TableHead>
-                      <TableHead className="text-right">Действия</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allMachines.map((machine) => (
-                      <TableRow key={machine.id}>
-                        <TableCell className="font-mono">#{machine.id}</TableCell>
-                        <TableCell className="font-medium">{machine.name}</TableCell>
-                        <TableCell className="text-muted-foreground">{machine.location}</TableCell>
-                        <TableCell className="text-right">
-                          <Button asChild variant="ghost" size="icon">
-                            <Link href={`/machines/${machine.id}`}>
-                              <Eye className="h-4 w-4" />
-                              <span className="sr-only">Посмотреть</span>
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="lg:col-span-1">
-             <TeletmetronUpload />
+        <div className="grid gap-8">
+          <div className="lg:col-span-3 space-y-8">
+            <TomorrowsMachines />
           </div>
         </div>
       </div>
