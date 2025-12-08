@@ -150,7 +150,6 @@ export const useTeletmetronAuth = () => {
         error: null
       });
 
-      console.log('🔄 Token успешно обновлен');
       return authData;
 
     } catch (error) {
@@ -181,7 +180,7 @@ export const useTeletmetronAuth = () => {
                 await refreshAccessToken();
                 return authState.token!;
             } catch (error) {
-                console.log('❌ Refresh token failed, re-authenticating...');
+                // Refresh token failed, re-authenticating...
             }
         }
 
