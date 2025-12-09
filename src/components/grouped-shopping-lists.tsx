@@ -14,15 +14,17 @@ interface GroupedShoppingListsProps {
 }
 
 const getMachineType = (machine: Machine): 'coffee' | 'snack' | 'bottle' => {
-  const name = machine.name.toLowerCase();
-  if (name.includes('krea') || name.includes('opera') || name.includes('kikko') || name.includes('colibri') || name.includes('saeco') || name.includes('jetinno')) {
+  const model = machine.model?.toLowerCase();
+  if (!model) return 'snack'; // Default
+
+  if (['krea', 'opera', 'kikko', 'colibri', 'saeco', 'jetinno'].includes(model)) {
     return 'coffee';
   }
-  if (name.includes('snakky') || name.includes('tcn') || name.includes('fas') || name.includes('foodbox')) {
+  if (['snakky', 'tcn', 'fas', 'foodbox'].includes(model)) {
     return 'snack';
   }
-  if (name.includes('sanden') || name.includes('sve')) {
-      return 'bottle';
+  if (['sanden', 'sve'].includes(model)) {
+    return 'bottle';
   }
   return 'snack'; // Default to snack if unsure
 };

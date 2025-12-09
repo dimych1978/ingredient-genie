@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getSpecialMachineDates, setSpecialMachineDate } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { allMachines, Machine } from '@/lib/data';
 
 interface MachineOverview {
   machine: {
@@ -29,10 +30,10 @@ interface MachineOverview {
   };
 }
 
-const isSpecialMachine = (machineName: string | undefined): boolean => {
-  if (!machineName) return false;
-  const name = machineName.toLowerCase();
-  return name.includes('krea') || name.includes('tcn');
+const isSpecialMachine = (machine: Machine | undefined): boolean => {
+  if (!machine || !machine.model) return false;
+  const model = machine.model.toLowerCase();
+  return model.includes('krea') || model.includes('tcn');
 };
 
 export default function MachineStatusPage() {
@@ -49,7 +50,7 @@ export default function MachineStatusPage() {
   const { token } = useTeletmetronAuth();
   const { toast } = useToast();
   
-  const machineName = machineOverview?.machine?.name;
+  const machineData = useMemo(() => allMachines.find(m => m.id === id), [id]);
 
   useEffect(() => {
     const fetchMachineData = async () => {
@@ -62,9 +63,8 @@ export default function MachineStatusPage() {
         const overviewResult = await getMachineOverview(id);
         setMachineOverview(overviewResult.data);
 
-        const currentMachineName = overviewResult.data?.machine?.name;
         const lastCollectionDate = overviewResult.data?.cache?.last_collection_at;
-        const special = isSpecialMachine(currentMachineName);
+        const special = isSpecialMachine(machineData);
 
         let finalStartDate: Date;
         
@@ -100,12 +100,12 @@ export default function MachineStatusPage() {
     };
 
     fetchMachineData();
-  }, [id, token, getMachineOverview]);
+  }, [id, token, getMachineOverview, machineData]);
 
   const handleManualDateChange = (isoDate: string) => {
      setEffectiveStartDate(isoDate);
      // Если это специальный аппарат, сохраняем дату
-     if (isSpecialMachine(machineName)) {
+     if (isSpecialMachine(machineData)) {
         const saveDate = async () => {
              const result = await setSpecialMachineDate(id, isoDate);
              if(result.success){
@@ -199,7 +199,7 @@ export default function MachineStatusPage() {
                   <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
                     <div className="font-medium">Дата инкассации (Telemetron):</div>
-                    <div>{isSpecialMachine(machineName) ? 'Ручной ввод для этого типа аппарата' : 'Нет данных'}</div>
+                    <div>{isSpecialMachine(machineData) ? 'Ручной ввод для этого типа аппарата' : 'Нет данных'}</div>
                   </div>
                 </div>
               )}
