@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 interface GroupedShoppingListsProps {
   machineIds: string[];
   specialMachineDates: Record<string, string>;
+  onSaveChanges: () => void;
 }
 
 const getMachineType = (machine: Machine): 'coffee' | 'snack' | 'bottle' => {
