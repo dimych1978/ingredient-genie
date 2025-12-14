@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icons } from '@/components/icons';
 import { ShoppingList } from '@/components/shopping-list';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, MapPin, Calendar, Package, Clock } from 'lucide-react';
+import { Loader2, MapPin, Calendar as CalendarIcon, Package, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
 import { useTeletmetronAuth } from '@/hooks/useTelemetronAuth';
@@ -15,6 +15,8 @@ import { ru } from 'date-fns/locale';
 import { getSpecialMachineDates, setSpecialMachineDate } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { allMachines, Machine } from '@/lib/data';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface MachineOverview {
   machine: {
@@ -45,6 +47,7 @@ export default function MachineStatusPage() {
   
   const [effectiveStartDate, setEffectiveStartDate] = useState<string | null>(null);
   const [isManualDate, setIsManualDate] = useState(false);
+  const [isCalendarOpen, setCalendarOpen] = useState(false);
 
   const { getMachineOverview } = useTeletmetronApi();
   const { token } = useTeletmetronAuth();
@@ -205,13 +208,32 @@ export default function MachineStatusPage() {
               )}
               
               <div className="flex items-start gap-2 mt-4 text-sm">
-                <Calendar className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                <CalendarIcon className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
                 <div>
                   <div className="font-medium text-foreground">Период для загрузки:</div>
-                  <div className="text-muted-foreground">
-                    с {format(new Date(effectiveStartDate), 'dd.MM.yyyy', { locale: ru })} 
-                    по {format(new Date(), 'dd.MM.yyyy', { locale: ru })}
-                  </div>
+                    <Popover open={isCalendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <div className="text-muted-foreground cursor-pointer hover:underline">
+                            с {format(new Date(effectiveStartDate), 'dd.MM.yyyy', { locale: ru })} 
+                            по {format(new Date(), 'dd.MM.yyyy', { locale: ru })}
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(effectiveStartDate)}
+                          onSelect={(date) => {
+                            if (date) {
+                              handleManualDateChange(date.toISOString());
+                            }
+                            setCalendarOpen(false);
+                          }}
+                          disabled={(date) => date > new Date() || date < new Date("2020-01-01")}
+                          initialFocus
+                          locale={ru}
+                        />
+                      </PopoverContent>
+                    </Popover>
                 </div>
               </div>
 
