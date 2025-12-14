@@ -1,4 +1,4 @@
-import { LoginForm } from '@/components/login-form';
+// import { LoginForm } from '@/components/login-form';
 import { Icons } from '@/components/icons';
 
 export default function LoginPage() {
@@ -16,7 +16,7 @@ export default function LoginPage() {
             Войдите, чтобы продолжить.
           </p>
         </header>
-        <LoginForm />
+        {/* <LoginForm /> */}
       </div>
     </main>
   );
