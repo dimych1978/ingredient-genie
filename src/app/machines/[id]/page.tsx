@@ -1,4 +1,4 @@
-
+// app/machines/[id]/page.tsx
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -8,8 +8,7 @@ import { ShoppingList } from '@/components/shopping-list';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, MapPin, Calendar as CalendarIcon, Package, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { useTeletmetronApi } from '@/hooks/useTelemetronApi';
-import { useTeletmetronAuth } from '@/hooks/useTelemetronAuth';
+import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getSpecialMachineDates, setSpecialMachineDate } from '@/app/actions';
@@ -49,15 +48,14 @@ export default function MachineStatusPage() {
   const [isManualDate, setIsManualDate] = useState(false);
   const [isCalendarOpen, setCalendarOpen] = useState(false);
 
-  const { getMachineOverview } = useTeletmetronApi();
-  const { token } = useTeletmetronAuth();
+  const { getMachineOverview } = useTelemetronApi();
   const { toast } = useToast();
   
   const machineData = useMemo(() => allMachines.find(m => m.id === id), [id]);
 
   useEffect(() => {
     const fetchMachineData = async () => {
-      if (!id || !token) return;
+      if (!id) return;
       
       setIsLoading(true);
       setError(null);
@@ -103,9 +101,9 @@ export default function MachineStatusPage() {
     };
 
     fetchMachineData();
-  }, [id, token, getMachineOverview, machineData]);
+  }, [id, getMachineOverview, machineData]);
 
-  const handleManualDateChange = (isoDate: string) => {
+  const handleManualDateChange = useCallback((isoDate: string) => {
      setEffectiveStartDate(isoDate);
      // Если это специальный аппарат, сохраняем дату
      if (isSpecialMachine(machineData)) {
@@ -119,8 +117,7 @@ export default function MachineStatusPage() {
         };
         saveDate();
      }
-  };
-
+  }, [id, machineData, toast]);
 
   if (isLoading) {
     return (
@@ -137,8 +134,12 @@ export default function MachineStatusPage() {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md bg-destructive/10 border-destructive">
-          <CardHeader><CardTitle>Ошибка</CardTitle></CardHeader>
-          <CardContent><p className="text-destructive">{error}</p></CardContent>
+          <CardHeader>
+            <CardTitle>Ошибка</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-destructive">{error}</p>
+          </CardContent>
         </Card>
       </main>
     );
@@ -160,8 +161,6 @@ export default function MachineStatusPage() {
       <div className="container mx-auto px-4 py-8 md:py-12">
         <header className="mb-8 md:mb-12">
           <div className="flex items-center gap-4 mb-2">
-         
-         
             <div>
               <Link href="/" className="flex items-center gap-2 mb-4 w-fit">
                 <Icons.logo className="h-8 w-8 text-primary" />
@@ -236,7 +235,6 @@ export default function MachineStatusPage() {
                     </Popover>
                 </div>
               </div>
-
             </div>
           </div>
         </header>
@@ -247,7 +245,7 @@ export default function MachineStatusPage() {
                 title={`Что брать к аппарату #${id}`}
                 description="Список расходников на основе продаж"
                 showControls={isManualDate}
-                forceLoad={true} // Всегда загружаем, т.к. дата теперь есть всегда
+                forceLoad={true}
                 specialMachineDates={{ [id]: effectiveStartDate }}
                 onDateChange={handleManualDateChange}
               />

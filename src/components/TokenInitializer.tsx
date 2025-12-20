@@ -1,12 +1,12 @@
-// components/TokenInitializer.tsx
-"use client";
+// // components/TokenInitializer.tsx
+// 'use client';
 
-import { useTeletmetronToken } from '@/hooks/useTelemetronToken';
+// import { useTelemetronToken } from '@/hooks/useTelemetronToken';
 
-export const TokenInitializer = () => {
-  // Просто используем хук - он автоматически выполнится
-  useTeletmetronToken();
-  
-  // Этот компонент ничего не рендерит
-  return null;
-};
+// export const TokenInitializer = () => {
+//   // Просто используем хук - он автоматически выполнится
+//   useTelemetronToken();
+
+//   // Этот компонент ничего не рендерит
+//   return null;
+// };

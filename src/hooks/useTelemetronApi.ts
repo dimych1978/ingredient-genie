@@ -1,28 +1,24 @@
 import { useCallback } from "react";
-import { useTeletmetronAuth } from "./useTelemetronAuth";
 
 // hooks/useTelemetronApi.ts
-export const useTeletmetronApi = () => {
-  const { getToken } = useTeletmetronAuth();
-
+export const useTelemetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
-    const token = await getToken();
-    
+    // БЕЗ заголовка Authorization!
     const response = await fetch(`/api/telemetron/${endpoint}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Accept': 'application/json',
         ...options.headers,
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`API request failed: ${response.status}. ${errorText}`);
     }
 
     return response.json();
-  }, [getToken]);
+  }, []);
 
   const getMachineOverview = useCallback((vmId: string) => {
     const formData = new FormData();

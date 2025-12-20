@@ -1,14 +1,80 @@
-// app/api/telemetron/[...path]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 const TELEMETRON_BASE_URL = 'https://my.telemetron.net';
 
-// app/api/telemetron/[...path]/route.ts
-// Обновим обработку ответов
+// Конфигурация OAuth 2.0 для Telemetron
+const TELEMETRON_CLIENT_ID = '95d753e0-39d1-4dfb-9886-8cda193d4aa9';
+const TELEMETRON_CLIENT_SECRET = 'sh1LBRJRqWjeoojiTzxl3XdKOfjyoqCMcuiZQNkU';
 
-export async function GET(
+// Кэш для токена (живет только во время выполнения функции)
+let tokenCache: { token: string; expiry: number } | null = null;
+
+// Функция для получения Bearer токена от Telemetron
+async function getTelemetronToken(): Promise<string> {
+  const username = process.env.TELEMETRON_USERNAME;
+  const password = process.env.TELEMETRON_PASSWORD;
+  
+  if (!username || !password) {
+    console.error('Telemetron credentials missing in environment');
+    throw new Error('Telemetron credentials not configured');
+  }
+
+  // Проверяем кэш (токены обычно живут 1-2 часа, проверяем за минуту до истечения)
+  if (tokenCache && Date.now() < tokenCache.expiry - 60000) {
+    console.log('Using cached token');
+    return tokenCache.token;
+  }
+
+  console.log('Requesting new token from Telemetron...');
+  
+  try {
+    const tokenResponse = await fetch(`${TELEMETRON_BASE_URL}/api/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Token-Applicant': 'site'
+      },
+      body: JSON.stringify({
+        grant_type: 'password',
+        client_id: TELEMETRON_CLIENT_ID,
+        client_secret: TELEMETRON_CLIENT_SECRET,
+        username: username,
+        password: password,
+        scope: '',
+        lang: 'ru'
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Token request failed:', tokenResponse.status, errorText);
+      throw new Error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    
+    // Сохраняем в кэш
+    tokenCache = {
+      token: tokenData.access_token,
+      expiry: Date.now() + (tokenData.expires_in * 1000)
+    };
+    
+    console.log('Token obtained successfully, expires in:', tokenData.expires_in, 'seconds');
+    return tokenData.access_token;
+    
+  } catch (error) {
+    console.error('Error getting Telemetron token:', error);
+    throw error;
+  }
+}
+
+// Общая функция для обработки запросов
+// Общая функция для обработки запросов
+async function handleTelemetronRequest(
+  method: 'GET' | 'POST',
   request: NextRequest,
-  { params }: { params: Promise <{ path: string[] }> }
+  params: Promise<{ path: string[] }>
 ) {
   try {
     const resolvedParams = await params;
@@ -16,22 +82,45 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const url = `${TELEMETRON_BASE_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
     
-    const authHeader = request.headers.get('authorization');
+    console.log(`Proxying ${method} request to: ${url}`);
     
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'No authorization header provided' },
-        { status: 401 }
-      );
+    // Получаем Bearer токен
+    const token = await getTelemetronToken();
+    
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
+    };
+
+    let body: BodyInit | undefined;
+    
+    if (method === 'POST') {
+      const contentType = request.headers.get('content-type');
+      console.log('Content-Type received:', contentType);
+      
+      // Обработка FormData
+      if (contentType?.includes('multipart/form-data')) {
+        const formData = await request.formData();
+        body = formData;
+        // Для FormData НЕ добавляем Content-Type заголовок!
+        // fetch API сам установит правильный boundary
+      } else {
+        // Для JSON или других типов
+        headers['Content-Type'] = contentType || 'application/json';
+        const textBody = await request.text();
+        body = textBody;
+      }
+    } else {
+      // Для GET запросов
+      headers['Content-Type'] = 'application/json';
     }
 
+    console.log('Sending request with headers:', Object.keys(headers));
+    
     const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': authHeader,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+      method,
+      headers,
+      body: method === 'POST' ? body : undefined,
     });
 
     if (!response.ok) {
@@ -41,6 +130,9 @@ export async function GET(
       } catch {
         errorBody = 'Не удалось прочитать тело ошибки';
       }
+      
+      console.error(`Telemetron API error ${response.status}:`, errorBody.substring(0, 200));
+      
       return NextResponse.json(
         { 
           error: `Telemetron API error: ${response.status} ${response.statusText}`,
@@ -109,6 +201,8 @@ export async function GET(
     );
 
   } catch (error) {
+    console.error('Proxy internal error:', error);
+    
     return NextResponse.json(
       { 
         error: 'Internal server error in proxy', 
@@ -118,98 +212,16 @@ export async function GET(
     );
   }
 }
-// app/api/telemetron/[...path]/route.ts
-// Добавьте этот код к существующему
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  return handleTelemetronRequest('GET', request, params);
+}
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  try {
-    const path = params.path.join('/');
-    const searchParams = request.nextUrl.searchParams.toString();
-    const url = `${TELEMETRON_BASE_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
-    
-    const authHeader = request.headers.get('authorization');
-    const contentType = request.headers.get('content-type');
-    
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'No authorization header provided' },
-        { status: 401 }
-      );
-    }
-
-    // Подготавливаем заголовки
-    const headers: HeadersInit = {
-      'Authorization': authHeader,
-      'Accept': 'application/json',
-    };
-
-    let body: BodyInit;
-    
-    // Обработка FormData
-    if (contentType?.includes('multipart/form-data')) {
-      // Для FormData получаем как FormData
-      const formData = await request.formData();
-      body = formData;
-      // Не добавляем Content-Type - браузер сам установит boundary
-    } else {
-      // Для JSON и других типов
-      headers['Content-Type'] = contentType || 'application/json';
-      const textBody = await request.text();
-      body = textBody;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: body,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return NextResponse.json(
-        { 
-          error: `Telemetron API error: ${response.status}`,
-          details: errorText.substring(0, 500) 
-        },
-        { status: response.status }
-      );
-    }
-
-    // Обработка ответа
-    const responseText = await response.text();
-    const responseContentType = response.headers.get('content-type');
-    
-    // Пробуем распарсить как JSON
-    try {
-      const data = JSON.parse(responseText);
-      return NextResponse.json(data);
-    } catch {
-      // Если не JSON, пробуем извлечь JSON из HTML
-      try {
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const jsonString = jsonMatch[0];
-          const data = JSON.parse(jsonString);
-          return NextResponse.json(data);
-        }
-      } catch (error) {
-        // не удалось извлечь
-      }
-      
-      return NextResponse.json({ 
-        message: 'Response is not JSON',
-        contentType: responseContentType,
-        rawResponse: responseText.substring(0, 1000) 
-      });
-    }
-
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
-      { status: 500 }
-    );
-  }
+  return handleTelemetronRequest('POST', request, params);
 }
