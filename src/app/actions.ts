@@ -2,6 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import type { LoadingOverride } from '@/types/telemetron';
 
 // --- Функции для работы с файлом дат спец. аппаратов ---
 
@@ -80,6 +81,55 @@ export async function saveDailySchedule(date: string, machineIds: string[]): Pro
         const schedules = await readSchedulesFile();
         schedules[date] = machineIds;
         await writeSchedulesFile(schedules);
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false };
+    }
+}
+
+// --- Функции для работы с состоянием загрузки ингредиентов ---
+
+const OVERRIDES_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'loading-overrides.json');
+
+type LoadingOverrides = Record<string, LoadingOverride>;
+
+async function readOverridesFile(): Promise<LoadingOverrides> {
+  try {
+    const data = await fs.readFile(OVERRIDES_FILE_PATH, 'utf-8');
+    return JSON.parse(data);
+  } catch (error: any) {
+    if (error.code === 'ENOENT') return {};
+    console.error('Ошибка чтения файла состояний загрузки:', error);
+    throw new Error('Не удалось прочитать файл состояний.');
+  }
+}
+
+async function writeOverridesFile(overrides: LoadingOverrides): Promise<void> {
+  try {
+    await fs.writeFile(OVERRIDES_FILE_PATH, JSON.stringify(overrides, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Ошибка записи в файл состояний загрузки:', error);
+    throw new Error('Не удалось сохранить состояния.');
+  }
+}
+
+export async function getLoadingOverrides(machineId: string): Promise<LoadingOverrides> {
+  const allOverrides = await readOverridesFile();
+  const machineOverrides: LoadingOverrides = {};
+  for (const key in allOverrides) {
+    if (key.startsWith(`${machineId}-`)) {
+      machineOverrides[key] = allOverrides[key];
+    }
+  }
+  return machineOverrides;
+}
+
+export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): Promise<{ success: boolean }> {
+    try {
+        const allOverrides = await readOverridesFile();
+        const updatedOverrides = { ...allOverrides, ...overridesToSave };
+        await writeOverridesFile(updatedOverrides);
         return { success: true };
     } catch (error) {
         console.error(error);

@@ -1,5 +1,4 @@
-
-import type { TelemetronSaleItem, TelemetronIngredient } from '@/types/telemetron';
+import type { TelemetronSaleItem, TelemetronIngredient, LoadingOverride, LoadingOverrides } from '@/types/telemetron';
 
 export interface ShoppingListItem {
   name: string;
@@ -81,19 +80,21 @@ const getSortPriority = (name: string): number => {
 };
 
 
-export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] }, sort: SortType = 'grouped'): ShoppingListItem[] => {
+export const calculateShoppingList = (
+  salesData: { data: TelemetronSaleItem[] }, 
+  sort: SortType = 'grouped',
+  overrides: LoadingOverrides = {},
+  machineId: string
+): ShoppingListItem[] => {
   // 1. Адаптируем данные
   const adaptedData = salesData.data.map(adaptSaleItem);
   
-  if (adaptedData.length === 0) return [];
-  
-  // 2. Считаем totals
+  // 2. Считаем totals по продажам
   const totals: Record<string, { amount: number; unitCode: number }> = {};
 
   adaptedData.forEach(sale => {
     const quantity = sale.number;
     
-    // Если есть ингредиенты (напитки)
     if (sale.planogram.ingredients.length > 0) {
       sale.planogram.ingredients.forEach(ingredient => {
         const normalizedName = normalizeIngredientName(ingredient.name);
@@ -104,29 +105,56 @@ export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] },
         }
         totals[normalizedName].amount += amount;
       });
-    } 
-    // Если ингредиентов нет (снеки, бутылки)
-    else {
+    } else {
       const productName = sale.planogram.name;
       if (!totals[productName]) {
-        totals[productName] = { amount: 0, unitCode: 1 }; // unitCode 1 = штуки
+        totals[productName] = { amount: 0, unitCode: 1 };
       }
       totals[productName].amount += quantity;
     }
   });
   
-  // 3. Конвертируем в ShoppingListItem[]
+  // 3. Учитываем предыдущие неполные загрузки
+  Object.keys(overrides).forEach(key => {
+    if (!key.startsWith(`${machineId}-`)) return;
+
+    const override: LoadingOverride = overrides[key];
+    const ingredientName = key.replace(`${machineId}-`, '');
+    
+    // Если статус 'partial' и есть данные о прошлой загрузке
+    if (override.status === 'partial' && override.requiredAmount && override.loadedAmount !== undefined) {
+      const shortfall = override.requiredAmount - override.loadedAmount;
+      
+      if (shortfall > 0) {
+        if (!totals[ingredientName]) {
+          // Если по этому ингредиенту не было продаж, но был недогруз
+           const unitCode = ingredientName.toLowerCase().includes('кофе') ? 3 : 1; // Простое предположение
+           totals[ingredientName] = { amount: 0, unitCode };
+        }
+        totals[ingredientName].amount += shortfall;
+      }
+    }
+  });
+
+
+  // 4. Конвертируем в ShoppingListItem[]
   const list = Object.entries(totals).map(([name, data]) => {
+    // Не отображаем товары, которые были полностью пополнены в прошлый раз
+    const override = overrides[`${machineId}-${name}`];
+    if (override && override.status === 'full') {
+        return null;
+    }
+
     const { unit, displayAmount } = getDisplayUnit(data.unitCode, data.amount);
     
     return {
       name,
-      amount: Math.round(displayAmount * 100) / 100, // Округление до 2 знаков
+      amount: Math.ceil(displayAmount), // Округляем до целого в большую сторону
       unit
     };
-  });
+  }).filter((item): item is ShoppingListItem => item !== null); // Убираем null элементы
 
-  // 4. Сортируем
+  // 5. Сортируем
   if (sort === 'alphabetical') {
     list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   } else { // 'grouped'
@@ -137,7 +165,6 @@ export const calculateShoppingList = (salesData: { data: TelemetronSaleItem[] },
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
-      // Если приоритет одинаковый, сортируем по алфавиту внутри группы
       return a.name.localeCompare(b.name, 'ru');
     });
   }

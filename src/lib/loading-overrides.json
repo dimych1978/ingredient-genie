@@ -1,0 +1,13 @@
+{
+  "comment": "Этот файл хранит информацию о статусе загрузки ингредиентов.",
+  "33354-Акваминерале Актив 0.5л.": {
+    "status": "full",
+    "requiredAmount": 3,
+    "loadedAmount": 3
+  },
+  "33354-Йота": {
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 3
+  }
+}

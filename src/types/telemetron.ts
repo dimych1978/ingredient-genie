@@ -29,3 +29,14 @@ export interface TelemetronSalesResponse {
     sales: number;
   };
 }
+
+// Типы для состояния загрузки
+export type LoadingStatus = 'pending' | 'full' | 'none' | 'partial';
+
+export interface LoadingOverride {
+  status: LoadingStatus;
+  requiredAmount?: number; // Сколько требовалось в прошлый раз
+  loadedAmount?: number;   // Сколько было загружено (для 'partial' и 'full')
+}
+
+export type LoadingOverrides = Record<string, LoadingOverride>;
