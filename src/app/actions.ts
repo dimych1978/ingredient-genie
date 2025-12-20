@@ -1,45 +1,30 @@
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
+import { kv } from '@/lib/kv';
 import type { LoadingOverride } from '@/types/telemetron';
 
-// --- Функции для работы с файлом дат спец. аппаратов ---
+// --- Функции для работы с датами спец. аппаратов ---
 
-const DATES_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'special-machine-dates.json');
+const DATES_KEY = 'special-machine-dates';
 
-async function readDatesFile(): Promise<Record<string, string>> {
+export async function getSpecialMachineDates(): Promise<Record<string, string>> {
   try {
-    const data = await fs.readFile(DATES_FILE_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') return {};
-    console.error('Ошибка чтения файла дат:', error);
+    const dates = await kv.get<Record<string, string>>(DATES_KEY);
+    return dates || {};
+  } catch (error) {
+    console.error('Ошибка чтения дат из KV:', error);
     throw new Error('Не удалось прочитать файл с датами.');
   }
 }
 
-async function writeDatesFile(dates: Record<string, string>): Promise<void> {
-  try {
-    await fs.writeFile(DATES_FILE_PATH, JSON.stringify(dates, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Ошибка записи в файл дат:', error);
-    throw new Error('Не удалось сохранить дату.');
-  }
-}
-
-export async function getSpecialMachineDates(): Promise<Record<string, string>> {
-  return await readDatesFile();
-}
-
 export async function setSpecialMachineDate(id: string, date: string): Promise<{ success: boolean }> {
   try {
-    const dates = await readDatesFile();
+    const dates = await getSpecialMachineDates();
     dates[id] = date;
-    await writeDatesFile(dates);
+    await kv.set(DATES_KEY, dates);
     return { success: true };
   } catch (error) {
-    console.error(error);
+    console.error('Ошибка записи даты в KV:', error);
     return { success: false };
   }
 }
@@ -47,75 +32,55 @@ export async function setSpecialMachineDate(id: string, date: string): Promise<{
 
 // --- Функции для работы с файлом истории заявок ---
 
-const SCHEDULES_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'daily-schedules.json');
-
-type DailySchedules = Record<string, string[]>;
-
-async function readSchedulesFile(): Promise<DailySchedules> {
-  try {
-    const data = await fs.readFile(SCHEDULES_FILE_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') return {};
-    console.error('Ошибка чтения файла заявок:', error);
-    throw new Error('Не удалось прочитать файл с заявками.');
-  }
-}
-
-async function writeSchedulesFile(schedules: DailySchedules): Promise<void> {
-  try {
-    await fs.writeFile(SCHEDULES_FILE_PATH, JSON.stringify(schedules, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Ошибка записи в файл заявок:', error);
-    throw new Error('Не удалось сохранить заявку.');
-  }
-}
+const SCHEDULES_KEY_PREFIX = 'daily-schedule:';
 
 export async function getDailySchedule(date: string): Promise<string[] | null> {
-    const schedules = await readSchedulesFile();
-    return schedules[date] || null;
+    try {
+        const schedule = await kv.get<string[]>(`${SCHEDULES_KEY_PREFIX}${date}`);
+        return schedule || null;
+    } catch (error) {
+        console.error('Ошибка чтения заявки из KV:', error);
+        throw new Error('Не удалось прочитать файл с заявками.');
+    }
 }
 
 export async function saveDailySchedule(date: string, machineIds: string[]): Promise<{ success: boolean }> {
     try {
-        const schedules = await readSchedulesFile();
-        schedules[date] = machineIds;
-        await writeSchedulesFile(schedules);
+        await kv.set(`${SCHEDULES_KEY_PREFIX}${date}`, machineIds);
         return { success: true };
     } catch (error) {
-        console.error(error);
+        console.error('Ошибка сохранения заявки в KV:', error);
         return { success: false };
     }
 }
 
 // --- Функции для работы с состоянием загрузки ингредиентов ---
 
-const OVERRIDES_FILE_PATH = path.join(process.cwd(), 'src', 'lib', 'loading-overrides.json');
+const OVERRIDES_KEY = 'loading-overrides';
 
 type LoadingOverrides = Record<string, LoadingOverride>;
 
-async function readOverridesFile(): Promise<LoadingOverrides> {
+async function readAllOverrides(): Promise<LoadingOverrides> {
   try {
-    const data = await fs.readFile(OVERRIDES_FILE_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') return {};
-    console.error('Ошибка чтения файла состояний загрузки:', error);
+    const overrides = await kv.get<LoadingOverrides>(OVERRIDES_KEY);
+    return overrides || {};
+  } catch (error) {
+    console.error('Ошибка чтения состояний загрузки из KV:', error);
     throw new Error('Не удалось прочитать файл состояний.');
   }
 }
 
-async function writeOverridesFile(overrides: LoadingOverrides): Promise<void> {
+async function writeAllOverrides(overrides: LoadingOverrides): Promise<void> {
   try {
-    await fs.writeFile(OVERRIDES_FILE_PATH, JSON.stringify(overrides, null, 2), 'utf-8');
+    await kv.set(OVERRIDES_KEY, overrides);
   } catch (error) {
-    console.error('Ошибка записи в файл состояний загрузки:', error);
+    console.error('Ошибка записи состояний загрузки в KV:', error);
     throw new Error('Не удалось сохранить состояния.');
   }
 }
 
 export async function getLoadingOverrides(machineId: string): Promise<LoadingOverrides> {
-  const allOverrides = await readOverridesFile();
+  const allOverrides = await readAllOverrides();
   const machineOverrides: LoadingOverrides = {};
   for (const key in allOverrides) {
     if (key.startsWith(`${machineId}-`)) {
@@ -127,9 +92,9 @@ export async function getLoadingOverrides(machineId: string): Promise<LoadingOve
 
 export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): Promise<{ success: boolean }> {
     try {
-        const allOverrides = await readOverridesFile();
+        const allOverrides = await readAllOverrides();
         const updatedOverrides = { ...allOverrides, ...overridesToSave };
-        await writeOverridesFile(updatedOverrides);
+        await writeAllOverrides(updatedOverrides);
         return { success: true };
     } catch (error) {
         console.error(error);
