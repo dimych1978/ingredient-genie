@@ -1,4 +1,4 @@
-
+//grouped-shopping-lists.tsx
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -30,7 +30,11 @@ const getMachineType = (machine: Machine): 'coffee' | 'snack' | 'bottle' => {
   return 'snack';
 };
 
-export const GroupedShoppingLists = ({ machineIds, specialMachineDates }: GroupedShoppingListsProps) => {
+export const GroupedShoppingLists = ({ 
+  machineIds, 
+  specialMachineDates, 
+  onSaveChanges 
+}: GroupedShoppingListsProps) => {
   const [showLists, setShowLists] = useState(false);
 
   const groupedMachines = useMemo(() => {
@@ -58,18 +62,31 @@ export const GroupedShoppingLists = ({ machineIds, specialMachineDates }: Groupe
   ];
 
   const handleGenerateClick = useCallback(() => {
+    // Сначала сохраняем заявку
+    if (machineIds.length > 0) {
+      onSaveChanges();
+    }
+    // Потом показываем списки
     setShowLists(prev => !prev);
-  }, []);
+  }, [machineIds.length, onSaveChanges]);
 
   return (
     <div className="space-y-6">
         <Card className="bg-muted/20">
             <CardHeader>
                 <CardTitle>Формирование общих заказов</CardTitle>
-                <CardDescription>Нажмите кнопку, чтобы создать сводные списки по типам аппаратов.</CardDescription>
+                <CardDescription>
+                  {machineIds.length > 0 
+                    ? `Нажмите кнопку, чтобы создать сводные списки по ${machineIds.length} аппаратам.` 
+                    : 'Сначала добавьте аппараты в список выше.'}
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                 <Button onClick={handleGenerateClick} className="w-full">
+                 <Button 
+                   onClick={handleGenerateClick} 
+                   className="w-full"
+                   disabled={machineIds.length === 0}
+                 >
                     {showLists ? 'Скрыть списки' : 'Сформировать общие заказы'}
                 </Button>
             </CardContent>

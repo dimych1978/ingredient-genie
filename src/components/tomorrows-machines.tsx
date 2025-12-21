@@ -138,28 +138,47 @@ export const TomorrowsMachines = () => {
     loadScheduleForDate(selectedDate);
   }, [selectedDate, loadScheduleForDate]);
 
-  const handleSaveChanges = useCallback(async () => {
-    const dateString = format(selectedDate, 'yyyy-MM-dd');
-    const result = await saveDailySchedule(dateString, machineIdsForDay);
-    if (result.success) {
+const handleSaveChanges = useCallback(async () => {
+  const dateString = format(selectedDate, 'yyyy-MM-dd');
+  const result = await saveDailySchedule(dateString, machineIdsForDay);
+
+  if (result.success) {
+    try {
+      const nextWeek = new Date(selectedDate);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const nextWeekString = format(nextWeek, 'yyyy-MM-dd');
+
+      await saveDailySchedule(nextWeekString, machineIdsForDay);
+
       toast({
         title: 'Расписание сохранено',
         description: `Список аппаратов на ${format(
           selectedDate,
           'dd.MM.yyyy'
-        )} успешно сохранен.`,
+        )} сохранен. Также сохранено на ${format(nextWeek, 'dd.MM.yyyy')}.`,
       });
-      setHasUnsavedChanges(false);
-    } else {
+    } catch (error) {
+      console.error('Ошибка при сохранении на след неделю:', error);
       toast({
-        variant: 'destructive',
-        title: 'Ошибка сохранения',
-        description: 'Не удалось сохранить расписание.',
+        title: 'Расписание частично сохранено',
+        description: `Список аппаратов на ${format(
+          selectedDate,
+          'dd.MM.yyyy'
+        )} сохранен. На следующую неделю не удалось сохранить.`,
       });
     }
-  }, [selectedDate, machineIdsForDay, toast]);
 
+    setHasUnsavedChanges(false);
+  } else {
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка сохранения',
+      description: 'Не удалось сохранить расписание.',
+    });
+  }
+}, [selectedDate, machineIdsForDay, toast]);  
   // --- COMPUTED VALUES ---
+
   const machinesForDay = useMemo(() => {
     return allMachines
       .filter(machine => machineIdsForDay.includes(machine.id))
