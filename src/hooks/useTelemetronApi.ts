@@ -1,6 +1,6 @@
 // hooks/useTelemetronApi.ts
-
 import { useCallback } from "react";
+import { format } from "date-fns"; // <-- меняем formatISO на format
 
 export const useTelemetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
@@ -31,10 +31,10 @@ export const useTelemetronApi = () => {
     });
   }, [apiRequest]);
 
-  const getSalesByProducts = useCallback((vmId: string, dateFromISO: string, dateToISO: string) => {
-
+  const getSalesByProducts = useCallback((vmId: string, dateFrom: string, dateTo: string) => {
+    // Telemetron API ожидает даты в формате "YYYY-MM-DD HH:MM:SS" или "YYYY-MM-DD"
     return apiRequest(
-      `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFromISO}&date_to=${dateToISO}`
+      `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFrom}&date_to=${dateTo}`
     );
   }, [apiRequest]);
 

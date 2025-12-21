@@ -151,8 +151,8 @@ export const ShoppingList = ({
               : dateFrom;
           }
 
-          const dateFromStr = formatISO(startDate);
-          const dateToStr = formatISO(dateTo);
+const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00"); 
+    const dateToStr = format(dateTo, "yyyy-MM-dd 23:59:59");      
 
           const salesData: TelemetronSalesResponse = await getSalesByProducts(
             vmId,
