@@ -1647,19 +1647,6 @@ export type MachineIngredients = {
 };
 
 export const machineIngredients: MachineIngredients = {
-  '40680': [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'ваниль', unit: 'кг', type: 'auto' },
-    { name: 'стаканы 250', unit: 'шт', type: 'manual' },
-    { name: 'стаканы 350', unit: 'шт', type: 'manual' },
-    { name: 'крышки 80', unit: 'шт', type: 'manual' },
-    { name: 'крышки 90', unit: 'шт', type: 'manual' },
-    { name: 'размешиватели деревянные', unit: 'шт', type: 'manual' },
-    { name: 'сахар в стиках', unit: 'шт', type: 'manual' },
-  ],
   opera: [
     { name: 'вода', unit: 'л', type: 'auto' },
     { name: 'кофе', unit: 'кг', type: 'auto' },
