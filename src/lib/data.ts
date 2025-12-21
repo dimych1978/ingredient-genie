@@ -1675,13 +1675,13 @@ export const machineIngredients: MachineIngredients = {
   ],
   kikko: [
     { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
+    { name: 'кофе зерновой', unit: 'кг', type: 'auto' },
+    { name: 'сливки сухие', unit: 'кг', type: 'auto' },
     { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'ваниль', unit: 'кг', type: 'auto' },
+    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
     { name: 'чай', unit: 'кг', type: 'auto' },
-    { name: 'стаканы 150', unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', unit: 'шт', type: 'auto' },
+    { name: 'стаканчик', unit: 'шт', type: 'auto' },
+    { name: 'размешиватель', unit: 'шт', type: 'auto' },
     { name: 'сахар', unit: 'кг', type: 'auto' },
   ],
   saeco: [
