@@ -1,4 +1,5 @@
 import type { TelemetronSaleItem, TelemetronIngredient, LoadingOverride, LoadingOverrides } from '@/types/telemetron';
+import { machineIngredients } from './data';
 
 export interface ShoppingListItem {
   name: string;
@@ -8,7 +9,6 @@ export interface ShoppingListItem {
 
 export type SortType = 'grouped' | 'alphabetical';
 
-// Адаптер для конвертации TelemetronSaleItem в внутренний формат
 interface AdaptedSaleItem {
   product_number: string;
   planogram: {
@@ -27,78 +27,56 @@ const adaptSaleItem = (item: TelemetronSaleItem): AdaptedSaleItem => ({
   number: item.number
 });
 
-// Универсальная нормализация названий (решает проблему кавычек)
-const normalizeIngredientName = (ingredientName: string): string => {
+const normalizeIngredientName = (name: string): string => {
   const mappings: Record<string, string> = {
     'Стакан пластиковый': 'Стаканчик',
     'Размешиватель, 105 мм': 'Размешиватель',
   };
   
-  return mappings[ingredientName] || ingredientName;
+  const lowerName = name.toLowerCase();
+  
+  // Круассаны Яшкино
+  if (lowerName.includes('круассан') && lowerName.includes('яшкино')) {
+    return 'Круассан Яшкино / Чудо / Степ';
+  }
+  
+  // Пирожное basker wheels панкейк
+  if (lowerName.includes('пирожное') && lowerName.includes('панкейк')) {
+    return 'Пирожное basker wheels панкейк 36гр/ Соломка';
+  }
+  
+  return mappings[name] || name;
 };
 
-// Нормализация для сравнения с планограммой (унифицирует кавычки и пробелы)
 const normalizeForPlanogramComparison = (name: string): string => {
   return name
-    .replace(/["«»"']/g, "'")          // Все типы кавычек -> одинарные
-    .replace(/\s*,\s*/g, ', ')          // Нормализуем запятые
-    .replace(/\s*\/\s*/g, ' / ')        // Нормализуем слэши
-    .replace(/\s+/g, ' ')               // Множественные пробелы -> один
-    .replace(/(\d),(\d)/g, '$1.$2')     // Запятые в числах -> точки
+    .replace(/["«»"']/g, "'")
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/\s*\/\s*/g, ' / ')
+    .replace(/\s+/g, ' ')
+    .replace(/(\d),(\d)/g, '$1.$2')
     .trim()
     .toLowerCase();
 };
 
-// Определение единицы измерения
 const getDisplayUnit = (unitCode: number, amount: number): { unit: string; displayAmount: number } => {
   switch (unitCode) {
-    case 2: // миллилитры
-      if (amount >= 1000) {
-        return { unit: 'л', displayAmount: amount / 1000 };
-      }
+    case 2:
+      if (amount >= 1000) return { unit: 'л', displayAmount: amount / 1000 };
       return { unit: 'мл', displayAmount: amount };
-      
-    case 3: // граммы
-      if (amount >= 1000) {
-        return { unit: 'кг', displayAmount: amount / 1000 };
-      }
+    case 3:
+      if (amount >= 1000) return { unit: 'кг', displayAmount: amount / 1000 };
       return { unit: 'г', displayAmount: amount };
-      
-    default: // штуки
+    default:
       return { unit: 'шт', displayAmount: amount };
   }
 };
 
-const COFFEE_GROUP_INGREDIENTS = [
-  'кофе',
-  'сливки',
-  'шоколад',
-  'ваниль',
-  'стаканы',
-  'крышки',
-  'размешиватели',
-  'сахар'
-];
-
-const getSortPriority = (name: string): number => {
-  const lowerName = name.toLowerCase();
-  for (let i = 0; i < COFFEE_GROUP_INGREDIENTS.length; i++) {
-    if (lowerName.includes(COFFEE_GROUP_INGREDIENTS[i])) {
-      return i;
-    }
-  }
-  return COFFEE_GROUP_INGREDIENTS.length;
-};
-
-// Поиск наиболее подходящего элемента планограммы для товара
 const findBestPlanogramMatch = (itemName: string, normalizedPlanogram: string[]): number => {
   const normalizedItem = normalizeForPlanogramComparison(itemName);
-  
-  // 1. Ищем точное совпадение
   const exactIndex = normalizedPlanogram.indexOf(normalizedItem);
   if (exactIndex !== -1) return exactIndex;
   
-  // 2. Ищем частичное совпадение (товар содержит часть названия из планограммы)
   for (let i = 0; i < normalizedPlanogram.length; i++) {
     const planogramItem = normalizedPlanogram[i];
     if (normalizedItem.includes(planogramItem) || planogramItem.includes(normalizedItem)) {
@@ -106,17 +84,125 @@ const findBestPlanogramMatch = (itemName: string, normalizedPlanogram: string[])
     }
   }
   
-  // 3. Ищем совпадение ключевых слов (первые 2-3 слова)
-  const itemKeywords = normalizedItem.split(/\s+/).slice(0, 3);
-  for (let i = 0; i < normalizedPlanogram.length; i++) {
-    const planogramItem = normalizedPlanogram[i];
-    const hasCommonKeyword = itemKeywords.some(keyword => 
-      keyword.length > 3 && planogramItem.includes(keyword)
-    );
-    if (hasCommonKeyword) return i;
+  return -1;
+};
+
+const sortForKikko = (
+  list: ShoppingListItem[],
+  planogram?: string[]
+): ShoppingListItem[] => {
+  const ingredients = machineIngredients.kikko;
+  
+  const coffeeItems: ShoppingListItem[] = [];
+  const snackItems: ShoppingListItem[] = [];
+  
+  list.forEach(item => {
+    const itemLower = item.name.toLowerCase();
+    const itemName = item.name;
+    
+    // Проверяем конфликты: чай и шоколад
+    const isSnackChocolate = /^шоколад\s+[а-яё]/i.test(itemName) || 
+                            /^шоколад,\s+[а-яё]/i.test(itemName);
+    
+    const isSnackTea = /^чай\s+[а-яё]/i.test(itemName) || 
+                      /^чай,\s+[а-яё]/i.test(itemName);
+    
+    // Минеральная вода - это снек
+    const isMineralWater = itemLower.includes('минеральн') || 
+                          itemLower.includes('минерал') ||
+                          itemLower.includes('черноголовка') ||
+                          itemLower.includes('норма жизни');
+    
+    if (isSnackChocolate || isSnackTea || isMineralWater) {
+      snackItems.push(item);
+      return;
+    }
+    
+    // Проверяем кофейные ингредиенты
+    let isCoffeeItem = false;
+    
+    for (const ing of ingredients) {
+      const ingLower = ing.name.toLowerCase();
+      
+      if (ingLower === 'вода') {
+        if (itemLower === 'вода') {
+          isCoffeeItem = true;
+          break;
+        }
+      } else if (itemLower.includes(ingLower)) {
+        isCoffeeItem = true;
+        break;
+      }
+    }
+    
+    if (isCoffeeItem) {
+      coffeeItems.push(item);
+    } else {
+      snackItems.push(item);
+    }
+  });
+  
+  // Сортируем кофейные ингредиенты по порядку
+  coffeeItems.sort((a, b) => {
+    let indexA = -1;
+    let indexB = -1;
+    const aLower = a.name.toLowerCase();
+    const bLower = b.name.toLowerCase();
+    
+    for (let i = 0; i < ingredients.length; i++) {
+      const ingLower = ingredients[i].name.toLowerCase();
+      
+      if (aLower.includes(ingLower)) indexA = i;
+      if (bLower.includes(ingLower)) indexB = i;
+    }
+    
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.name.localeCompare(b.name, 'ru');
+  });
+  
+  // Сортируем снеки по планограмме
+  if (planogram && snackItems.length > 0) {
+    const normalizedPlanogramArray = planogram.map(normalizeForPlanogramComparison);
+    
+    snackItems.sort((a, b) => {
+      const matchA = findBestPlanogramMatch(a.name, normalizedPlanogramArray);
+      const matchB = findBestPlanogramMatch(b.name, normalizedPlanogramArray);
+      
+      if (matchA !== -1 && matchB !== -1) return matchA - matchB;
+      if (matchA !== -1) return -1;
+      if (matchB !== -1) return 1;
+      return a.name.localeCompare(b.name, 'ru');
+    });
+  } else {
+    snackItems.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   }
   
-  return -1; // Не найдено
+  return [...coffeeItems, ...snackItems];
+};
+
+const sortRegularList = (
+  list: ShoppingListItem[],
+  planogram?: string[]
+): ShoppingListItem[] => {
+  if (planogram && planogram.length > 0) {
+    const normalizedPlanogram = planogram.map(normalizeForPlanogramComparison);
+    
+    list.sort((a, b) => {
+      const matchA = findBestPlanogramMatch(a.name, normalizedPlanogram);
+      const matchB = findBestPlanogramMatch(b.name, normalizedPlanogram);
+      
+      if (matchA !== -1 && matchB !== -1) return matchA - matchB;
+      if (matchA !== -1) return -1;
+      if (matchB !== -1) return 1;
+      return a.name.localeCompare(b.name, 'ru');
+    });
+  } else {
+    list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  }
+  
+  return list;
 };
 
 export const calculateShoppingList = (
@@ -124,12 +210,10 @@ export const calculateShoppingList = (
   sort: SortType = 'grouped',
   overrides: LoadingOverrides = {},
   machineId: string,
-  planogram?: string[]
+  planogram?: string[],
+  machineModel?: string
 ): ShoppingListItem[] => {
-  // 1. Адаптируем данные
   const adaptedData = salesData.data.map(adaptSaleItem);
-  
-  // 2. Считаем totals по продажам
   const totals: Record<string, { amount: number; unitCode: number }> = {};
 
   adaptedData.forEach(sale => {
@@ -137,6 +221,7 @@ export const calculateShoppingList = (
     
     if (sale.planogram.ingredients.length > 0) {
       sale.planogram.ingredients.forEach(ingredient => {
+        // Нормализуем название ингредиента
         const normalizedName = normalizeIngredientName(ingredient.name);
         const amount = ingredient.volume * quantity;
         
@@ -146,7 +231,8 @@ export const calculateShoppingList = (
         totals[normalizedName].amount += amount;
       });
     } else {
-      const productName = sale.planogram.name;
+      // Нормализуем название продукта
+      const productName = normalizeIngredientName(sale.planogram.name);
       if (!totals[productName]) {
         totals[productName] = { amount: 0, unitCode: 1 };
       }
@@ -154,7 +240,6 @@ export const calculateShoppingList = (
     }
   });
   
-  // 3. Учитываем предыдущие неполные загрузки
   Object.keys(overrides).forEach(key => {
     if (!key.startsWith(`${machineId}-`)) return;
 
@@ -174,7 +259,6 @@ export const calculateShoppingList = (
     }
   });
 
-  // 4. Конвертируем в ShoppingListItem[]
   const list = Object.entries(totals).map(([name, data]) => {
     const override = overrides[`${machineId}-${name}`];
     if (override && override.status === 'full') {
@@ -190,43 +274,11 @@ export const calculateShoppingList = (
     };
   }).filter((item): item is ShoppingListItem => item !== null);
 
-  // 5. Сортируем
-  if (planogram && planogram.length > 0) {
-    // Нормализуем планограмму один раз
-    const normalizedPlanogram = planogram.map(normalizeForPlanogramComparison);
-    
-    // Сортируем по совпадению с планограммой
-    list.sort((a, b) => {
-      const matchA = findBestPlanogramMatch(a.name, normalizedPlanogram);
-      const matchB = findBestPlanogramMatch(b.name, normalizedPlanogram);
-      
-      // Оба найдены в планограмме
-      if (matchA !== -1 && matchB !== -1) {
-        return matchA - matchB;
-      }
-      // Только A найден
-      if (matchA !== -1) return -1;
-      // Только B найден
-      if (matchB !== -1) return 1;
-      
-      // Ни один не найден - используем обычную сортировку
-      if (sort === 'alphabetical') {
-        return a.name.localeCompare(b.name, 'ru');
-      } else {
-        const priorityA = getSortPriority(a.name);
-        const priorityB = getSortPriority(b.name);
-        return priorityA !== priorityB ? priorityA - priorityB : a.name.localeCompare(b.name, 'ru');
-      }
-    });
-  } else if (sort === 'alphabetical') {
-    list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  const lowerModel = machineModel?.toLowerCase();
+  
+  if (lowerModel?.includes('kikko')) {
+    return sortForKikko(list, planogram);
   } else {
-    list.sort((a, b) => {
-      const priorityA = getSortPriority(a.name);
-      const priorityB = getSortPriority(b.name);
-      return priorityA !== priorityB ? priorityA - priorityB : a.name.localeCompare(b.name, 'ru');
-    });
+    return sortRegularList(list, planogram);
   }
-
-  return list;
 };

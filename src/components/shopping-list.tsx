@@ -49,7 +49,7 @@ const isSpecialMachine = (machineId: string): boolean => {
   const machine = allMachines.find(m => m.id === machineId);
   if (!machine || !machine.model) return false;
   const model = machine.model.toLowerCase();
-  return model.includes('krea') || model.includes('tcn');
+  return model.includes('krea') || model.includes('tcn') || model.includes('kikko');
 };
 
 interface EditableShoppingListItem {
@@ -145,7 +145,7 @@ const loadShoppingList = useCallback(async () => {
           const machineOverview = await getMachineOverview(vmId);
           startDate = machineOverview?.data?.cache?.last_collection_at
             ? new Date(machineOverview.data.cache.last_collection_at)
-            : dateFrom; // ← используем dateFrom как было
+            : dateFrom;
         }
 
         const dateFromStr = format(startDate, "yyyy-MM-dd HH:mm:ss"); 
@@ -156,7 +156,46 @@ const loadShoppingList = useCallback(async () => {
           dateFromStr,
           dateToStr
         );
+        
         if (salesData?.data) allSales.push(...salesData.data);
+        
+        // Получаем модель аппарата из allMachines
+        const machineData = allMachines.find(m => m.id === vmId);
+        const machineModel = machineData?.model?.toLowerCase();
+        
+        // Проверяем, есть ли планограмма для текущего аппарата (если он один)
+        const planogram = machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
+
+        const calculatedList = calculateShoppingList(
+          { data: allSales },
+          sort,
+          machineOverrides,
+          machineIds[0],
+          planogram,
+          machineModel
+        );
+
+        const editableList: EditableShoppingListItem[] = calculatedList.map(
+          item => {
+            const overrideKey = `${machineIds[0]}-${item.name}`;
+            const override = machineOverrides[overrideKey];
+            return {
+              ...item,
+              status: override?.status || 'pending',
+              loadedAmount: override?.loadedAmount,
+            };
+          }
+        );
+
+        setShoppingList(editableList);
+
+        if (calculatedList.length === 0 && allSales.length > 0) {
+          toast({
+            variant: 'default',
+            title: 'Нет продаж',
+            description: 'За выбранный период продаж не найдено.',
+          });
+        }
       } catch (e) {
         console.error(`Ошибка загрузки продаж для аппарата ${vmId}:`, e);
         toast({
@@ -167,38 +206,6 @@ const loadShoppingList = useCallback(async () => {
       }
     }
 
-    // Проверяем, есть ли планограмма для текущего аппарата (если он один)
-    const planogram = machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
-
-    const calculatedList = calculateShoppingList(
-      { data: allSales },
-      sort,
-      machineOverrides,
-      machineIds[0],
-      planogram
-    );
-
-    const editableList: EditableShoppingListItem[] = calculatedList.map(
-      item => {
-        const overrideKey = `${machineIds[0]}-${item.name}`;
-        const override = machineOverrides[overrideKey];
-        return {
-          ...item,
-          status: override?.status || 'pending',
-          loadedAmount: override?.loadedAmount,
-        };
-      }
-    );
-
-    setShoppingList(editableList);
-
-    if (calculatedList.length === 0 && allSales.length > 0) {
-      toast({
-        variant: 'default',
-        title: 'Нет продаж',
-        description: 'За выбранный период продаж не найдено.',
-      });
-    }
   } catch (error) {
     console.error('Ошибка загрузки shopping list:', error);
     toast({
@@ -291,8 +298,6 @@ const loadShoppingList = useCallback(async () => {
           title: 'Сохранено',
           description: 'Состояние загрузки и время инкассации успешно сохранены.',
         });
-        // НЕ вызываем loadShoppingList() - это создаст бесконечный цикл
-        // Вместо этого обновляем состояние локально
         setShoppingList(prev => prev.map(item => {
           const override = overridesToSave[`${machineId}-${item.name}`];
           return override ? { ...item, status: override.status } : item;
@@ -319,7 +324,7 @@ const loadShoppingList = useCallback(async () => {
       .map((item, index) => `${index + 1}. ${item.name}: ${item.amount} ${item.unit}`)
       .join('\n');
 
-      const fileContent = header + itemsText; 
+    const fileContent = header + itemsText; 
 
     const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
