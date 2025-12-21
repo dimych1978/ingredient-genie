@@ -28,8 +28,8 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <Providers>
-          <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-6 max-w-7xl">
+         <div className="min-h-screen bg-background">
+            <div className="container mx-auto px-3 sm:px-4 max-w-7xl">
               {children}
             </div>
           </div>
