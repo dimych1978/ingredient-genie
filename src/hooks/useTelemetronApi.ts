@@ -4,7 +4,6 @@ import { useCallback } from "react";
 
 export const useTelemetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
-    // БЕЗ заголовка Authorization!
     const response = await fetch(`/api/telemetron/${endpoint}`, {
       ...options,
       headers: {
@@ -32,9 +31,10 @@ export const useTelemetronApi = () => {
     });
   }, [apiRequest]);
 
-  const getSalesByProducts = useCallback((vmId: string, dateFrom: string, dateTo: string) => {
+  const getSalesByProducts = useCallback((vmId: string, dateFromISO: string, dateToISO: string) => {
+
     return apiRequest(
-      `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFrom}&date_to=${dateTo}`
+      `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFromISO}&date_to=${dateToISO}`
     );
   }, [apiRequest]);
 

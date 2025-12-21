@@ -12,7 +12,7 @@ import type {
   LoadingStatus,
   LoadingOverrides,
 } from '@/types/telemetron';
-import { getLoadingOverrides, saveLoadingOverrides } from '@/app/actions';
+import { getLoadingOverrides, saveLoadingOverrides, setSpecialMachineDate } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -31,7 +31,7 @@ import {
   Minus,
   Save,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -43,8 +43,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { allMachines } from '@/lib/data';
 
-// Расширяем интерфейс для внутреннего использования в компоненте
+const isSpecialMachine = (machineId: string): boolean => {
+  const machine = allMachines.find(m => m.id === machineId);
+  if (!machine || !machine.model) return false;
+  const model = machine.model.toLowerCase();
+  return model.includes('krea') || model.includes('tcn');
+};
+
 interface EditableShoppingListItem {
   name: string;
   amount: number;
@@ -60,7 +67,8 @@ interface ShoppingListProps {
   showControls?: boolean;
   forceLoad?: boolean;
   specialMachineDates?: Record<string, string>;
-  onDateChange?: (date: string) => void;
+  onDateChange?: (date: Date) => void;
+  onTimestampUpdate?: (newTimestamp: string) => void;
   sort?: SortType;
 }
 
@@ -72,6 +80,7 @@ export const ShoppingList = ({
   forceLoad = false,
   specialMachineDates = {},
   onDateChange,
+  onTimestampUpdate,
   sort = 'grouped',
 }: ShoppingListProps) => {
   const [loading, setLoading] = useState(false);
@@ -79,32 +88,26 @@ export const ShoppingList = ({
   const [shoppingList, setShoppingList] = useState<EditableShoppingListItem[]>(
     []
   );
-  const [dateFrom, setDateFrom] = useState<Date>(() => {
-    const machineDate = specialMachineDates[initialMachineIds[0]];
-    if (machineDate) return new Date(machineDate);
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday;
-  });
-
+  
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
+  
+  const dateFrom = useMemo(() => {
+    const machineDateStr = specialMachineDates[machineIds[0]];
+    return machineDateStr ? new Date(machineDateStr) : new Date();
+  }, [specialMachineDates, machineIds]);
+
 
   const { getSalesByProducts, getMachineOverview } = useTelemetronApi();
   const { toast } = useToast();
 
   useEffect(() => {
     setMachineIds(initialMachineIds);
-    const machineDate = specialMachineDates[initialMachineIds[0]];
-    if (machineDate) {
-      setDateFrom(new Date(machineDate));
-    }
-  }, [initialMachineIds, specialMachineDates]);
+  }, [initialMachineIds]);
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
-    setDateFrom(newDate);
-    if (onDateChange) onDateChange(newDate.toISOString());
+    if (onDateChange) onDateChange(newDate);
   };
 
   const handleMachineIdsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,8 +151,8 @@ export const ShoppingList = ({
               : dateFrom;
           }
 
-          const dateFromStr = format(startDate, "yyyy-MM-dd'T'00:00:00.000");
-          const dateToStr = format(dateTo, "yyyy-MM-dd'T'23:59:59.999");
+          const dateFromStr = formatISO(startDate);
+          const dateToStr = formatISO(dateTo);
 
           const salesData: TelemetronSalesResponse = await getSalesByProducts(
             vmId,
@@ -231,11 +234,9 @@ export const ShoppingList = ({
     const currentItem = newList[index];
     currentItem.status = status;
 
-    // Если пополнено полностью, устанавливаем loadedAmount равным требуемому
     if (status === 'full') {
       currentItem.loadedAmount = currentItem.amount;
     } else if (status !== 'partial') {
-      // Для 'none' и 'pending' сбрасываем loadedAmount
       delete currentItem.loadedAmount;
     }
     setShoppingList(newList);
@@ -260,7 +261,6 @@ export const ShoppingList = ({
     const machineId = machineIds[0];
     const overridesToSave: LoadingOverrides = {};
 
-    // Создаем копию текущих оверрайдов, чтобы не потерять старые записи
     const currentOverrides = await getLoadingOverrides(machineId);
 
     shoppingList.forEach(item => {
@@ -268,12 +268,10 @@ export const ShoppingList = ({
       if (item.status !== 'pending') {
         overridesToSave[key] = {
           status: item.status,
-          // Сохраняем и amount (требуемое) и loadedAmount (загруженное)
           requiredAmount: item.amount,
           loadedAmount: item.loadedAmount,
         };
       } else {
-        // Если статус сброшен в pending, удаляем оверрайд
         if (currentOverrides[key]) {
           delete currentOverrides[key];
         }
@@ -281,15 +279,24 @@ export const ShoppingList = ({
     });
 
     try {
-      // Сливаем старые и новые оверрайды
       const result = await saveLoadingOverrides({
         ...currentOverrides,
         ...overridesToSave,
       });
+
+      if (isSpecialMachine(machineId)) {
+        const now = new Date();
+        const newTimestamp = now.toISOString();
+        await setSpecialMachineDate(machineId, newTimestamp);
+        if (onTimestampUpdate) {
+            onTimestampUpdate(newTimestamp);
+        }
+      }
+
       if (result.success) {
         toast({
           title: 'Сохранено',
-          description: 'Состояние загрузки ингредиентов успешно сохранено.',
+          description: 'Состояние загрузки и время инкассации успешно сохранены.',
         });
       } else {
         throw new Error('Не удалось сохранить данные на сервере.');
@@ -307,7 +314,7 @@ export const ShoppingList = ({
   };
 
   const downloadList = () => {
-    const periodStr = `${format(dateFrom, 'dd.MM.yyyy')}-Today`;
+    const periodStr = `${format(dateFrom, 'dd.MM.yyyy HH:mm')}-Сейчас`;
     const header = `${title}\nПериод: ${periodStr}\nАппараты: ${machineIdsString}\n\n`;
 
     const itemsText = shoppingList
@@ -385,7 +392,7 @@ export const ShoppingList = ({
                         id='dateFrom'
                         type='date'
                         value={format(dateFrom, 'yyyy-MM-dd')}
-                        onChange={handleDateChange}
+                        onChange={handleDateInputChange}
                         className='w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white'
                       />
                     </div>
