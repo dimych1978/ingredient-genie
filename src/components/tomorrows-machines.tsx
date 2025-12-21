@@ -70,7 +70,14 @@ const isSpecialMachine = (machineId: string): boolean => {
   const machine = allMachines.find(m => m.id === machineId);
   if (!machine || !machine.model) return false;
   const model = machine.model.toLowerCase();
-  return model.includes('krea') || model.includes('tcn');
+  return (
+    model.includes('krea') ||
+    model.includes('tcn') ||
+    model.includes('unicum') ||
+    model.includes('fas') ||
+    model.includes('koro') ||
+    model.includes('phedra')
+  );
 };
 
 export const TomorrowsMachines = () => {
@@ -102,27 +109,30 @@ export const TomorrowsMachines = () => {
   }>({ open: false, machineId: null });
 
   // --- DATA FETCHING AND SAVING ---
-  const loadScheduleForDate = useCallback(async (date: Date) => {
-    setIsLoading(true);
-    try {
-      const dateKey = format(date, 'yyyy-MM-dd');
-      const [dates, schedule] = await Promise.all([
-        getSpecialMachineDates(),
-        getDailySchedule(dateKey),
-      ]);
-      setSpecialMachineDates(dates);
-      setMachineIdsForDay(schedule || []);
-      setHasUnsavedChanges(false); // Сбрасываем флаг при загрузке
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка загрузки данных',
-        description: 'Не удалось загрузить расписание или даты аппаратов.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+  const loadScheduleForDate = useCallback(
+    async (date: Date) => {
+      setIsLoading(true);
+      try {
+        const dateKey = format(date, 'yyyy-MM-dd');
+        const [dates, schedule] = await Promise.all([
+          getSpecialMachineDates(),
+          getDailySchedule(dateKey),
+        ]);
+        setSpecialMachineDates(dates);
+        setMachineIdsForDay(schedule || []);
+        setHasUnsavedChanges(false); // Сбрасываем флаг при загрузке
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка загрузки данных',
+          description: 'Не удалось загрузить расписание или даты аппаратов.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [toast]
+  );
 
   useEffect(() => {
     loadScheduleForDate(selectedDate);
@@ -134,7 +144,10 @@ export const TomorrowsMachines = () => {
     if (result.success) {
       toast({
         title: 'Расписание сохранено',
-        description: `Список аппаратов на ${format(selectedDate, 'dd.MM.yyyy')} успешно сохранен.`,
+        description: `Список аппаратов на ${format(
+          selectedDate,
+          'dd.MM.yyyy'
+        )} успешно сохранен.`,
       });
       setHasUnsavedChanges(false);
     } else {
@@ -289,7 +302,8 @@ export const TomorrowsMachines = () => {
             </Popover>
           </CardTitle>
           <CardDescription>
-            Добавляйте и удаляйте аппараты из списка. Не забудьте сохранить изменения.
+            Добавляйте и удаляйте аппараты из списка. Не забудьте сохранить
+            изменения.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -365,8 +379,8 @@ export const TomorrowsMachines = () => {
             </Table>
           ) : (
             <p className='text-muted-foreground text-center py-4'>
-              На {format(selectedDate, 'dd.MM.yyyy')} аппаратов не запланировано.
-              Добавьте первый аппарат.
+              На {format(selectedDate, 'dd.MM.yyyy')} аппаратов не
+              запланировано. Добавьте первый аппарат.
             </p>
           )}
 
@@ -431,35 +445,41 @@ export const TomorrowsMachines = () => {
                 </Command>
               </PopoverContent>
             </Popover>
-            <Popover
+            {/* <Popover
               open={calendarState.open}
               onOpenChange={open =>
                 setCalendarState(prev => ({ ...prev, open }))
               }
             >
-              <PopoverTrigger asChild>
-                <Button
-                  onClick={handleAddMachineClick}
-                  disabled={!machineToAdd}
-                >
-                  <PlusCircle className='mr-2 h-4 w-4' />
-                  Добавить
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-auto p-0'>
-                <Calendar
-                  locale={ru}
-                  mode='single'
-                  onSelect={handleCalendarSelect}
-                  selected={calendarSelectedDate}
-                  disabled={date =>
-                    date > new Date() || date < new Date('2020-01-01')
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+              <PopoverTrigger asChild> */}
+            <Button onClick={handleAddMachineClick} disabled={!machineToAdd}>
+              <PlusCircle className='mr-2 h-4 w-4' />
+              Добавить
+            </Button>
           </div>
+
+          {/* Popover for calendar, not tied to the button */}
+          <Popover
+            open={calendarState.open}
+            onOpenChange={open => setCalendarState(prev => ({ ...prev, open }))}
+          >
+            <PopoverTrigger asChild>
+              <span />
+            </PopoverTrigger>
+            <PopoverContent className='w-auto p-0'>
+              <Calendar
+                locale={ru}
+                mode='single'
+                onSelect={handleCalendarSelect}
+                selected={calendarSelectedDate}
+                disabled={date =>
+                  date > new Date() || date < new Date('2020-01-01')
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {/* </div> */}
 
           {machineIdsForDay.length > 0 && (
             <div className='mt-4'>
