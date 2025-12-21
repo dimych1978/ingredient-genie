@@ -50,7 +50,7 @@ interface EditableShoppingListItem {
   amount: number;
   unit: string;
   status: LoadingStatus;
-  loadedAmount?: number; // переименовано с partialAmount для ясности
+  loadedAmount?: number; 
 }
 
 interface ShoppingListProps {

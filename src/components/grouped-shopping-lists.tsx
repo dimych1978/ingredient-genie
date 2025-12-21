@@ -27,7 +27,7 @@ const getMachineType = (machine: Machine): 'coffee' | 'snack' | 'bottle' => {
   if (['sanden', 'sve'].includes(model)) {
     return 'bottle';
   }
-  return 'snack'; // Default to snack if unsure
+  return 'snack';
 };
 
 export const GroupedShoppingLists = ({ machineIds, specialMachineDates }: GroupedShoppingListsProps) => {

@@ -15,7 +15,6 @@ export interface TelemetronSaleItem {
   product_number: string;
   planogram: TelemetronPlanogram;
   number: number; // количество продаж
-  value: number; // выручка в рублях
   attribute: any;
   currency: string;
   price: number;

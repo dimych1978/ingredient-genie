@@ -1,4 +1,3 @@
-// import { LoginForm } from '@/components/login-form';
 import { Icons } from '@/components/icons';
 
 export default function LoginPage() {

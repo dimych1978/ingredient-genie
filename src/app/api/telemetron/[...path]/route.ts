@@ -70,7 +70,6 @@ async function getTelemetronToken(): Promise<string> {
 }
 
 // Общая функция для обработки запросов
-// Общая функция для обработки запросов
 async function handleTelemetronRequest(
   method: 'GET' | 'POST',
   request: NextRequest,

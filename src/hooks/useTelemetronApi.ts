@@ -1,6 +1,7 @@
+// hooks/useTelemetronApi.ts
+
 import { useCallback } from "react";
 
-// hooks/useTelemetronApi.ts
 export const useTelemetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     // БЕЗ заголовка Authorization!
