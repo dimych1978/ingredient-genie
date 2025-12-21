@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -27,7 +28,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <Providers>
-          {children}
+          <div className="min-h-screen bg-background">
+            <div className="container mx-auto px-4 py-6 max-w-7xl">
+              {children}
+            </div>
+          </div>
         </Providers>
         <Toaster />
       </body>
