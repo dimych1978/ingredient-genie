@@ -50,13 +50,10 @@ const normalizeIngredientName = (name: string): string => {
 
 const normalizeForPlanogramComparison = (name: string): string => {
   return name
-    .replace(/["«»"']/g, "'")
-    .replace(/\s*,\s*/g, ', ')
-    .replace(/\s*\/\s*/g, ' / ')
-    .replace(/\s+/g, ' ')
-    .replace(/(\d),(\d)/g, '$1.$2')
-    .trim()
-    .toLowerCase();
+    .replace(/["«»"']/g, '') // Убираем ВСЕ кавычки полностью
+    .replace(/\s+/g, ' ')    // Множественные пробелы -> один пробел
+    .trim()                  // Убираем пробелы по краям
+    .toLowerCase();          // В нижний регистр
 };
 
 const getDisplayUnit = (unitCode: number, amount: number): { unit: string; displayAmount: number } => {
