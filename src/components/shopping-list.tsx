@@ -31,7 +31,7 @@ import {
   Minus,
   Save,
 } from 'lucide-react';
-import { format, formatISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { allMachines } from '@/lib/data';
+import { allMachines, planograms } from '@/lib/data';
 
 const isSpecialMachine = (machineId: string): boolean => {
   const machine = allMachines.find(m => m.id === machineId);
@@ -85,9 +85,7 @@ export const ShoppingList = ({
 }: ShoppingListProps) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [shoppingList, setShoppingList] = useState<EditableShoppingListItem[]>(
-    []
-  );
+  const [shoppingList, setShoppingList] = useState<EditableShoppingListItem[]>([]);
   
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
@@ -96,7 +94,6 @@ export const ShoppingList = ({
     const machineDateStr = specialMachineDates[machineIds[0]];
     return machineDateStr ? new Date(machineDateStr) : new Date();
   }, [specialMachineDates, machineIds]);
-
 
   const { getSalesByProducts, getMachineOverview } = useTelemetronApi();
   const { toast } = useToast();
@@ -118,134 +115,129 @@ export const ShoppingList = ({
     setMachineIds(ids);
   };
 
-  const loadShoppingList = useCallback(async () => {
-    if (machineIds.length === 0) {
-      if (forceLoad) {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не указаны ID аппаратов.',
-        });
-      }
-      return;
-    }
-    setLoading(true);
-    setShoppingList([]);
-
-    try {
-      const allSales: TelemetronSaleItem[] = [];
-      const dateTo = new Date();
-
-      const machineOverrides: LoadingOverrides =
-        machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
-
-      for (const vmId of machineIds) {
-        try {
-          let startDate: Date;
-          if (specialMachineDates[vmId]) {
-            startDate = new Date(specialMachineDates[vmId]);
-          } else {
-            const machineOverview = await getMachineOverview(vmId);
-            startDate = machineOverview?.data?.cache?.last_collection_at
-              ? new Date(machineOverview.data.cache.last_collection_at)
-              : dateFrom;
-          }
-
-const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00"); 
-    const dateToStr = format(dateTo, "yyyy-MM-dd 23:59:59");      
-
-          const salesData: TelemetronSalesResponse = await getSalesByProducts(
-            vmId,
-            dateFromStr,
-            dateToStr
-          );
-          if (salesData?.data) allSales.push(...salesData.data);
-        } catch (e) {
-          console.error(`Ошибка загрузки продаж для аппарата ${vmId}:`, e);
-          toast({
-            variant: 'destructive',
-            title: `Ошибка для аппарата ${vmId}`,
-            description:
-              e instanceof Error ? e.message : 'Не удалось загрузить данные.',
-          });
-        }
-      }
-
-      const calculatedList = calculateShoppingList(
-        { data: allSales },
-        sort,
-        machineOverrides,
-        machineIds[0]
-      );
-
-      const editableList: EditableShoppingListItem[] = calculatedList.map(
-        item => {
-          const overrideKey = `${machineIds[0]}-${item.name}`;
-          const override = machineOverrides[overrideKey];
-          return {
-            ...item,
-            status: override?.status || 'pending',
-            loadedAmount: override?.loadedAmount,
-          };
-        }
-      );
-
-      setShoppingList(editableList);
-
-      if (calculatedList.length === 0 && allSales.length > 0) {
-        toast({
-          variant: 'default',
-          title: 'Нет продаж',
-          description: 'За выбранный период продаж не найдено.',
-        });
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки shopping list:', error);
+const loadShoppingList = useCallback(async () => {
+  if (machineIds.length === 0) {
+    if (forceLoad) {
       toast({
         variant: 'destructive',
         title: 'Ошибка',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Не удалось сформировать список.',
+        description: 'Не указаны ID аппаратов.',
       });
-    } finally {
-      setLoading(false);
     }
-  }, [
-    machineIds,
-    getSalesByProducts,
-    getMachineOverview,
-    toast,
-    dateFrom,
-    specialMachineDates,
-    sort,
-    forceLoad,
-  ]);
+    return;
+  }
+  setLoading(true);
+  setShoppingList([]);
 
+  try {
+    const allSales: TelemetronSaleItem[] = [];
+    const dateTo = new Date();
+
+    const machineOverrides: LoadingOverrides =
+      machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
+
+    for (const vmId of machineIds) {
+      try {
+        let startDate: Date;
+        if (specialMachineDates[vmId]) {
+          startDate = new Date(specialMachineDates[vmId]);
+        } else {
+          const machineOverview = await getMachineOverview(vmId);
+          startDate = machineOverview?.data?.cache?.last_collection_at
+            ? new Date(machineOverview.data.cache.last_collection_at)
+            : dateFrom; // ← используем dateFrom как было
+        }
+
+        const dateFromStr = format(startDate, "yyyy-MM-dd HH:mm:ss"); 
+        const dateToStr = format(dateTo, "yyyy-MM-dd HH:mm:ss");      
+
+        const salesData: TelemetronSalesResponse = await getSalesByProducts(
+          vmId,
+          dateFromStr,
+          dateToStr
+        );
+        if (salesData?.data) allSales.push(...salesData.data);
+      } catch (e) {
+        console.error(`Ошибка загрузки продаж для аппарата ${vmId}:`, e);
+        toast({
+          variant: 'destructive',
+          title: `Ошибка для аппарата ${vmId}`,
+          description: e instanceof Error ? e.message : 'Не удалось загрузить данные.',
+        });
+      }
+    }
+
+    // Проверяем, есть ли планограмма для текущего аппарата (если он один)
+    const planogram = machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
+
+    const calculatedList = calculateShoppingList(
+      { data: allSales },
+      sort,
+      machineOverrides,
+      machineIds[0],
+      planogram
+    );
+
+    const editableList: EditableShoppingListItem[] = calculatedList.map(
+      item => {
+        const overrideKey = `${machineIds[0]}-${item.name}`;
+        const override = machineOverrides[overrideKey];
+        return {
+          ...item,
+          status: override?.status || 'pending',
+          loadedAmount: override?.loadedAmount,
+        };
+      }
+    );
+
+    setShoppingList(editableList);
+
+    if (calculatedList.length === 0 && allSales.length > 0) {
+      toast({
+        variant: 'default',
+        title: 'Нет продаж',
+        description: 'За выбранный период продаж не найдено.',
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки shopping list:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка',
+      description: error instanceof Error ? error.message : 'Не удалось сформировать список.',
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [
+  machineIds,
+  getSalesByProducts,
+  getMachineOverview,
+  toast,
+  specialMachineDates,
+  sort,
+  dateFrom 
+]);
   useEffect(() => {
     if (forceLoad) {
       loadShoppingList();
     }
-  }, [forceLoad, machineIdsString, dateFrom, loadShoppingList]);
+  }, [forceLoad, machineIdsString, dateFrom]); 
 
   const handleStatusChange = (index: number, status: LoadingStatus) => {
-    const newList = [...shoppingList];
-    const currentItem = newList[index];
-    currentItem.status = status;
-
-    if (status === 'full') {
-      currentItem.loadedAmount = currentItem.amount;
-    } else if (status !== 'partial') {
-      delete currentItem.loadedAmount;
-    }
-    setShoppingList(newList);
+    setShoppingList(prev => prev.map((item, i) => 
+      i === index ? {
+        ...item,
+        status,
+        loadedAmount: status === 'full' ? item.amount : (status !== 'partial' ? undefined : item.loadedAmount)
+      } : item
+    ));
   };
 
   const handlePartialAmountChange = (index: number, amount: string) => {
-    const newList = [...shoppingList];
-    newList[index].loadedAmount = Number(amount);
-    setShoppingList(newList);
+    setShoppingList(prev => prev.map((item, i) => 
+      i === index ? { ...item, loadedAmount: Number(amount) } : item
+    ));
   };
 
   const handleSaveOverrides = async () => {
@@ -257,28 +249,29 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
       });
       return;
     }
+    
     setSaving(true);
     const machineId = machineIds[0];
     const overridesToSave: LoadingOverrides = {};
 
-    const currentOverrides = await getLoadingOverrides(machineId);
-
-    shoppingList.forEach(item => {
-      const key = `${machineId}-${item.name}`;
-      if (item.status !== 'pending') {
-        overridesToSave[key] = {
-          status: item.status,
-          requiredAmount: item.amount,
-          loadedAmount: item.loadedAmount,
-        };
-      } else {
-        if (currentOverrides[key]) {
-          delete currentOverrides[key];
-        }
-      }
-    });
-
     try {
+      const currentOverrides = await getLoadingOverrides(machineId);
+
+      shoppingList.forEach(item => {
+        const key = `${machineId}-${item.name}`;
+        if (item.status !== 'pending') {
+          overridesToSave[key] = {
+            status: item.status,
+            requiredAmount: item.amount,
+            loadedAmount: item.loadedAmount,
+          };
+        } else {
+          if (currentOverrides[key]) {
+            delete currentOverrides[key];
+          }
+        }
+      });
+
       const result = await saveLoadingOverrides({
         ...currentOverrides,
         ...overridesToSave,
@@ -289,7 +282,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
         const newTimestamp = now.toISOString();
         await setSpecialMachineDate(machineId, newTimestamp);
         if (onTimestampUpdate) {
-            onTimestampUpdate(newTimestamp);
+          onTimestampUpdate(newTimestamp);
         }
       }
 
@@ -298,6 +291,12 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
           title: 'Сохранено',
           description: 'Состояние загрузки и время инкассации успешно сохранены.',
         });
+        // НЕ вызываем loadShoppingList() - это создаст бесконечный цикл
+        // Вместо этого обновляем состояние локально
+        setShoppingList(prev => prev.map(item => {
+          const override = overridesToSave[`${machineId}-${item.name}`];
+          return override ? { ...item, status: override.status } : item;
+        }));
       } else {
         throw new Error('Не удалось сохранить данные на сервере.');
       }
@@ -305,8 +304,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
       toast({
         variant: 'destructive',
         title: 'Ошибка сохранения',
-        description:
-          error instanceof Error ? error.message : 'Неизвестная ошибка.',
+        description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
       });
     } finally {
       setSaving(false);
@@ -318,15 +316,12 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
     const header = `${title}\nПериод: ${periodStr}\nАппараты: ${machineIdsString}\n\n`;
 
     const itemsText = shoppingList
-      .map(
-        (item, index) =>
-          `${index + 1}. ${item.name}: ${item.amount} ${item.unit}`
-      )
+      .map((item, index) => `${index + 1}. ${item.name}: ${item.amount} ${item.unit}`)
       .join('\n');
 
-    const text = header + itemsText;
+      const fileContent = header + itemsText; 
 
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -364,10 +359,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800 rounded-lg'>
                   {machineIds.length > 1 && (
                     <div className='md:col-span-2'>
-                      <Label
-                        htmlFor='vmIds'
-                        className='block text-sm text-gray-400 mb-1'
-                      >
+                      <Label htmlFor='vmIds' className='block text-sm text-gray-400 mb-1'>
                         ID аппаратов (через запятую)
                       </Label>
                       <Input
@@ -380,10 +372,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
                     </div>
                   )}
                   <div className='md:col-span-2'>
-                    <Label
-                      htmlFor='dateFrom'
-                      className='block text-sm text-gray-400 mb-1'
-                    >
+                    <Label htmlFor='dateFrom' className='block text-sm text-gray-400 mb-1'>
                       Дата начала периода
                     </Label>
                     <div className='flex items-center gap-2'>
@@ -418,9 +407,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
         {loading && (
           <div className='text-center py-8'>
             <Loader2 className='animate-spin h-8 w-8 text-yellow-400 mx-auto mb-3' />
-            <div className='text-gray-400'>
-              Загружаем данные и формируем список...
-            </div>
+            <div className='text-gray-400'>Загружаем данные и формируем список...</div>
           </div>
         )}
 
@@ -463,9 +450,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
                       <div className='font-medium'>{item.name}</div>
                       <div className='text-base text-green-400'>
                         Нужно:{' '}
-                        <span className='font-bold'>
-                          {item.amount.toLocaleString('ru-RU')}
-                        </span>{' '}
+                        <span className='font-bold'>{item.amount.toLocaleString('ru-RU')}</span>{' '}
                         {item.unit}
                       </div>
                     </div>
@@ -475,57 +460,39 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
                           <Button
                             variant='ghost'
                             size='icon'
-                            className={cn(
-                              'rounded-full',
-                              item.status === 'full' &&
-                                'bg-green-500/20 text-green-400'
-                            )}
+                            className={cn('rounded-full', item.status === 'full' && 'bg-green-500/20 text-green-400')}
                             onClick={() => handleStatusChange(index, 'full')}
                           >
                             <Check className='h-5 w-5' />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Пополнено полностью</p>
-                        </TooltipContent>
+                        <TooltipContent><p>Пополнено полностью</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant='ghost'
                             size='icon'
-                            className={cn(
-                              'rounded-full',
-                              item.status === 'none' &&
-                                'bg-red-500/20 text-red-400'
-                            )}
+                            className={cn('rounded-full', item.status === 'none' && 'bg-red-500/20 text-red-400')}
                             onClick={() => handleStatusChange(index, 'none')}
                           >
                             <X className='h-5 w-5' />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Не пополнено</p>
-                        </TooltipContent>
+                        <TooltipContent><p>Не пополнено</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant='ghost'
                             size='icon'
-                            className={cn(
-                              'rounded-full',
-                              item.status === 'partial' &&
-                                'bg-yellow-500/20 text-yellow-400'
-                            )}
+                            className={cn('rounded-full', item.status === 'partial' && 'bg-yellow-500/20 text-yellow-400')}
                             onClick={() => handleStatusChange(index, 'partial')}
                           >
                             <Minus className='h-5 w-5' />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Пополнено частично</p>
-                        </TooltipContent>
+                        <TooltipContent><p>Пополнено частично</p></TooltipContent>
                       </Tooltip>
                     </div>
                     {item.status === 'partial' && (
@@ -533,9 +500,7 @@ const dateFromStr = format(startDate, "yyyy-MM-dd 00:00:00");
                         <Input
                           type='number'
                           value={item.loadedAmount ?? ''}
-                          onChange={e =>
-                            handlePartialAmountChange(index, e.target.value)
-                          }
+                          onChange={e => handlePartialAmountChange(index, e.target.value)}
                           placeholder='Кол-во'
                           className='bg-gray-700 border-gray-600 text-white h-9'
                         />
