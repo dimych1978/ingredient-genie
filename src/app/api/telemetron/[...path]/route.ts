@@ -1,3 +1,4 @@
+//api/telemetron/[...path]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 const TELEMETRON_BASE_URL = 'https://my.telemetron.net';

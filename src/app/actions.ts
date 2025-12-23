@@ -1,3 +1,4 @@
+//actions.ts
 'use server';
 
 import { kv } from '@/lib/kv';
@@ -91,13 +92,26 @@ export async function getLoadingOverrides(machineId: string): Promise<LoadingOve
 }
 
 export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): Promise<{ success: boolean }> {
-    try {
-        const allOverrides = await readAllOverrides();
-        const updatedOverrides = { ...allOverrides, ...overridesToSave };
-        await writeAllOverrides(updatedOverrides);
-        return { success: true };
-    } catch (error) {
-        console.error(error);
-        return { success: false };
-    }
+  try {
+    const allOverrides = await readAllOverrides();
+    const updatedOverrides = { ...allOverrides };
+    
+    // Обновляем или добавляем override'ы
+    Object.keys(overridesToSave).forEach(key => {
+      const override = overridesToSave[key];
+      // Убедимся что carryOver вычислен правильно
+      const carryOver = Math.max(0, (override.requiredAmount || 0) - (override.loadedAmount || 0));
+      updatedOverrides[key] = {
+        ...override,
+        carryOver,
+        timestamp: new Date().toISOString()
+      };
+    });
+    
+    await kv.set(OVERRIDES_KEY, updatedOverrides);
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false };
+  }
 }

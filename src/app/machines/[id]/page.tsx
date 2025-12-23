@@ -25,7 +25,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getSpecialMachineDates, setSpecialMachineDate } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { allMachines, Machine } from '@/lib/data';
+import { allMachines, isSpecialMachine, Machine } from '@/lib/data';
 import {
   Popover,
   PopoverContent,
@@ -47,11 +47,18 @@ interface MachineOverview {
   };
 }
 
-const isSpecialMachine = (machine: Machine | undefined): boolean => {
-  if (!machine || !machine.model) return false;
-  const model = machine.model.toLowerCase();
-  return model.includes('krea') || model.includes('tcn');
-};
+// const isSpecialMachine = (machine: Machine | undefined): boolean => {
+//   if (!machine || !machine.model) return false;
+//   const model = machine.model.toLowerCase();
+//   return (
+//     model.includes('krea') ||
+//     model.includes('tcn') ||
+//     model.includes('unicum') ||
+//     model.includes('fas') ||
+//     model.includes('koro') ||
+//     model.includes('phedra')
+//   );
+// };
 
 export default function MachineStatusPage() {
   const params = useParams();
@@ -64,25 +71,86 @@ export default function MachineStatusPage() {
   const [effectiveStartDate, setEffectiveStartDate] = useState<string | null>(
     null
   );
+  const [isServiced, setIsServiced] = useState(false);
   const [isManualDate, setIsManualDate] = useState(false);
   const [isCalendarOpen, setCalendarOpen] = useState(false);
+  const [hasUnsavedDate, setHasUnsavedDate] = useState(false);
 
   const { getMachineOverview } = useTelemetronApi();
   const { toast } = useToast();
 
   const machineData = useMemo(() => allMachines.find(m => m.id === id), [id]);
 
+  // const fetchMachineAndDateData = useCallback(async () => {
+  //   if (!id) return;
+
+  //   setIsLoading(true);
+  //   setError(null);
+  //   setHasUnsavedDate(false); // Сбрасываем флаг
+
+  //   try {
+  //     const overviewResult = await getMachineOverview(id);
+  //     setMachineOverview(overviewResult.data);
+
+  //     const lastCollectionDate = overviewResult.data?.cache?.last_collection_at;
+  //     const special = isSpecialMachine(machineData);
+
+  //     let finalStartDate: Date;
+
+  //     if (special) {
+  //       // ДЛЯ СПЕЦ. АППАРАТОВ: берем сохраненную дату
+  //       const dates = await getSpecialMachineDates();
+  //       const savedDateStr = dates[id];
+
+  //       if (savedDateStr) {
+  //         finalStartDate = new Date(savedDateStr);
+  //         setIsManualDate(true);
+  //       } else {
+  //         // Если нет сохраненной даты - показываем вчерашний день
+  //         // но НЕ сохраняем в БД
+  //         const yesterday = new Date();
+  //         yesterday.setDate(yesterday.getDate() - 1);
+  //         finalStartDate = yesterday;
+  //         setIsManualDate(true);
+  //         setHasUnsavedDate(true); // Дата не сохранена в БД
+  //       }
+  //     } else {
+  //       // Обычные аппараты - без изменений
+  //       if (lastCollectionDate) {
+  //         finalStartDate = new Date(lastCollectionDate);
+  //         setIsManualDate(false);
+  //       } else {
+  //         const yesterday = new Date();
+  //         yesterday.setDate(yesterday.getDate() - 1);
+  //         finalStartDate = yesterday;
+  //         setIsManualDate(true);
+  //       }
+  //     }
+
+  //     setEffectiveStartDate(finalStartDate.toISOString());
+  //   } catch (e) {
+  //     const err =
+  //       e instanceof Error ? e.message : 'Ошибка при загрузке данных аппарата';
+  //     setError(err);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [id, getMachineOverview, machineData]);
+
   const fetchMachineAndDateData = useCallback(async () => {
     if (!id) return;
 
     setIsLoading(true);
     setError(null);
+    setHasUnsavedDate(false);
 
     try {
       const overviewResult = await getMachineOverview(id);
+
       setMachineOverview(overviewResult.data);
 
       const lastCollectionDate = overviewResult.data?.cache?.last_collection_at;
+
       const special = isSpecialMachine(machineData);
 
       let finalStartDate: Date;
@@ -90,26 +158,32 @@ export default function MachineStatusPage() {
       if (special) {
         const dates = await getSpecialMachineDates();
         const savedDateStr = dates[id];
+
         if (savedDateStr) {
           finalStartDate = new Date(savedDateStr);
+          setIsManualDate(true);
         } else {
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
           finalStartDate = yesterday;
+          setIsManualDate(true);
+          setHasUnsavedDate(true);
         }
-        setIsManualDate(true);
-      } else if (lastCollectionDate) {
-        finalStartDate = new Date(lastCollectionDate);
-        setIsManualDate(false);
       } else {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        finalStartDate = yesterday;
-        setIsManualDate(true); // Treat as manual if no API data
+        if (lastCollectionDate) {
+          finalStartDate = new Date(lastCollectionDate);
+          setIsManualDate(false);
+        } else {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          finalStartDate = yesterday;
+          setIsManualDate(true);
+        }
       }
 
       setEffectiveStartDate(finalStartDate.toISOString());
     } catch (e) {
+      console.error('Ошибка в fetchMachineAndDateData:', e);
       const err =
         e instanceof Error ? e.message : 'Ошибка при загрузке данных аппарата';
       setError(err);
@@ -126,22 +200,22 @@ export default function MachineStatusPage() {
     async (date: Date) => {
       const isoDate = date.toISOString();
       setEffectiveStartDate(isoDate);
-      
-      if (isSpecialMachine(machineData)) {
-        const result = await setSpecialMachineDate(id, isoDate);
-        if (result.success) {
-          toast({
-            title: 'Дата сохранена',
-            description: 'Начальная дата для этого аппарата обновлена.',
-          });
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Ошибка',
-            description: 'Не удалось сохранить дату.',
-          });
-        }
-      }
+      setHasUnsavedDate(true);
+      // if (isSpecialMachine(machineData)) {
+      //   const result = await setSpecialMachineDate(id, isoDate);
+      //   if (result.success) {
+      //     toast({
+      //       title: 'Дата сохранена',
+      //       description: 'Начальная дата для этого аппарата обновлена.',
+      //     });
+      //   } else {
+      //     toast({
+      //       variant: 'destructive',
+      //       title: 'Ошибка',
+      //       description: 'Не удалось сохранить дату.',
+      //     });
+      //   }
+      // }
     },
     [id, machineData, toast]
   );
@@ -204,7 +278,6 @@ export default function MachineStatusPage() {
                   Аппарат #{id}
                 </h1>
               </Link>
-
               {machineOverview.machine?.name && (
                 <div className='flex items-center gap-2 mt-1'>
                   <Package className='h-5 w-5 text-muted-foreground' />
@@ -213,7 +286,6 @@ export default function MachineStatusPage() {
                   </div>
                 </div>
               )}
-
               {machineOverview.location && (
                 <div className='flex items-start gap-2 mt-2 text-muted-foreground'>
                   <MapPin className='h-4 w-4 mt-0.5 flex-shrink-0' />
@@ -225,7 +297,6 @@ export default function MachineStatusPage() {
                   </div>
                 </div>
               )}
-
               <div className='flex items-start gap-2 mt-2 text-muted-foreground'>
                 <Clock className='h-4 w-4 mt-0.5 flex-shrink-0' />
                 <div className='text-sm'>
@@ -240,12 +311,16 @@ export default function MachineStatusPage() {
                   </div>
                 </div>
               </div>
-
               <div className='flex items-start gap-2 mt-4 text-sm'>
                 <CalendarIcon className='h-4 w-4 mt-0.5 flex-shrink-0 text-primary' />
                 <div>
                   <div className='font-medium text-foreground'>
                     Изменить дату начала периода:
+                    {hasUnsavedDate && (
+                      <span className='ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded'>
+                        не сохранено
+                      </span>
+                    )}
                   </div>
                   <Popover open={isCalendarOpen} onOpenChange={setCalendarOpen}>
                     <PopoverTrigger asChild>
@@ -261,9 +336,7 @@ export default function MachineStatusPage() {
                         selected={startDateForDisplay}
                         onSelect={date => {
                           if (date) {
-                            // При выборе из календаря ставим время на начало дня
                             const newDate = new Date(date);
-                            newDate.setHours(0, 0, 0, 0);
                             handleManualDateChange(newDate);
                           }
                           setCalendarOpen(false);
@@ -277,21 +350,62 @@ export default function MachineStatusPage() {
                     </PopoverContent>
                   </Popover>
                 </div>
-              </div>
+              </div>{' '}
             </div>
           </div>
         </header>
 
         <div className='space-y-6'>
+          <div className='mb-6'>
+            <div className='flex items-center space-x-2'>
+              <input
+                type='checkbox'
+                id='serviced'
+                checked={isServiced}
+                onChange={e => setIsServiced(e.target.checked)}
+                className='h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
+              />
+              <label htmlFor='serviced' className='text-sm font-medium'>
+                Аппарат обслужен (нажата кнопка Telemetron)
+              </label>
+            </div>
+            {isServiced && (
+              <p className='text-sm text-green-600 mt-1'>
+                ✅ Следующее обслуживание будет рассчитываться от текущей даты
+              </p>
+            )}
+          </div>
+          {isSpecialMachine(machineData) && !effectiveStartDate && (
+            <div className='mb-6 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg'>
+              <div className='flex items-center gap-2 text-yellow-300'>
+                <CalendarIcon className='h-5 w-5' />
+                <span className='font-semibold'>
+                  Не установлена дата инкассации
+                </span>
+              </div>
+              <p className='text-sm text-yellow-200 mt-1'>
+                Для этого аппарата нужно установить дату начала периода вручную.
+                После пополнения нажмите "Сохранить состояние" - дата обновится
+                автоматически.
+              </p>
+            </div>
+          )}
           <ShoppingList
             machineIds={[id]}
             title={`Что брать к аппарату #${id}`}
-            description='Список расходников на основе продаж'
+            description={
+              isServiced
+                ? 'Аппарат обслужен - следующий расчёт будет от текущей даты'
+                : 'Список расходников на основе продаж'
+            }
             showControls={false}
             forceLoad={true}
-            specialMachineDates={{ [id]: effectiveStartDate }}
+            specialMachineDates={
+              isSpecialMachine(machineData) ? { [id]: effectiveStartDate } : {}
+            }
             onDateChange={handleManualDateChange}
             onTimestampUpdate={refreshTimestamp}
+            markAsServiced={isServiced} // Добавить новый проп
           />
         </div>
       </div>

@@ -1652,7 +1652,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'кофе', unit: 'кг', type: 'auto' },
     { name: 'сливки', unit: 'кг', type: 'auto' },
     { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'ваниль', unit: 'кг', type: 'auto' },
+    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
     { name: 'банан', unit: 'кг', type: 'auto' },
     { name: 'чай', unit: 'кг', type: 'auto' },
     { name: 'стаканы 300', unit: 'шт', type: 'auto' },
@@ -1665,7 +1665,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'кофе', unit: 'кг', type: 'auto' },
     { name: 'сливки', unit: 'кг', type: 'auto' },
     { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'ваниль', unit: 'кг', type: 'auto' },
+    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
     { name: 'стаканы 250', unit: 'шт', type: 'manual' },
     { name: 'стаканы 350', unit: 'шт', type: 'manual' },
     { name: 'крышки 80', unit: 'шт', type: 'manual' },
@@ -1689,7 +1689,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'кофе', unit: 'кг', type: 'auto' },
     { name: 'сливки', unit: 'кг', type: 'auto' },
     { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'ваниль', unit: 'кг', type: 'auto' },
+    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
     { name: 'чай', unit: 'кг', type: 'auto' },
     { name: 'стаканы 150', unit: 'шт', type: 'auto' },
     { name: 'размешиватели 105', unit: 'шт', type: 'auto' },
@@ -1700,7 +1700,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'кофе', unit: 'кг', type: 'auto' },
     { name: 'сливки', unit: 'кг', type: 'auto' },
     { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'ваниль', unit: 'кг', type: 'auto' },
+    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
     { name: 'кисель', unit: 'кг', type: 'auto' },
     { name: 'чай', unit: 'кг', type: 'auto' },
     { name: 'стаканы 150', unit: 'шт', type: 'auto' },
@@ -1728,4 +1728,12 @@ export const weeklySchedule: { [key: number]: string[] } = {
   4: [], // Thursday
   5: [], // Friday
   6: [], // Saturday
+};
+
+const SPECIAL_MODELS = ['krea', 'tcn', 'unicum', 'fas', 'koro', 'phedra'];
+
+export const isSpecialMachine = (machine: Machine | undefined): boolean => {
+  if (!machine || !machine.model) return false;
+  const model = machine.model.toLowerCase();
+  return SPECIAL_MODELS.some(special => model.includes(special));
 };

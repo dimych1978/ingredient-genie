@@ -4,6 +4,16 @@ import { format } from "date-fns"; // <-- меняем formatISO на format
 
 export const useTelemetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
+     const cacheKey = `${endpoint}:${JSON.stringify(options.body || '')}`;
+  
+  // Проверяем кэш (5 минут)
+  const cached = sessionStorage.getItem(cacheKey);
+  const cacheTime = sessionStorage.getItem(`${cacheKey}:time`);
+  
+  if (cached && cacheTime && Date.now() - parseInt(cacheTime) < 5 * 60 * 1000) {
+    return JSON.parse(cached);
+  }
+  
     const response = await fetch(`/api/telemetron/${endpoint}`, {
       ...options,
       headers: {

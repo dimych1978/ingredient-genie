@@ -30,12 +30,25 @@ export interface TelemetronSalesResponse {
 }
 
 // Типы для состояния загрузки
-export type LoadingStatus = 'pending' | 'full' | 'none' | 'partial';
+export type LoadingStatus = 'none' | 'partial';
 
 export interface LoadingOverride {
   status: LoadingStatus;
-  requiredAmount?: number; // Сколько требовалось в прошлый раз
-  loadedAmount?: number;   // Сколько было загружено (для 'partial' и 'full')
+  requiredAmount: number;
+  loadedAmount: number;
+  carryOver?: number; // Сколько недополнено (для переноса)
+  timestamp?: string;
 }
 
 export type LoadingOverrides = Record<string, LoadingOverride>;
+
+export interface ShoppingListItem {
+  name: string;
+  amount: number; // Сколько нужно ВСЕГО (продажи + перенос)
+  unit: string;
+  status: LoadingStatus;
+  previousDeficit?: number; // Сколько не доложили в прошлый раз
+  salesAmount?: number; // Только продажи (для информации)
+}
+
+

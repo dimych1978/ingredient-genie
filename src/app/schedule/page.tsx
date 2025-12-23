@@ -1,4 +1,4 @@
-
+//schedule.page.tsd
 import { Icons } from '@/components/icons';
 import { TomorrowsMachines } from '@/components/tomorrows-machines';
 import Link from 'next/link';

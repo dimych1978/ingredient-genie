@@ -105,6 +105,7 @@ export const GroupedShoppingLists = ({
               forceLoad
               specialMachineDates={specialMachineDates}
               sort="alphabetical"
+              markAsServiced
             />
           );
         }

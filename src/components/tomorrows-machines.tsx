@@ -1,7 +1,8 @@
+//tomorrows-machines.tsx
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { allMachines } from '@/lib/data';
+import { allMachines, isSpecialMachine } from '@/lib/data';
 import {
   Card,
   CardContent,
@@ -65,20 +66,6 @@ import {
 } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-const isSpecialMachine = (machineId: string): boolean => {
-  const machine = allMachines.find(m => m.id === machineId);
-  if (!machine || !machine.model) return false;
-  const model = machine.model.toLowerCase();
-  return (
-    model.includes('krea') ||
-    model.includes('tcn') ||
-    model.includes('unicum') ||
-    model.includes('fas') ||
-    model.includes('koro') ||
-    model.includes('phedra')
-  );
-};
 
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -214,7 +201,9 @@ const handleSaveChanges = useCallback(async () => {
   const handleAddMachineClick = () => {
     if (!machineToAdd) return;
 
-    const special = isSpecialMachine(machineToAdd);
+    const machine = allMachines.find(m => m.id === machineToAdd);
+
+    const special = isSpecialMachine(machine);
     if (special) {
       const lastDateString = specialMachineDates[machineToAdd];
       const lastDate = lastDateString ? new Date(lastDateString) : null;
