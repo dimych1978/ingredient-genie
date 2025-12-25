@@ -1,7 +1,8 @@
 export type Ingredient = {
   name: string;
-  unit: 'кг' | 'шт' | 'л';
+  unit: 'г' | 'шт' | 'мл';
   type: 'auto' | 'manual';
+  apiNames: string[];
 };
 
 export type Machine = {
@@ -1643,82 +1644,87 @@ export const planograms: Record<string, string[]> = {
 };
 
 export type MachineIngredients = {
-  [key: string]: Ingredient[];
+  [model: string]: Ingredient[];
 };
 
 export const machineIngredients: MachineIngredients = {
   opera: [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
-    { name: 'банан', unit: 'кг', type: 'auto' },
-    { name: 'чай', unit: 'кг', type: 'auto' },
-    { name: 'стаканы 300', unit: 'шт', type: 'auto' },
-    { name: 'крышки 80', unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 125', unit: 'шт', type: 'auto' },
-    { name: 'сахар', unit: 'кг', type: 'auto' },
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    { name: 'кофе', apiNames: ['Кофе зерновой', 'Кофе'], unit: 'г', type: 'auto' },
+    { name: 'сливки', apiNames: ['Сливки сухие', 'Сливки'], unit: 'г', type: 'auto' },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    { name: 'банан', apiNames: ['Банан'], unit: 'г', type: 'auto' },
+    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
+    { name: 'стаканы 300', apiNames: ['Стаканчик', 'Стакан'], unit: 'шт', type: 'auto' },
+    { name: 'крышки 80', apiNames: ['Крышка'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватели 125', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   'krea touch': [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
-    { name: 'стаканы 250', unit: 'шт', type: 'manual' },
-    { name: 'стаканы 350', unit: 'шт', type: 'manual' },
-    { name: 'крышки 80', unit: 'шт', type: 'manual' },
-    { name: 'крышки 90', unit: 'шт', type: 'manual' },
-    { name: 'размешиватели деревянные', unit: 'шт', type: 'manual' },
-    { name: 'сахар в стиках', unit: 'шт', type: 'manual' },
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
+    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+    { name: 'сироп', apiNames: ['Сироп'], unit: 'мл', type: 'auto' },
+    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
+    { name: 'стаканчик', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
+    { name: 'крышка', apiNames: ['Крышка'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватель', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    { name: 'стаканы 250', apiNames: [], unit: 'шт', type: 'manual' },
+    { name: 'стаканы 350', apiNames: [], unit: 'шт', type: 'manual' },
+    { name: 'крышки 80', apiNames: [], unit: 'шт', type: 'manual' },
+    { name: 'крышки 90', apiNames: [], unit: 'шт', type: 'manual' },
+    { name: 'размешиватели деревянные', apiNames: [], unit: 'шт', type: 'manual' },
+    { name: 'сахар в стиках', apiNames: [], unit: 'шт', type: 'manual' },
   ],
   kikko: [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе зерновой', unit: 'кг', type: 'auto' },
-    { name: 'сливки сухие', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
-    { name: 'чай', unit: 'кг', type: 'auto' },
-    { name: 'стаканчик', unit: 'шт', type: 'auto' },
-    { name: 'размешиватель', unit: 'шт', type: 'auto' },
-    { name: 'сахар', unit: 'кг', type: 'auto' },
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    { name: 'кофе зерновой', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
+    { name: 'сливки сухие', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+    { name: 'стаканчик', apiNames: ['Стаканчик', 'Стакан пластиковый'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватель', apiNames: ['Размешиватель', 'Размешиватель, 105 мм'], unit: 'шт', type: 'auto' },
   ],
   saeco: [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
-    { name: 'чай', unit: 'кг', type: 'auto' },
-    { name: 'стаканы 150', unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', unit: 'шт', type: 'auto' },
-    { name: 'сахар', unit: 'кг', type: 'auto' },
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
+    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
+    { name: 'стаканы 150', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватели 105', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   'saeco-max': [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'капучино ваниль', unit: 'кг', type: 'auto' },
-    { name: 'кисель', unit: 'кг', type: 'auto' },
-    { name: 'чай', unit: 'кг', type: 'auto' },
-    { name: 'стаканы 150', unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', unit: 'шт', type: 'auto' },
-    { name: 'сахар', unit: 'кг', type: 'auto' },
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
+    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    { name: 'кисель', apiNames: ['Кисель'], unit: 'г', type: 'auto' },
+    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
+    { name: 'стаканы 150', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватели 105', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   colibri: [
-    { name: 'вода', unit: 'л', type: 'auto' },
-    { name: 'кофе', unit: 'кг', type: 'auto' },
-    { name: 'сливки', unit: 'кг', type: 'auto' },
-    { name: 'шоколад', unit: 'кг', type: 'auto' },
-    { name: 'чай', unit: 'кг', type: 'auto' },
-    { name: 'стаканы пластик', unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', unit: 'шт', type: 'auto' },
-    { name: 'сахар', unit: 'кг', type: 'auto' },
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
+    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
+    { name: 'стаканы пластик', apiNames: ['Стаканчик', 'Стакан пластиковый'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватели 105', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
 };
-
 // 0: Sunday, 1: Monday, 2: Tuesday, 3: Wednesday, 4: Thursday, 5: Friday, 6: Saturday
 export const weeklySchedule: { [key: number]: string[] } = {
   0: [], // Sunday
@@ -1736,4 +1742,25 @@ export const isSpecialMachine = (machine: Machine | undefined): boolean => {
   if (!machine || !machine.model) return false;
   const model = machine.model.toLowerCase();
   return SPECIAL_MODELS.some(special => model.includes(special));
+};
+
+export const getIngredientConfig = (
+  apiName: string,
+  machineModel: string
+): Ingredient | undefined => {
+  // Нормализуем название из API
+  const normalizedApiName = apiName.toLowerCase().trim();
+  
+  // Ищем модель
+  const modelKey = Object.keys(machineIngredients).find(model => 
+    machineModel.toLowerCase().includes(model.toLowerCase())
+  );
+  
+  if (!modelKey) return undefined;
+  
+  // Ищем ингредиент в конфиге модели
+  return machineIngredients[modelKey].find(ingredient => 
+    ingredient.apiNames.some(api => api.toLowerCase() === normalizedApiName) ||
+    ingredient.name.toLowerCase() === normalizedApiName
+  );
 };
