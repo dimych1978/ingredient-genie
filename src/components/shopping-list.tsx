@@ -608,13 +608,13 @@ export const ShoppingList = ({
                           <div className='ml-2 w-24'>
                             <Input
                               type='number'
-                              value={loadedAmounts[index] ?? ''}
+                              value={item.amount}
                               onChange={e =>
                                 handlePartialAmountChange(index, e.target.value)
                               }
                               placeholder='Кол-во'
                               className='bg-gray-700 border-gray-600 text-white h-9'
-                              min={0}
+                              min={`${item.unit}`}
                             />
                           </div>
                         )}
