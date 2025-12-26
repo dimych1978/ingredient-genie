@@ -99,8 +99,8 @@ export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): P
     // Обновляем или добавляем override'ы
     Object.keys(overridesToSave).forEach(key => {
       const override = overridesToSave[key];
-      // Убедимся что carryOver вычислен правильно
-      const carryOver = Math.max(0, (override.requiredAmount || 0) - (override.loadedAmount || 0));
+      // Теперь carryOver может быть отрицательным (излишек)
+      const carryOver = (override.requiredAmount || 0) - (override.loadedAmount || 0);
       updatedOverrides[key] = {
         ...override,
         carryOver,

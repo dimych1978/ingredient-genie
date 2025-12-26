@@ -49,6 +49,7 @@ export interface ShoppingListItem {
   status: LoadingStatus;
   previousDeficit?: number; // Сколько не доложили в прошлый раз
   salesAmount?: number; // Только продажи (для информации)
+  isCore: boolean;
 }
 
 
