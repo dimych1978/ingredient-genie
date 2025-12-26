@@ -54,8 +54,6 @@ import { allMachines, isSpecialMachine, planograms } from '@/lib/data';
 interface EditableShoppingListItem extends ShoppingListItem {
   status: 'none' | 'partial';
   loadedAmount?: number;
-  salesAmount?: number;
-  previousDeficit?: number;
 }
 
 interface ShoppingListProps {
@@ -91,11 +89,6 @@ export const ShoppingList = ({
 
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const [loadedAmounts, setLoadedAmounts] = useState<number[]>([]);
-
-  interface DisplayShoppingListItem extends ShoppingListItem {
-    previousDeficit?: number;
-    salesAmount?: number;
-  }
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
@@ -144,6 +137,8 @@ export const ShoppingList = ({
 
       const machineOverrides: LoadingOverrides =
         machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
+      
+      const machineData = allMachines.find(m => m.id === machineIds[0]);
 
       for (const vmId of machineIds) {
         try {
@@ -169,43 +164,8 @@ export const ShoppingList = ({
             dateFromStr,
             dateToStr
           );
-
+          
           if (salesData?.data) allSales.push(...salesData.data);
-
-          const machineData = allMachines.find(m => m.id === vmId);
-          const machineModel = machineData?.model?.toLowerCase();
-
-          const planogram =
-            machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
-
-          const calculatedList = calculateShoppingList(
-            { data: allSales },
-            sort,
-            machineOverrides,
-            machineIds[0],
-            planogram,
-            machineModel
-          );
-
-          const editableList = calculatedList.map(item => {
-            const overrideKey = `${machineIds[0]}-${item.name}`;
-            const override = machineOverrides[overrideKey];
-            return {
-              ...item,
-              status: override?.status || 'none',
-              loadedAmount: override?.loadedAmount,
-            };
-          });
-
-          setShoppingList(editableList);
-
-          if (calculatedList.length === 0 && allSales.length > 0) {
-            toast({
-              variant: 'default',
-              title: 'Нет продаж',
-              description: 'За выбранный период продаж не найдено.',
-            });
-          }
         } catch (e) {
           console.error(`Ошибка для аппарата ${vmId}:`, e);
           toast({
@@ -216,6 +176,38 @@ export const ShoppingList = ({
           });
         }
       }
+      
+      const planogram = machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
+
+      const calculatedList = calculateShoppingList(
+        { data: allSales },
+        sort,
+        machineOverrides,
+        machineIds[0],
+        planogram,
+        machineData?.model
+      );
+
+      const editableList: EditableShoppingListItem[] = calculatedList.map(item => {
+        const overrideKey = `${machineIds[0]}-${item.name}`;
+        const override = machineOverrides[overrideKey];
+        return {
+          ...item,
+          status: override?.status || 'none',
+          loadedAmount: override?.loadedAmount,
+        };
+      });
+
+      setShoppingList(editableList);
+
+      if (editableList.length === 0) {
+        toast({
+          variant: 'default',
+          title: 'Нет продаж',
+          description: 'За выбранный период продаж не найдено или все пополнено.',
+        });
+      }
+
     } catch (error) {
       console.error('Ошибка загрузки shopping list:', error);
       toast({
@@ -261,11 +253,9 @@ export const ShoppingList = ({
       )
     );
 
-    // Обновляем loadedAmounts
     if (status === 'partial') {
       setLoadedAmounts(prev => {
         const newAmounts = [...prev];
-        // Ставим минимальное значение или предыдущее
         newAmounts[index] = item.loadedAmount || 1;
         return newAmounts;
       });
@@ -286,7 +276,6 @@ export const ShoppingList = ({
       return newAmounts;
     });
 
-    // Обновляем loadedAmount в основном списке
     setShoppingList(prev =>
       prev.map((item, i) =>
         i === index ? { ...item, loadedAmount: numValue } : item
@@ -294,29 +283,8 @@ export const ShoppingList = ({
     );
   };
 
-  // const handlePartialAmountChange = (index: number, value: string) => {
-  //   const numValue = Math.max(0, parseInt(value) || 0);
-
-  //   // Обновляем массив loadedAmounts
-  //   setLoadedAmounts(prev => {
-  //     const newAmounts = [...prev];
-  //     newAmounts[index] = numValue;
-  //     return newAmounts;
-  //   });
-
-  //   // Также обновляем loadedAmount в shoppingList
-  //   setShoppingList(prev => prev.map((item, i) =>
-  //     i === index ? {
-  //       ...item,
-  //       loadedAmount: numValue,
-  //       status: 'partial' // Автоматически ставим статус partial при вводе
-  //     } : item
-  //   ));
-  // };
-
   useEffect(() => {
     if (shoppingList.length > 0) {
-      // Инициализируем loadedAmounts значениями из shoppingList
       const initialLoadedAmounts = shoppingList.map(
         item => item.loadedAmount || 0
       );
@@ -340,63 +308,32 @@ export const ShoppingList = ({
     try {
       const overridesToSave: LoadingOverrides = {};
 
-      // Сохраняем ВСЕ элементы, у которых есть статус (partial или none)
-      shoppingList.forEach(item => {
+      shoppingList.forEach((item, index) => {
         const key = `${machineId}-${item.name}`;
+        
+        if (item.status) {
+             const loadedAmount = item.status === 'partial' ? (loadedAmounts[index] || 0) : item.amount;
+             const requiredAmount = item.amount || 0;
 
-        // Сохраняем если есть статус И (есть продажи ИЛИ есть перенос)
-        const hasSalesOrCarryOver =
-          (item.salesAmount && item.salesAmount > 0) ||
-          (item.previousDeficit && item.previousDeficit > 0);
-
-        if (item.status && hasSalesOrCarryOver) {
-          // Используем loadedAmount из состояния loadedAmounts
-          const loadedAmount = loadedAmounts[shoppingList.indexOf(item)] || 0;
-
-          overridesToSave[key] = {
-            status: item.status,
-            requiredAmount: item.amount,
-            loadedAmount: item.status === 'partial' ? loadedAmount : 0,
-          };
+            overridesToSave[key] = {
+                status: item.status,
+                requiredAmount: requiredAmount,
+                loadedAmount: loadedAmount,
+                timestamp: new Date().toISOString()
+            };
         }
       });
-
-      // Получаем текущие override'ы и обновляем только нужные
-      const currentOverrides = await getLoadingOverrides(machineId);
-      const updatedOverrides = { ...currentOverrides };
-
-      // Обновляем или добавляем новые
-      Object.keys(overridesToSave).forEach(key => {
-        updatedOverrides[key] = overridesToSave[key];
-      });
-
-      // Удаляем override'ы для позиций, которых нет в текущем списке или продаж нет
-      Object.keys(currentOverrides).forEach(key => {
-        const itemName = key.replace(`${machineId}-`, '');
-        const existsInCurrentList = shoppingList.some(
-          item =>
-            item.name === itemName &&
-            ((item.salesAmount && item.salesAmount > 0) ||
-              (item.previousDeficit && item.previousDeficit > 0))
-        );
-
-        if (!existsInCurrentList) {
-          delete updatedOverrides[key];
-        }
-      });
-
-      const result = await saveLoadingOverrides(updatedOverrides);
+      
+      const result = await saveLoadingOverrides(overridesToSave);
 
       const machine = allMachines.find(m => m.id === machineId);
 
-      if (machine && isSpecialMachine(machine)) {
+      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
         const now = new Date();
         const newTimestamp = now.toISOString();
+        const dateUpdateResult = await setSpecialMachineDate(machineId, newTimestamp);
 
-        // Сохраняем новую дату инкассации
-        const result = await setSpecialMachineDate(machineId, newTimestamp);
-
-        if (result.success && onTimestampUpdate) {
+        if (dateUpdateResult.success && onTimestampUpdate) {
           onTimestampUpdate(newTimestamp);
           toast({
             title: 'Дата инкассации обновлена',
@@ -407,15 +344,7 @@ export const ShoppingList = ({
           });
         }
       }
-      // if (isSpecialMachine(machineId)) {
-      //   const now = new Date();
-      //   const newTimestamp = now.toISOString();
-      //   await setSpecialMachineDate(machineId, newTimestamp);
-      //   if (onTimestampUpdate) {
-      //     onTimestampUpdate(newTimestamp);
-      //   }
-      // }
-
+     
       if (result.success) {
         toast({
           title: 'Сохранено',
@@ -578,11 +507,15 @@ export const ShoppingList = ({
             <div className='grid gap-2'>
               <TooltipProvider>
                 {shoppingList.map((item, index) => {
-                  const displayItem = item as DisplayShoppingListItem;
-                  const isFullyReplenished = displayItem.salesAmount === 0;
-                  const hasCarryOver =
-                    displayItem.previousDeficit &&
-                    displayItem.previousDeficit > 0;
+                  const isFullyReplenished = item.amount === 0;
+                  const hasSales = item.salesAmount && item.salesAmount > 0;
+                  const deficit = item.previousDeficit || 0;
+                  const hasDeficit = deficit > 0;
+                  const hasSurplus = deficit < 0;
+
+                  if (item.name.toLowerCase() === 'item') {
+                      return null;
+                  }
 
                   return (
                     <div
@@ -591,47 +524,23 @@ export const ShoppingList = ({
                         'flex justify-between items-center p-3 border rounded-lg',
                         isFullyReplenished
                           ? 'bg-green-900/20 border-green-600 text-green-300'
-                          : displayItem.status === 'none'
+                          : item.status === 'none'
                           ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
                           : 'bg-blue-900/20 border-blue-600 text-blue-300'
                       )}
                     >
                       <div className='flex-1 space-y-1'>
-                        <div className='font-medium'>{displayItem.name}</div>
+                        <div className='font-medium capitalize'>{item.name}</div>
 
-                        {/* Информация о продажах */}
-                        {displayItem.salesAmount &&
-                          displayItem.salesAmount > 0 && (
-                            <div className='text-sm text-gray-400'>
-                              Продажи:{' '}
-                              {displayItem.salesAmount.toLocaleString('ru-RU')}{' '}
-                              {displayItem.unit}
-                              {displayItem.name.toLowerCase() === 'вода' &&
-                                displayItem.salesAmount < 1 && (
-                                  <span className='text-xs'>
-                                    {' '}
-                                    (в мл:{' '}
-                                    {(
-                                      displayItem.salesAmount * 1000
-                                    ).toLocaleString('ru-RU')}
-                                    )
-                                  </span>
-                                )}
-                            </div>
-                          )}
-
-                        {/* Информация о переносе */}
-                        {hasCarryOver && (
-                          <div className='text-sm text-orange-400'>
-                            Перенос с прошлого раза:{' '}
-                            {displayItem.previousDeficit!.toLocaleString(
-                              'ru-RU'
-                            )}{' '}
-                            {displayItem.unit}
-                          </div>
+                        {(hasSales || hasDeficit || hasSurplus) && (
+                           <div className='text-sm text-gray-400'>
+                                {hasSales && `Продажи: ${item.salesAmount} ${item.unit}`}
+                                {(hasSales && (hasDeficit || hasSurplus)) && ' + '}
+                                {hasDeficit && `Недогруз: ${deficit} ${item.unit}`}
+                                {hasSurplus && `Излишек: ${Math.abs(deficit)} ${item.unit}`}
+                           </div>
                         )}
 
-                        {/* ИТОГО */}
                         <div
                           className={cn(
                             'text-base font-bold',
@@ -639,17 +548,15 @@ export const ShoppingList = ({
                           )}
                         >
                           {isFullyReplenished
-                            ? 'Пополнено полностью'
-                            : `Нужно: ${displayItem.amount.toLocaleString(
+                            ? 'Пополнено'
+                            : `Нужно: ${item.amount.toLocaleString(
                                 'ru-RU'
-                              )} ${displayItem.unit}`}
+                              )} ${item.unit}`}
                         </div>
                       </div>
-
-                      {/* Кнопки управления только если есть продажи и не полностью пополнено */}
+                      
                       {!isFullyReplenished && (
                         <div className='flex items-center gap-1'>
-                          {/* "Не пополнено" */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -657,7 +564,7 @@ export const ShoppingList = ({
                                 size='icon'
                                 className={cn(
                                   'rounded-full',
-                                  displayItem.status === 'none' &&
+                                  item.status === 'none' &&
                                     'bg-red-500/20 text-red-400'
                                 )}
                                 onClick={() =>
@@ -668,11 +575,10 @@ export const ShoppingList = ({
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Не пополнено</p>
+                              <p>Пополнено полностью</p>
                             </TooltipContent>
                           </Tooltip>
 
-                          {/* "Частично пополнено" */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -680,7 +586,7 @@ export const ShoppingList = ({
                                 size='icon'
                                 className={cn(
                                   'rounded-full',
-                                  displayItem.status === 'partial' &&
+                                  item.status === 'partial' &&
                                     'bg-yellow-500/20 text-yellow-400'
                                 )}
                                 onClick={() =>
@@ -697,8 +603,7 @@ export const ShoppingList = ({
                         </div>
                       )}
 
-                      {/* Поле для ввода загруженного количества */}
-                      {displayItem.status === 'partial' &&
+                      {item.status === 'partial' &&
                         !isFullyReplenished && (
                           <div className='ml-2 w-24'>
                             <Input
@@ -709,7 +614,7 @@ export const ShoppingList = ({
                               }
                               placeholder='Кол-во'
                               className='bg-gray-700 border-gray-600 text-white h-9'
-                              min={displayItem.previousDeficit || 0}
+                              min={0}
                             />
                           </div>
                         )}

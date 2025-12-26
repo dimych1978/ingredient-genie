@@ -1746,14 +1746,14 @@ export const isSpecialMachine = (machine: Machine | undefined): boolean => {
 
 export const getIngredientConfig = (
   apiName: string,
-  machineModel: string
+  machineModel?: string
 ): Ingredient | undefined => {
   // Нормализуем название из API
   const normalizedApiName = apiName.toLowerCase().trim();
   
   // Ищем модель
   const modelKey = Object.keys(machineIngredients).find(model => 
-    machineModel.toLowerCase().includes(model.toLowerCase())
+    machineModel?.toLowerCase().includes(model.toLowerCase())
   );
   
   if (!modelKey) return undefined;
