@@ -93,14 +93,14 @@ export const ShoppingList = ({
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
-  // const dateFrom = useMemo(() => {
-  //   const machineDateStr = specialMachineDates[machineIds[0]];
-  //   return machineDateStr ? new Date(machineDateStr) : new Date();
-  // }, [specialMachineDates, machineIds]);
-
   const isKreaTouch = useMemo(() => {
     const machine = allMachines.find(m => m.id === machineIds[0]);
     return machine?.model?.toLowerCase().includes('krea');
+  }, [machineIds]);
+
+  const isOpera = useMemo(() => {
+    const machine = allMachines.find(m => m.id === machineIds[0]);
+    return machine?.model?.toLowerCase().includes('opera');
   }, [machineIds]);
 
   const { getSalesByProducts, getMachineOverview } = useTelemetronApi();
@@ -118,6 +118,16 @@ export const ShoppingList = ({
     const checkboxItems = ['стаканчик', 'крышка', 'размешиватель', 'сахар'];
     if (checkboxItems.some(name => lowerName.includes(name))) return 'checkbox';
     if (lowerName.includes('сироп')) return 'syrup';
+    return 'normal';
+  };
+ 
+  const getOperaItemType = (
+    itemName: string
+  ): 'normal' | 'checkbox' => {
+    if (!isOpera) return 'normal';
+    const lowerName = itemName.toLowerCase();
+    
+    if (lowerName.includes('крышк')) return 'checkbox';
     return 'normal';
   };
 
@@ -540,7 +550,7 @@ export const ShoppingList = ({
 
                         {(isKreaTouch &&
                           getKreaTouchItemType(item.name) === 'checkbox') ||
-                        getKreaTouchItemType(item.name) === 'syrup' ? (
+                        (getKreaTouchItemType(item.name) === 'syrup') || (getOperaItemType(item.name) === 'checkbox' )? (
                           // Только для чекбокс-товаров Krea-Touch: показываем только продажи
                           hasSales && (
                             <div className='text-sm text-gray-400'>
@@ -582,8 +592,8 @@ export const ShoppingList = ({
                       </div>
                       {!isFullyReplenished && (
                         <div className='flex items-center gap-2'>
-                          {isKreaTouch &&
-                          getKreaTouchItemType(item.name) === 'checkbox' ? (
+                          {(isKreaTouch &&
+                          getKreaTouchItemType(item.name) === 'checkbox') || (isOpera && getOperaItemType(item.name) === 'checkbox') ? (
                             // ТОЛЬКО чекбокс для чекбокс-товаров
                             <div className='flex flex-col gap-2'>
                               {/* Если это стаканчик или крышка - показываем 2 чекбокса */}
