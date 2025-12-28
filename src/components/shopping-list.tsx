@@ -31,14 +31,12 @@ import {
   ShoppingCart,
   Calendar,
   Download,
-  Check,
   X,
-  Minus,
   Save,
   Pencil,
+  CircleCheckBig,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +52,8 @@ import { allMachines, isSpecialMachine, planograms } from '@/lib/data';
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
   loadedAmount?: number;
+  checked?: boolean;
+  selectedSyrups?: string[];
 }
 
 interface ShoppingListProps {
@@ -83,9 +83,10 @@ export const ShoppingList = ({
 }: ShoppingListProps) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [shoppingList, setShoppingList] = useState<ShoppingListItemWithStatus[]>([]);
+  const [shoppingList, setShoppingList] = useState<
+    ShoppingListItemWithStatus[]
+  >([]);
   const [loadedAmounts, setLoadedAmounts] = useState<number[]>([]);
-
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
@@ -94,12 +95,42 @@ export const ShoppingList = ({
     return machineDateStr ? new Date(machineDateStr) : new Date();
   }, [specialMachineDates, machineIds]);
 
+  const isKreaTouch = useMemo(() => {
+    const machine = allMachines.find(m => m.id === machineIds[0]);
+    return machine?.model?.toLowerCase().includes('krea');
+  }, [machineIds]);
+
   const { getSalesByProducts, getMachineOverview } = useTelemetronApi();
   const { toast } = useToast();
 
   useEffect(() => {
     setMachineIds(initialMachineIds);
   }, [initialMachineIds]);
+
+  const getKreaTouchItemType = (
+    itemName: string
+  ): 'normal' | 'checkbox' | 'syrup' => {
+    if (!isKreaTouch) return 'normal';
+    const lowerName = itemName.toLowerCase();
+    const checkboxItems = ['стаканчик', 'крышка', 'размешиватель', 'сахар'];
+    if (checkboxItems.some(name => lowerName.includes(name))) return 'checkbox';
+    if (lowerName.includes('сироп')) return 'syrup';
+    return 'normal';
+  };
+
+  const handleCheckboxChange = (index: number, checked: boolean) => {
+    setShoppingList(prev =>
+      prev.map((item, i) => (i === index ? { ...item, checked } : item))
+    );
+  };
+
+  const handleSyrupChange = (index: number, syrupIds: string[]) => {
+    setShoppingList(prev =>
+      prev.map((item, i) =>
+        i === index ? { ...item, selectedSyrups: syrupIds } : item
+      )
+    );
+  };
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
@@ -131,11 +162,8 @@ export const ShoppingList = ({
     try {
       const allSales: TelemetronSaleItem[] = [];
       const dateTo = new Date();
-
-      // Загружаем только статусы (пополнено/не пополнено), но не количества
       const machineOverrides: LoadingOverrides =
         machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
-      
       const machineData = allMachines.find(m => m.id === machineIds[0]);
 
       for (const vmId of machineIds) {
@@ -154,15 +182,12 @@ export const ShoppingList = ({
               : dateFrom;
           }
 
-          const dateFromStr = format(startDate, 'yyyy-MM-dd HH:mm:ss');
-          const dateToStr = format(dateTo, 'yyyy-MM-dd HH:mm:ss');
-
           const salesData: TelemetronSalesResponse = await getSalesByProducts(
             vmId,
-            dateFromStr,
-            dateToStr
+            format(startDate, 'yyyy-MM-dd HH:mm:ss'),
+            format(dateTo, 'yyyy-MM-dd HH:mm:ss')
           );
-          
+
           if (salesData?.data) allSales.push(...salesData.data);
         } catch (e) {
           console.error(`Ошибка для аппарата ${vmId}:`, e);
@@ -174,9 +199,9 @@ export const ShoppingList = ({
           });
         }
       }
-      
-      const planogram = machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
 
+      const planogram =
+        machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
       const calculatedList = calculateShoppingList(
         { data: allSales },
         sort,
@@ -186,31 +211,29 @@ export const ShoppingList = ({
         machineData?.model
       );
 
-      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(item => {
-        const overrideKey = `${machineIds[0]}-${item.name}`;
-        const override = machineOverrides[overrideKey];
-        return {
-          ...item,
-          status: override?.status || 'none',
-          // Не используем loadedAmount из сохраненных данных - всегда начинаем с чистого листа
-          loadedAmount: item.amount, // По умолчанию показываем нужное количество
-        };
-      });
+      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
+        item => {
+          const overrideKey = `${machineIds[0]}-${item.name}`;
+          const override = machineOverrides[overrideKey];
+          return {
+            ...item,
+            status: override?.status || 'none',
+            loadedAmount: item.amount,
+          };
+        }
+      );
 
       setShoppingList(listWithStatus);
-      
-      // Инициализируем loadedAmounts с нужными количествами по умолчанию
-      const initialLoadedAmounts = listWithStatus.map(item => item.amount);
-      setLoadedAmounts(initialLoadedAmounts);
+      setLoadedAmounts(listWithStatus.map(item => item.amount));
 
       if (listWithStatus.length === 0) {
         toast({
           variant: 'default',
           title: 'Нет продаж',
-          description: 'За выбранный период продаж не найдено или все пополнено.',
+          description:
+            'За выбранный период продаж не найдено или все пополнено.',
         });
       }
-
     } catch (error) {
       console.error('Ошибка загрузки shopping list:', error);
       toast({
@@ -235,9 +258,7 @@ export const ShoppingList = ({
   ]);
 
   useEffect(() => {
-    if (forceLoad) {
-      loadShoppingList();
-    }
+    if (forceLoad) loadShoppingList();
   }, [forceLoad, machineIdsString]);
 
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
@@ -247,8 +268,8 @@ export const ShoppingList = ({
           ? {
               ...item,
               status,
-              // При смене статуса на partial, используем текущее значение или amount по умолчанию
-              loadedAmount: status === 'partial' ? loadedAmounts[index] : undefined,
+              loadedAmount:
+                status === 'partial' ? loadedAmounts[index] : undefined,
             }
           : item
       )
@@ -257,15 +278,11 @@ export const ShoppingList = ({
 
   const handleAmountChange = (index: number, value: string) => {
     const numValue = value === '' ? 0 : parseInt(value) || 0;
-    
-    // Обновляем состояние loadedAmounts
     setLoadedAmounts(prev => {
       const newAmounts = [...prev];
       newAmounts[index] = numValue;
       return newAmounts;
     });
-
-    // Обновляем shoppingList
     setShoppingList(prev =>
       prev.map((item, i) =>
         i === index ? { ...item, loadedAmount: numValue } : item
@@ -288,32 +305,28 @@ export const ShoppingList = ({
 
     try {
       const overridesToSave: LoadingOverrides = {};
-
       shoppingList.forEach((item, index) => {
         const key = `${machineId}-${item.name}`;
-        
         if (item.status === 'none') {
-          // Если статус "none" (пополнено полностью), сохраняем только статус
-          // Не сохраняем количество, так как оно всегда новое каждый раз
           overridesToSave[key] = {
             status: 'none',
             requiredAmount: item.amount,
-            loadedAmount: item.amount, // Для истории, но на будущее не полагаемся на это
-            timestamp: new Date().toISOString()
+            loadedAmount: item.amount,
+            timestamp: new Date().toISOString(),
           };
         }
-        // Не сохраняем partial статусы - они временные только для текущей сессии
       });
-      
-      const result = await saveLoadingOverrides(overridesToSave);
 
+      const result = await saveLoadingOverrides(overridesToSave);
       const machine = allMachines.find(m => m.id === machineId);
 
       if (machine && (isSpecialMachine(machine) || markAsServiced)) {
         const now = new Date();
         const newTimestamp = now.toISOString();
-        const dateUpdateResult = await setSpecialMachineDate(machineId, newTimestamp);
-
+        const dateUpdateResult = await setSpecialMachineDate(
+          machineId,
+          newTimestamp
+        );
         if (dateUpdateResult.success && onTimestampUpdate) {
           onTimestampUpdate(newTimestamp);
           toast({
@@ -325,7 +338,7 @@ export const ShoppingList = ({
           });
         }
       }
-     
+
       if (result.success) {
         toast({
           title: 'Сохранено',
@@ -349,16 +362,13 @@ export const ShoppingList = ({
   const downloadList = () => {
     const periodStr = `${format(dateFrom, 'dd.MM.yyyy HH:mm')}-Сейчас`;
     const header = `${title}\nПериод: ${periodStr}\nАппараты: ${machineIdsString}\n\n`;
-
     const itemsText = shoppingList
       .map(
         (item, index) =>
           `${index + 1}. ${item.name}: ${item.amount} ${item.unit}`
       )
       .join('\n');
-
     const fileContent = header + itemsText;
-
     const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -488,9 +498,7 @@ export const ShoppingList = ({
             <div className='grid gap-2'>
               <TooltipProvider>
                 {shoppingList.map((item, index) => {
-                  if (item.name.toLowerCase() === 'item') {
-                    return null;
-                  }
+                  if (item.name.toLowerCase() === 'item') return null;
                   const isFullyReplenished = item.amount === 0;
                   const hasSales = item.salesAmount && item.salesAmount > 0;
                   const deficit = item.previousDeficit || 0;
@@ -510,113 +518,331 @@ export const ShoppingList = ({
                       )}
                     >
                       <div className='flex-1 space-y-1'>
-                        <div className='font-medium capitalize'>{item.name}</div>
-
-                        {(hasSales || hasDeficit || hasSurplus) && (
-                          <div className='text-sm text-gray-400'>
-                            {hasSales && `Продажи: ${item.salesAmount} ${item.unit}`}
-                            {(hasSales && (hasDeficit || hasSurplus)) && ' + '}
-                            {hasDeficit && `Недогруз: ${deficit} ${item.unit}`}
-                            {hasSurplus && `Излишек: ${Math.abs(deficit)} ${item.unit}`}
-                          </div>
-                        )}
-
-                        <div
-                          className={cn(
-                            'text-base font-bold',
-                            isFullyReplenished ? 'text-green-400' : 'text-white'
-                          )}
-                        >
-                          {isFullyReplenished
-                            ? 'Пополнено'
-                            : `Нужно: ${item.amount.toLocaleString(
-                                'ru-RU'
-                              )} ${item.unit}`}
+                        <div className='font-medium capitalize'>
+                          {item.name}
                         </div>
+
+                        {(isKreaTouch &&
+                          getKreaTouchItemType(item.name) === 'checkbox') ||
+                        getKreaTouchItemType(item.name) === 'syrup' ? (
+                          // Только для чекбокс-товаров Krea-Touch: показываем только продажи
+                          hasSales && (
+                            <div className='text-sm text-gray-400'>
+                              Продажи: {item.salesAmount} {item.unit}
+                            </div>
+                          )
+                        ) : (
+                          // Для всех остальных товаров
+                          <>
+                            {(hasSales || hasDeficit || hasSurplus) && (
+                              <div className='text-sm text-gray-400'>
+                                {hasSales &&
+                                  `Продажи: ${item.salesAmount} ${item.unit}`}
+                                {hasSales &&
+                                  (hasDeficit || hasSurplus) &&
+                                  ' + '}
+                                {hasDeficit &&
+                                  `Недогруз: ${deficit} ${item.unit}`}
+                                {hasSurplus &&
+                                  `Излишек: ${Math.abs(deficit)} ${item.unit}`}
+                              </div>
+                            )}
+                            <div
+                              className={cn(
+                                'text-base font-bold',
+                                isFullyReplenished
+                                  ? 'text-green-400'
+                                  : 'text-white'
+                              )}
+                            >
+                              {isFullyReplenished
+                                ? 'Пополнено'
+                                : `Нужно: ${item.amount.toLocaleString(
+                                    'ru-RU'
+                                  )} ${item.unit}`}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      
                       {!isFullyReplenished && (
                         <div className='flex items-center gap-2'>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className={cn(
-                                  'rounded-full',
-                                  item.status === 'none' &&
-                                    'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                )}
+                          {isKreaTouch &&
+                          getKreaTouchItemType(item.name) === 'checkbox' ? (
+                            // ТОЛЬКО чекбокс для чекбокс-товаров
+                            <div className='flex items-center gap-2'>
+                              <button
                                 onClick={() =>
-                                  handleStatusChange(index, 'none')
+                                  handleCheckboxChange(index, !item.checked)
                                 }
+                                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
                               >
-                                <X className='h-5 w-5' />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Пополнено полностью</p>
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className={cn(
-                                  'rounded-full',
-                                  item.status === 'partial' &&
-                                    'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                {item.checked && (
+                                  <CircleCheckBig className='h-4 w-4 text-green-500' />
                                 )}
-                                onClick={() =>
-                                  handleStatusChange(index, 'partial')
-                                }
+                              </button>
+                              <span
+                                className={`'text-sm' ${
+                                  item.checked
+                                    ? 'text-green-500'
+                                    : 'text-yellow-200'
+                                }`}
                               >
-                                <Pencil className='h-5 w-5' />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Пополнено частично</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      )}
+                                {item.checked ? 'Не надо' : 'Нужно'}
+                              </span>
+                            </div>
+                          ) : isKreaTouch &&
+                            getKreaTouchItemType(item.name) === 'syrup' ? (
+                            // ТОЛЬКО селектор сиропов (без кнопок X/Pencil)
+                            <div className='w-48'>
+                              <div className='text-sm text-gray-300 mb-1'>
+                                Выберите сиропы:
+                              </div>
+                              <div className='space-y-1'>
+                                {[
+                                  { id: 'banana', name: 'Банан' },
+                                  { id: 'vanilla', name: 'Ваниль' },
+                                  { id: 'coconut', name: 'Кокос' },
+                                  { id: 'caramel', name: 'Карамель' },
+                                ].map(syrup => {
+                                  const isSelected =
+                                    item.selectedSyrups?.includes(syrup.id) ||
+                                    false;
 
-                      {item.status === 'partial' && !isFullyReplenished && (
-                        <div className='flex items-center gap-1'>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600'
-                            onClick={() => {
-                              const current = item.loadedAmount || 0;
-                              handleAmountChange(index, (current - 1).toString());
-                            }}
-                          >
-                            -
-                          </Button>
-                          <div className='w-20'>
-                            <Input
-                              type='number'
-                              value={item.loadedAmount?.toString() || ''}
-                              onChange={e => handleAmountChange(index, e.target.value)}
-                              placeholder={item.amount?.toString()}
-                              className='bg-gray-700 border-gray-600 text-white h-10 text-lg text-center'
-                              inputMode='numeric'
-                            />
-                          </div>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600'
-                            onClick={() => {
-                              const current = item.loadedAmount || 0;
-                              handleAmountChange(index, (current + 1).toString());
-                            }}
-                          >
-                            +
-                          </Button>
+                                  return (
+                                    <div
+                                      key={syrup.id}
+                                      className='flex items-center gap-2 cursor-pointer'
+                                      onClick={() => {
+                                        const selectedSyrups =
+                                          item.selectedSyrups || [];
+                                        const newSelected = isSelected
+                                          ? selectedSyrups.filter(
+                                              id => id !== syrup.id
+                                            )
+                                          : [...selectedSyrups, syrup.id];
+                                        handleSyrupChange(index, newSelected);
+                                      }}
+                                    >
+                                      <div
+                                        className={cn(
+                                          'flex items-center justify-center h-5 w-5 rounded-full border-2',
+                                          isSelected
+                                            ? 'border-green-500 bg-green-500/10'
+                                            : 'border-gray-400 hover:border-gray-300'
+                                        )}
+                                      >
+                                        {isSelected && (
+                                          <CircleCheckBig className='h-3 w-3 text-green-500' />
+                                        )}
+                                      </div>
+                                      <span
+                                        className={cn(
+                                          'text-sm',
+                                          isSelected
+                                            ? 'text-green-300'
+                                            : 'text-gray-300'
+                                        )}
+                                      >
+                                        {syrup.name}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className={cn(
+                                      'rounded-full',
+                                      item.status === 'none' &&
+                                        'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                    )}
+                                    onClick={() =>
+                                      handleStatusChange(index, 'none')
+                                    }
+                                  >
+                                    <X className='h-5 w-5' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Пополнено полностью</p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className={cn(
+                                      'rounded-full',
+                                      item.status === 'partial' &&
+                                        'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                    )}
+                                    onClick={() =>
+                                      handleStatusChange(index, 'partial')
+                                    }
+                                  >
+                                    <Pencil className='h-5 w-5' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Пополнено частично</p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              {item.status === 'partial' &&
+                                !isFullyReplenished && (
+                                  <div className='ml-2'>
+                                    {(() => {
+                                      const itemType = getKreaTouchItemType(
+                                        item.name
+                                      );
+
+                                      if (isKreaTouch && itemType === 'syrup') {
+                                        return (
+                                          <div className='w-48'>
+                                            <div className='text-sm text-gray-300 mb-1'>
+                                              Выберите сиропы:
+                                            </div>
+                                            <div className='space-y-1'>
+                                              {[
+                                                { id: 'banana', name: 'Банан' },
+                                                {
+                                                  id: 'vanilla',
+                                                  name: 'Ваниль',
+                                                },
+                                                {
+                                                  id: 'coconut',
+                                                  name: 'Кокос',
+                                                },
+                                                {
+                                                  id: 'caramel',
+                                                  name: 'Карамель',
+                                                },
+                                              ].map(syrup => {
+                                                const isSelected =
+                                                  item.selectedSyrups?.includes(
+                                                    syrup.id
+                                                  ) || false;
+
+                                                return (
+                                                  <div
+                                                    key={syrup.id}
+                                                    className='flex items-center gap-2 cursor-pointer'
+                                                    onClick={() => {
+                                                      const selectedSyrups =
+                                                        item.selectedSyrups ||
+                                                        [];
+                                                      const newSelected =
+                                                        isSelected
+                                                          ? selectedSyrups.filter(
+                                                              id =>
+                                                                id !== syrup.id
+                                                            )
+                                                          : [
+                                                              ...selectedSyrups,
+                                                              syrup.id,
+                                                            ];
+                                                      handleSyrupChange(
+                                                        index,
+                                                        newSelected
+                                                      );
+                                                    }}
+                                                  >
+                                                    <div
+                                                      className={cn(
+                                                        'flex items-center justify-center h-5 w-5 rounded-full border-2 transition-all duration-200',
+                                                        isSelected
+                                                          ? 'border-green-500 bg-green-500/10'
+                                                          : 'border-gray-400 hover:border-gray-300'
+                                                      )}
+                                                    >
+                                                      {isSelected && (
+                                                        <CircleCheckBig className='h-3 w-3 text-green-500 animate-scale-in' />
+                                                      )}
+                                                    </div>
+                                                    <span
+                                                      className={cn(
+                                                        'text-sm transition-colors duration-200',
+                                                        isSelected
+                                                          ? 'text-green-300'
+                                                          : 'text-gray-300'
+                                                      )}
+                                                    >
+                                                      {syrup.name}
+                                                    </span>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <div className='flex items-center gap-1'>
+                                          <Button
+                                            variant='outline'
+                                            size='icon'
+                                            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
+                                            onClick={() => {
+                                              const current =
+                                                item.loadedAmount ||
+                                                item.amount;
+                                              handleAmountChange(
+                                                index,
+                                                (current - 1).toString()
+                                              );
+                                            }}
+                                          >
+                                            -
+                                          </Button>
+                                          <div className='w-20'>
+                                            <Input
+                                              type='number'
+                                              value={(
+                                                item.loadedAmount ?? item.amount
+                                              )?.toString()}
+                                              onChange={e =>
+                                                handleAmountChange(
+                                                  index,
+                                                  e.target.value
+                                                )
+                                              }
+                                              placeholder={item.amount?.toString()}
+                                              className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
+                                              inputMode='numeric'
+                                              autoComplete='off'
+                                            />
+                                          </div>
+                                          <Button
+                                            variant='outline'
+                                            size='icon'
+                                            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
+                                            onClick={() => {
+                                              const current =
+                                                item.loadedAmount ||
+                                                item.amount;
+                                              handleAmountChange(
+                                                index,
+                                                (current + 1).toString()
+                                              );
+                                            }}
+                                          >
+                                            +
+                                          </Button>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                )}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

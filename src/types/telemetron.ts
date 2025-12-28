@@ -1,3 +1,19 @@
+export type IngredientType = 'auto' | 'manual' | 'checkbox' | 'select';
+
+export interface SyrupOption {
+  id: string;
+  name: string;
+  selected: boolean;
+}
+
+export interface Ingredient {
+  name: string;
+  apiNames: string[];
+  unit: string;
+  type: IngredientType;
+  syrupOptions?: SyrupOption[]; // только для сиропа
+}
+
 export interface TelemetronIngredient {
   name: string;
   unit: number; // 1=штука, 2=миллилитр, 3=грамм
@@ -50,6 +66,7 @@ export interface ShoppingListItem {
   previousDeficit?: number; // Сколько не доложили в прошлый раз
   salesAmount?: number; // Только продажи (для информации)
   isCore: boolean;
+  type?: IngredientType; // 'auto' | 'checkbox' | 'select'
+  syrupOptions?: SyrupOption[]; // для сиропа
+  checked?: boolean;
 }
-
-

@@ -1,10 +1,4 @@
-export type Ingredient = {
-  name: string;
-  unit: 'г' | 'шт' | 'мл';
-  type: 'auto' | 'manual';
-  apiNames: string[];
-};
-
+import type {Ingredient} from '@/types/telemetron'
 export type Machine = {
   id: string;
   name: string;
@@ -1662,23 +1656,62 @@ export const machineIngredients: MachineIngredients = {
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   'krea touch': [
-    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
-    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
-    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
-    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
-    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
-    { name: 'сироп', apiNames: ['Сироп'], unit: 'мл', type: 'auto' },
-    { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
-    { name: 'стаканчик', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
-    { name: 'крышка', apiNames: ['Крышка'], unit: 'шт', type: 'auto' },
-    { name: 'размешиватель', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
-    { name: 'стаканы 250', apiNames: [], unit: 'шт', type: 'manual' },
-    { name: 'стаканы 350', apiNames: [], unit: 'шт', type: 'manual' },
-    { name: 'крышки 80', apiNames: [], unit: 'шт', type: 'manual' },
-    { name: 'крышки 90', apiNames: [], unit: 'шт', type: 'manual' },
-    { name: 'размешиватели деревянные', apiNames: [], unit: 'шт', type: 'manual' },
-    { name: 'сахар в стиках', apiNames: [], unit: 'шт', type: 'manual' },
+    { 
+    name: 'вода', 
+    apiNames: ['Вода'], 
+    unit: 'мл', 
+    type: 'auto' 
+  },
+  { 
+    name: 'кофе', 
+    apiNames: ['Кофе зерновой'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  { 
+    name: 'сливки', 
+    apiNames: ['Сливки сухие'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  { 
+    name: 'сахар', 
+    apiNames: ['Сахар'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  // Чекбоксы
+  { 
+    name: 'стаканчик', 
+    apiNames: ['Стаканчик'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  { 
+    name: 'крышка', 
+    apiNames: ['Крышка'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  { 
+    name: 'размешиватель', 
+    apiNames: ['Размешиватель'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  // Селектор для сиропа
+  { 
+    name: 'сироп', 
+    apiNames: ['Сироп'], 
+    unit: 'мл', 
+    type: 'select',
+    syrupOptions: [
+      { id: 'banana', name: 'банан', selected: false },
+      { id: 'vanilla', name: 'ваниль', selected: false },
+      { id: 'coconut', name: 'кокос', selected: false },
+      { id: 'caramel', name: 'карамель', selected: false },
+    ]
+  },
   ],
   kikko: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },

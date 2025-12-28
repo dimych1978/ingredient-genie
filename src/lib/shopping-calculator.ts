@@ -4,13 +4,14 @@ import type {
   TelemetronIngredient,
   LoadingOverrides,
   ShoppingListItem,
+  Ingredient,
 } from '@/types/telemetron';
+
 import {
   allMachines,
   machineIngredients,
   getIngredientConfig,
   type Machine,
-  type Ingredient,
 } from './data';
 
 export type SortType = 'grouped' | 'alphabetical';
@@ -45,11 +46,13 @@ export const calculateShoppingList = (
   machineModel?: string
 ): ShoppingListItem[] => {
   const machine = allMachines.find(m => m.id === machineId);
-  
+
   const lowerMachineModel = machine?.model?.toLowerCase();
 
-  const matchingKeys = lowerMachineModel 
-    ? Object.keys(machineIngredients).filter(key => lowerMachineModel.includes(key.toLowerCase()))
+  const matchingKeys = lowerMachineModel
+    ? Object.keys(machineIngredients).filter(key =>
+        lowerMachineModel.includes(key.toLowerCase())
+      )
     : [];
 
   matchingKeys.sort((a, b) => b.length - a.length);
@@ -81,14 +84,14 @@ export const calculateShoppingList = (
       ingredients.forEach(apiIngredient => {
         const config = getIngredientConfig(apiIngredient.name, machine?.model);
         if (config) {
-            const key = config.name;
-            const amount = apiIngredient.volume * quantity;
-    
-            if (!totals[key]) {
-              totals[key] = { amount: 0, config, sales: 0, carryOver: 0 };
-            }
-            totals[key].amount += amount;
-            totals[key].sales += amount;
+          const key = config.name;
+          const amount = apiIngredient.volume * quantity;
+
+          if (!totals[key]) {
+            totals[key] = { amount: 0, config, sales: 0, carryOver: 0 };
+          }
+          totals[key].amount += amount;
+          totals[key].sales += amount;
         }
       });
     } else {
@@ -98,7 +101,12 @@ export const calculateShoppingList = (
       if (!totals[key]) {
         totals[key] = {
           amount: 0,
-          config: config || { name: key, unit: 'шт', type: 'manual', apiNames: [key] },
+          config: config || {
+            name: key,
+            unit: 'шт',
+            type: 'manual',
+            apiNames: [key],
+          },
           sales: 0,
           carryOver: 0,
         };
@@ -116,14 +124,20 @@ export const calculateShoppingList = (
     if (itemNameFromOverride.toLowerCase() === 'item') return;
 
     const override = overrides[overrideKey];
-    if (override.carryOver) { // Проверяем само наличие carryOver
+    if (override.carryOver) {
+      // Проверяем само наличие carryOver
       const config = getIngredientConfig(itemNameFromOverride, machine?.model);
       const key = config ? config.name : itemNameFromOverride;
 
       if (!totals[key]) {
         totals[key] = {
           amount: 0,
-          config: config || { name: key, unit: 'шт', type: 'manual', apiNames: [key] },
+          config: config || {
+            name: key,
+            unit: 'шт',
+            type: 'manual',
+            apiNames: [key],
+          },
           sales: 0,
           carryOver: 0,
         };
@@ -151,17 +165,23 @@ export const calculateShoppingList = (
       data.carryOver,
       data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
     );
-    
+
     // Показываем в списке, если есть продажи, или есть перенос, или требуется > 0
     if (displayAmount > 0 || data.sales > 0 || data.carryOver !== 0) {
       allItems.push({
         name: data.config.name,
-        amount: Math.ceil(Math.max(0, displayAmount)), // Не может быть нужно отрицательное количество
+        amount: Math.ceil(Math.max(0, displayAmount)),
         unit: displayUnit,
         status: overrides[`${machineId}-${key}`]?.status || 'none',
         salesAmount: Math.ceil(salesDisplayAmount),
-        previousDeficit: Math.ceil(deficitDisplayAmount), // Теперь это может быть и излишек (отрицательное число)
-        isCore: !!modelKey && coreIngredientConfigs.some(c => c.name === data.config.name)
+        previousDeficit: Math.ceil(deficitDisplayAmount),
+        isCore:
+          !!modelKey &&
+          coreIngredientConfigs.some(c => c.name === data.config.name),
+        type: data.config.type, // Передаем тип
+        syrupOptions: data.config.syrupOptions, // Передаем варианты сиропа
+        // Для чекбоксов по умолчанию не отмечены
+        checked: false,
       });
     }
   });
@@ -182,14 +202,22 @@ export const calculateShoppingList = (
 
     // Сортировка снеков по планограмме
     if (planogram && planogram.length > 0) {
-      const indexA = planogram.findIndex(p => normalizeForPlanogramComparison(p) === normalizeForPlanogramComparison(a.name));
-      const indexB = planogram.findIndex(p => normalizeForPlanogramComparison(p) === normalizeForPlanogramComparison(b.name));
-      
+      const indexA = planogram.findIndex(
+        p =>
+          normalizeForPlanogramComparison(p) ===
+          normalizeForPlanogramComparison(a.name)
+      );
+      const indexB = planogram.findIndex(
+        p =>
+          normalizeForPlanogramComparison(p) ===
+          normalizeForPlanogramComparison(b.name)
+      );
+
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
       if (indexA !== -1) return -1;
       if (indexB !== -1) return 1;
     }
-    
+
     return a.name.localeCompare(b.name, 'ru');
   });
 
