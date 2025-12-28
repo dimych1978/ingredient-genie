@@ -47,19 +47,6 @@ interface MachineOverview {
   };
 }
 
-// const isSpecialMachine = (machine: Machine | undefined): boolean => {
-//   if (!machine || !machine.model) return false;
-//   const model = machine.model.toLowerCase();
-//   return (
-//     model.includes('krea') ||
-//     model.includes('tcn') ||
-//     model.includes('unicum') ||
-//     model.includes('fas') ||
-//     model.includes('koro') ||
-//     model.includes('phedra')
-//   );
-// };
-
 export default function MachineStatusPage() {
   const params = useParams();
   const id = params.id as string;
@@ -80,62 +67,6 @@ export default function MachineStatusPage() {
   const { toast } = useToast();
 
   const machineData = useMemo(() => allMachines.find(m => m.id === id), [id]);
-
-  // const fetchMachineAndDateData = useCallback(async () => {
-  //   if (!id) return;
-
-  //   setIsLoading(true);
-  //   setError(null);
-  //   setHasUnsavedDate(false); // Сбрасываем флаг
-
-  //   try {
-  //     const overviewResult = await getMachineOverview(id);
-  //     setMachineOverview(overviewResult.data);
-
-  //     const lastCollectionDate = overviewResult.data?.cache?.last_collection_at;
-  //     const special = isSpecialMachine(machineData);
-
-  //     let finalStartDate: Date;
-
-  //     if (special) {
-  //       // ДЛЯ СПЕЦ. АППАРАТОВ: берем сохраненную дату
-  //       const dates = await getSpecialMachineDates();
-  //       const savedDateStr = dates[id];
-
-  //       if (savedDateStr) {
-  //         finalStartDate = new Date(savedDateStr);
-  //         setIsManualDate(true);
-  //       } else {
-  //         // Если нет сохраненной даты - показываем вчерашний день
-  //         // но НЕ сохраняем в БД
-  //         const yesterday = new Date();
-  //         yesterday.setDate(yesterday.getDate() - 1);
-  //         finalStartDate = yesterday;
-  //         setIsManualDate(true);
-  //         setHasUnsavedDate(true); // Дата не сохранена в БД
-  //       }
-  //     } else {
-  //       // Обычные аппараты - без изменений
-  //       if (lastCollectionDate) {
-  //         finalStartDate = new Date(lastCollectionDate);
-  //         setIsManualDate(false);
-  //       } else {
-  //         const yesterday = new Date();
-  //         yesterday.setDate(yesterday.getDate() - 1);
-  //         finalStartDate = yesterday;
-  //         setIsManualDate(true);
-  //       }
-  //     }
-
-  //     setEffectiveStartDate(finalStartDate.toISOString());
-  //   } catch (e) {
-  //     const err =
-  //       e instanceof Error ? e.message : 'Ошибка при загрузке данных аппарата';
-  //     setError(err);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [id, getMachineOverview, machineData]);
 
   const fetchMachineAndDateData = useCallback(async () => {
     if (!id) return;
@@ -201,28 +132,20 @@ export default function MachineStatusPage() {
       const isoDate = date.toISOString();
       setEffectiveStartDate(isoDate);
       setHasUnsavedDate(true);
-      // if (isSpecialMachine(machineData)) {
-      //   const result = await setSpecialMachineDate(id, isoDate);
-      //   if (result.success) {
-      //     toast({
-      //       title: 'Дата сохранена',
-      //       description: 'Начальная дата для этого аппарата обновлена.',
-      //     });
-      //   } else {
-      //     toast({
-      //       variant: 'destructive',
-      //       title: 'Ошибка',
-      //       description: 'Не удалось сохранить дату.',
-      //     });
-      //   }
-      // }
     },
     [id, machineData, toast]
   );
 
+  useEffect(() => {
+  if (effectiveStartDate && !isLoading) {
+    // Тут нужно вызвать перезагрузку ShoppingList
+    // Но ShoppingList внутри сам загружает данные при forceLoad=true
+    // Нужно передать какой-то сигнал для перезагрузки
+  }
+}, [effectiveStartDate]);
+
   const refreshTimestamp = useCallback(async (newTimestamp: string) => {
     setEffectiveStartDate(newTimestamp);
-    // No toast needed here, as it's an automatic update on save
   }, []);
 
   if (isLoading) {
@@ -391,6 +314,7 @@ export default function MachineStatusPage() {
             </div>
           )}
           <ShoppingList
+          key={`${id}-${effectiveStartDate}`}
             machineIds={[id]}
             title={`Что брать к аппарату #${id}`}
             description={
@@ -398,6 +322,7 @@ export default function MachineStatusPage() {
                 ? 'Аппарат обслужен - следующий расчёт будет от текущей даты'
                 : 'Список расходников на основе продаж'
             }
+            dateFrom={new Date (effectiveStartDate)}
             showControls={false}
             forceLoad={true}
             specialMachineDates={

@@ -53,7 +53,7 @@ interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
   loadedAmount?: number;
   checked?: boolean;
-  checkedType?: ('big' | 'small');
+  checkedType?: 'big' | 'small';
   selectedSyrups?: string[];
 }
 
@@ -61,6 +61,7 @@ interface ShoppingListProps {
   machineIds: string[];
   title?: string;
   description?: string;
+  dateFrom: Date;
   showControls?: boolean;
   forceLoad?: boolean;
   specialMachineDates?: Record<string, string>;
@@ -74,6 +75,7 @@ export const ShoppingList = ({
   machineIds: initialMachineIds,
   title = 'Shopping List',
   description,
+  dateFrom,
   showControls = true,
   forceLoad = false,
   specialMachineDates = {},
@@ -91,10 +93,10 @@ export const ShoppingList = ({
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
-  const dateFrom = useMemo(() => {
-    const machineDateStr = specialMachineDates[machineIds[0]];
-    return machineDateStr ? new Date(machineDateStr) : new Date();
-  }, [specialMachineDates, machineIds]);
+  // const dateFrom = useMemo(() => {
+  //   const machineDateStr = specialMachineDates[machineIds[0]];
+  //   return machineDateStr ? new Date(machineDateStr) : new Date();
+  // }, [specialMachineDates, machineIds]);
 
   const isKreaTouch = useMemo(() => {
     const machine = allMachines.find(m => m.id === machineIds[0]);
@@ -119,7 +121,11 @@ export const ShoppingList = ({
     return 'normal';
   };
 
-  const handleCheckboxChange = (index: number, checked: boolean, checkedType?: string) => {
+  const handleCheckboxChange = (
+    index: number,
+    checked: boolean,
+    checkedType?: string
+  ) => {
     setShoppingList(prev =>
       prev.map((item, i) => (i === index ? { ...item, checked } : item))
     );
@@ -169,19 +175,28 @@ export const ShoppingList = ({
 
       for (const vmId of machineIds) {
         try {
-          let startDate: Date;
-          const isSpecial = isSpecialMachine(
-            allMachines?.find(m => m.id === vmId)
-          );
+          const startDate = dateFrom;
+          // const isSpecial = isSpecialMachine(
+          //   allMachines?.find(m => m.id === vmId)
+          // );
 
-          if (isSpecial && specialMachineDates[vmId]) {
-            startDate = new Date(specialMachineDates[vmId]);
-          } else {
-            const machineOverview = await getMachineOverview(vmId);
-            startDate = machineOverview?.data?.cache?.last_collection_at
-              ? new Date(machineOverview.data.cache.last_collection_at)
-              : dateFrom;
-          }
+          // const machineOverview = await getMachineOverview(vmId);
+          // const lastCollection = machineOverview?.data?.cache
+          //   ?.last_collection_at
+          //   ? new Date(machineOverview.data.cache.last_collection_at)
+          //   : null;
+
+          // if (isSpecial && specialMachineDates[vmId]) {
+          //   startDate = new Date(specialMachineDates[vmId]);
+          // } else if (lastCollection) {
+          //   // Для обычных аппаратов - используем ПОЗДНЮЮ дату из lastCollection ИЛИ dateFrom
+          //   startDate = dateFrom > lastCollection ? dateFrom : lastCollection;
+          // } else {
+          //   const machineOverview = await getMachineOverview(vmId);
+          //   startDate = machineOverview?.data?.cache?.last_collection_at
+          //     ? new Date(machineOverview.data.cache.last_collection_at)
+          //     : dateFrom;
+          // }
 
           const salesData: TelemetronSalesResponse = await getSalesByProducts(
             vmId,
@@ -565,60 +580,104 @@ export const ShoppingList = ({
                           </>
                         )}
                       </div>
-{!isFullyReplenished && (
-  <div className='flex items-center gap-2'>
-    {isKreaTouch && getKreaTouchItemType(item.name) === 'checkbox' ? (
-      // ТОЛЬКО чекбокс для чекбокс-товаров
-      <div className='flex flex-col gap-2'>
-        {/* Если это стаканчик или крышка - показываем 2 чекбокса */}
-        {['стаканчик', 'крышка'].some(name => item.name.toLowerCase().includes(name)) ? (
-          <>
-            <div className='flex items-center gap-2'>
-              <button
-                onClick={() => handleCheckboxChange(index, !item.checked, 'big')}
-                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-              >
-                {item.checkedType === 'big' && (
-                  <CircleCheckBig className='h-4 w-4 text-green-500' />
-                )}
-              </button>
-              <span className={`text-sm ${item.checkedType === 'big' ? 'text-green-500' : 'text-yellow-200'}`}>
-                {item.checkedType === 'big' ? 'Не надо' : 'Большой'}
-              </span>
-            </div>
-            
-            <div className='flex items-center gap-2'>
-              <button
-                onClick={() => handleCheckboxChange(index, !item.checked, 'small')}
-                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-              >
-                {item.checkedType === 'small' && (
-                  <CircleCheckBig className='h-4 w-4 text-green-500' />
-                )}
-              </button>
-              <span className={`text-sm ${item.checkedType === 'small' ? 'text-green-500' : 'text-yellow-200'}`}>
-                {item.checkedType === 'small' ? 'Не надо' : 'Малый'}
-              </span>
-            </div>
-          </>
-        ) : (
-          // Для остальных чекбокс-товаров (размешиватель, сахар) - один чекбокс
-          <div className='flex items-center gap-2'>
-            <button
-              onClick={() => handleCheckboxChange(index, !item.checked, item?.checkedType)}
-              className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-            >
-              {item.checked && (
-                <CircleCheckBig className='h-4 w-4 text-green-500' />
-              )}
-            </button>
-            <span className={`text-sm ${item.checked ? 'text-green-500' : 'text-yellow-200'}`}>
-              {item.checked ? 'Не надо' : 'Нужно'}
-            </span>
-          </div>
-        )}
-      </div>
-    ) : isKreaTouch && getKreaTouchItemType(item.name) === 'syrup' ? (                            // ТОЛЬКО селектор сиропов (без кнопок X/Pencil)
+                      {!isFullyReplenished && (
+                        <div className='flex items-center gap-2'>
+                          {isKreaTouch &&
+                          getKreaTouchItemType(item.name) === 'checkbox' ? (
+                            // ТОЛЬКО чекбокс для чекбокс-товаров
+                            <div className='flex flex-col gap-2'>
+                              {/* Если это стаканчик или крышка - показываем 2 чекбокса */}
+                              {['стаканчик', 'крышка'].some(name =>
+                                item.name.toLowerCase().includes(name)
+                              ) ? (
+                                <>
+                                  <div className='flex items-center gap-2'>
+                                    <button
+                                      onClick={() =>
+                                        handleCheckboxChange(
+                                          index,
+                                          !item.checked,
+                                          'big'
+                                        )
+                                      }
+                                      className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                    >
+                                      {item.checkedType === 'big' && (
+                                        <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                      )}
+                                    </button>
+                                    <span
+                                      className={`text-sm ${
+                                        item.checkedType === 'big'
+                                          ? 'text-green-500'
+                                          : 'text-yellow-200'
+                                      }`}
+                                    >
+                                      {item.checkedType === 'big'
+                                        ? 'Не надо'
+                                        : 'Большой'}
+                                    </span>
+                                  </div>
+
+                                  <div className='flex items-center gap-2'>
+                                    <button
+                                      onClick={() =>
+                                        handleCheckboxChange(
+                                          index,
+                                          !item.checked,
+                                          'small'
+                                        )
+                                      }
+                                      className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                    >
+                                      {item.checkedType === 'small' && (
+                                        <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                      )}
+                                    </button>
+                                    <span
+                                      className={`text-sm ${
+                                        item.checkedType === 'small'
+                                          ? 'text-green-500'
+                                          : 'text-yellow-200'
+                                      }`}
+                                    >
+                                      {item.checkedType === 'small'
+                                        ? 'Не надо'
+                                        : 'Малый'}
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                // Для остальных чекбокс-товаров (размешиватель, сахар) - один чекбокс
+                                <div className='flex items-center gap-2'>
+                                  <button
+                                    onClick={() =>
+                                      handleCheckboxChange(
+                                        index,
+                                        !item.checked,
+                                        item?.checkedType
+                                      )
+                                    }
+                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                  >
+                                    {item.checked && (
+                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                    )}
+                                  </button>
+                                  <span
+                                    className={`text-sm ${
+                                      item.checked
+                                        ? 'text-green-500'
+                                        : 'text-yellow-200'
+                                    }`}
+                                  >
+                                    {item.checked ? 'Не надо' : 'Нужно'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : isKreaTouch &&
+                            getKreaTouchItemType(item.name) === 'syrup' ? ( // ТОЛЬКО селектор сиропов (без кнопок X/Pencil)
                             <div className='w-48'>
                               <div className='text-sm text-gray-300 mb-1'>
                                 Выберите сиропы:
