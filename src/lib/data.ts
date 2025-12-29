@@ -1682,13 +1682,25 @@ export const machineIngredients: MachineIngredients = {
   },
   // Чекбоксы
   { 
-    name: 'стаканчик', 
+    name: 'стаканчик большой', 
     apiNames: ['Стаканчик'], 
     unit: 'шт', 
     type: 'checkbox' 
   },
   { 
-    name: 'крышка', 
+    name: 'стаканчик малый', 
+    apiNames: ['Стаканчик'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  { 
+    name: 'крышка большая', 
+    apiNames: ['Крышка'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  { 
+    name: 'крышка малая', 
     apiNames: ['Крышка'], 
     unit: 'шт', 
     type: 'checkbox' 

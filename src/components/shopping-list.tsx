@@ -11,6 +11,7 @@ import type {
   TelemetronSaleItem,
   LoadingStatus,
   LoadingOverrides,
+  LoadingOverride,
   ShoppingListItem,
 } from '@/types/telemetron';
 import {
@@ -245,6 +246,7 @@ export const ShoppingList = ({
             ...item,
             status: override?.status || 'none',
             loadedAmount: item.amount,
+            checked: override?.checked || false,
           };
         }
       );
@@ -316,74 +318,100 @@ export const ShoppingList = ({
     );
   };
 
-  const handleSaveOverrides = async () => {
-    if (machineIds.length > 1) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Сохранение статусов доступно только для одного аппарата.',
-      });
-      return;
-    }
+const handleSaveOverrides = async () => {
+  if (machineIds.length > 1) {
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка',
+      description: 'Сохранение статусов доступно только для одного аппарата.',
+    });
+    return;
+  }
 
-    setSaving(true);
-    const machineId = machineIds[0];
+  setSaving(true);
+  const machineId = machineIds[0];
 
-    try {
-      const overridesToSave: LoadingOverrides = {};
-      shoppingList.forEach((item, index) => {
-        const key = `${machineId}-${item.name}`;
-        if (item.status === 'none') {
-          overridesToSave[key] = {
-            status: 'none',
-            requiredAmount: item.amount,
-            loadedAmount: item.amount,
-            timestamp: new Date().toISOString(),
-          };
+  try {
+    const overridesToSave: LoadingOverrides = {};
+    
+    shoppingList.forEach((item, index) => {
+      const key = `${machineId}-${item.name}`;
+      const actualLoadedAmount = loadedAmounts[index] || item.amount;
+      
+      const isCheckboxItem = isKreaTouch && getKreaTouchItemType(item.name) === 'checkbox';
+      const isOperaCheckbox = isOpera && getOperaItemType(item.name) === 'checkbox';
+      const isSyrupItem = isKreaTouch && getKreaTouchItemType(item.name) === 'syrup';
+      
+      // Сохраняем ВСЕ типы товаров
+      if (item.status === 'none' || isCheckboxItem || isOperaCheckbox || isSyrupItem) {
+        let status: LoadingStatus
+        const override: LoadingOverride = {
+          status: 'none',
+          requiredAmount: item.amount,
+          loadedAmount: actualLoadedAmount,
+          timestamp: new Date().toISOString(),
+        };
+        
+        // Определяем статус
+        if (isCheckboxItem || isOperaCheckbox) {
+          status = item.checked ? 'none' : 'partial';
+          override.checked = item.checked;
+        } else if (isSyrupItem) {
+          status = item.selectedSyrups?.length ? 'none' : 'partial';
+          override.selectedSyrups = item.selectedSyrups || [];
+        } else if (isSyrupItem){
+          status = item.status;
         }
-      });
-
-      const result = await saveLoadingOverrides(overridesToSave);
-      const machine = allMachines.find(m => m.id === machineId);
-
-      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-        const now = new Date();
-        const newTimestamp = now.toISOString();
-        const dateUpdateResult = await setSpecialMachineDate(
-          machineId,
-          newTimestamp
-        );
-        if (dateUpdateResult.success && onTimestampUpdate) {
-          onTimestampUpdate(newTimestamp);
-          toast({
-            title: 'Дата инкассации обновлена',
-            description: `Теперь продажи будут считаться с ${format(
-              new Date(newTimestamp),
-              'dd.MM.yyyy HH:mm'
-            )}`,
-          });
-        }
+        else {status = item.status}
+        
+        overridesToSave[key] = override;
       }
+    });
 
-      if (result.success) {
+    const result = await saveLoadingOverrides(overridesToSave);
+    
+    // Сохраняем время сохранения состояния
+    await saveLastSaveTime(machineId, new Date().toISOString());
+    
+    const machine = allMachines.find(m => m.id === machineId);
+
+    if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+      const now = new Date();
+      const newTimestamp = now.toISOString();
+      const dateUpdateResult = await setSpecialMachineDate(machineId, newTimestamp);
+      
+      await saveTelemetronPress(machineId, newTimestamp);
+      
+      if (dateUpdateResult.success && onTimestampUpdate) {
+        onTimestampUpdate(newTimestamp);
         toast({
-          title: 'Сохранено',
-          description: 'Статус пополнения сохранен.',
+          title: 'Дата инкассации обновлена',
+          description: `Теперь продажи будут считаться с ${format(
+            new Date(newTimestamp),
+            'dd.MM.yyyy HH:mm'
+          )}`,
         });
-      } else {
-        throw new Error('Не удалось сохранить данные на сервере.');
       }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка сохранения',
-        description:
-          error instanceof Error ? error.message : 'Неизвестная ошибка.',
-      });
-    } finally {
-      setSaving(false);
     }
-  };
+
+    if (result.success) {
+      toast({
+        title: 'Сохранено',
+        description: 'Состояние всех позиций сохранено.',
+      });
+    } else {
+      throw new Error('Не удалось сохранить данные на сервере.');
+    }
+  } catch (error) {
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка сохранения',
+      description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
+    });
+  } finally {
+    setSaving(false);
+  }
+};
 
   const downloadList = () => {
     const periodStr = `${format(dateFrom, 'dd.MM.yyyy HH:mm')}-Сейчас`;

@@ -54,6 +54,8 @@ export interface LoadingOverride {
   loadedAmount: number;
   carryOver?: number; // Сколько недополнено (для переноса)
   timestamp?: string;
+  checked?: boolean;
+  selectedSyrups?: string[];
 }
 
 export type LoadingOverrides = Record<string, LoadingOverride>;
