@@ -16,7 +16,9 @@ import type {
 } from '@/types/telemetron';
 import {
   getLoadingOverrides,
+  saveLastSaveTime,
   saveLoadingOverrides,
+  saveTelemetronPress,
   setSpecialMachineDate,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';

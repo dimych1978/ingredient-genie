@@ -8,6 +8,47 @@ import type { LoadingOverride } from '@/types/telemetron';
 
 const DATES_KEY = 'special-machine-dates';
 
+const TELEMETRON_PRESS_KEY_PREFIX = 'telemetron-press:';
+const LAST_SAVE_KEY_PREFIX = 'last-save:';
+
+// Сохраняем время нажатия Telemetron
+export async function saveTelemetronPress(machineId: string, timestamp: string): Promise<void> {
+  try {
+    await kv.set(`${TELEMETRON_PRESS_KEY_PREFIX}${machineId}`, timestamp);
+  } catch (error) {
+    console.error('Ошибка сохранения нажатия Telemetron:', error);
+  }
+}
+
+// Получаем последнее нажатие Telemetron
+export async function getLastTelemetronPress(machineId: string): Promise<string | null> {
+  try {
+    return await kv.get<string>(`${TELEMETRON_PRESS_KEY_PREFIX}${machineId}`);
+  } catch (error) {
+    console.error('Ошибка чтения нажатия Telemetron:', error);
+    return null;
+  }
+}
+
+// Сохраняем время последнего сохранения состояния
+export async function saveLastSaveTime(machineId: string, timestamp: string): Promise<void> {
+  try {
+    await kv.set(`${LAST_SAVE_KEY_PREFIX}${machineId}`, timestamp);
+  } catch (error) {
+    console.error('Ошибка сохранения времени сохранения:', error);
+  }
+}
+
+// Получаем время последнего сохранения состояния
+export async function getLastSaveTime(machineId: string): Promise<string | null> {
+  try {
+    return await kv.get<string>(`${LAST_SAVE_KEY_PREFIX}${machineId}`);
+  } catch (error) {
+    console.error('Ошибка чтения времени сохранения:', error);
+    return null;
+  }
+}
+
 export async function getSpecialMachineDates(): Promise<Record<string, string>> {
   try {
     const dates = await kv.get<Record<string, string>>(DATES_KEY);
