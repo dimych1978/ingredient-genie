@@ -1651,7 +1651,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'банан', apiNames: ['Банан'], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'стаканы 300', apiNames: ['Стаканчик', 'Стакан'], unit: 'шт', type: 'auto' },
-    { name: 'крышки 80', apiNames: ['Крышка'], unit: 'шт', type: 'auto' },
+    { name: 'крышки 80', apiNames: ['Крышка'], unit: 'шт', type: 'manual' },
     { name: 'размешиватели 125', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
@@ -1678,7 +1678,7 @@ export const machineIngredients: MachineIngredients = {
     name: 'сахар', 
     apiNames: ['Сахар'], 
     unit: 'г', 
-    type: 'auto' 
+    type: 'checkbox' 
   },
   // Чекбоксы
   { 

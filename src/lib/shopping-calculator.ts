@@ -1,7 +1,5 @@
-//shopping-calculator.ts
 import type {
   TelemetronSaleItem,
-  TelemetronIngredient,
   LoadingOverrides,
   ShoppingListItem,
   Ingredient,
@@ -11,7 +9,6 @@ import {
   allMachines,
   machineIngredients,
   getIngredientConfig,
-  type Machine,
 } from './data';
 
 export type SortType = 'grouped' | 'alphabetical';
@@ -104,7 +101,7 @@ export const calculateShoppingList = (
           config: config || {
             name: key,
             unit: 'шт',
-            type: 'manual',
+            type: 'auto',
             apiNames: [key],
           },
           sales: 0,
@@ -116,7 +113,7 @@ export const calculateShoppingList = (
     }
   });
 
-  // 2. Обработка переносов (overrides) - теперь учитывает и излишки (отрицательное значение)
+  // 2. Обработка переносов (overrides)
   Object.keys(overrides).forEach(overrideKey => {
     if (!overrideKey.startsWith(`${machineId}-`)) return;
 
@@ -124,8 +121,8 @@ export const calculateShoppingList = (
     if (itemNameFromOverride.toLowerCase() === 'item') return;
 
     const override = overrides[overrideKey];
-    if (override.carryOver) {
-      // Проверяем само наличие carryOver
+
+    if (override.carryOver !== undefined && override.carryOver !== null) {
       const config = getIngredientConfig(itemNameFromOverride, machine?.model);
       const key = config ? config.name : itemNameFromOverride;
 
@@ -135,22 +132,22 @@ export const calculateShoppingList = (
           config: config || {
             name: key,
             unit: 'шт',
-            type: 'manual',
+            type: 'auto',
             apiNames: [key],
           },
           sales: 0,
           carryOver: 0,
         };
       }
-      // Просто прибавляем carryOver. Если он отрицательный (излишек), он вычтется.
+      
       totals[key].amount += override.carryOver;
-      totals[key].carryOver += override.carryOver;
+      totals[key].carryOver = override.carryOver;
     }
   });
 
   const allItems: ShoppingListItem[] = [];
 
-  // 3. Формируем финальный список
+  // 3. Формируем финальный список - ВСЕГДА ВЫВОДИМ ВСЕ ТОВАРЫ
   Object.keys(totals).forEach(key => {
     const data = totals[key];
     const { unit: displayUnit, displayAmount } = getDisplayUnit(
@@ -166,24 +163,21 @@ export const calculateShoppingList = (
       data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
     );
 
-    // Показываем в списке, если есть продажи, или есть перенос, или требуется > 0
-    if (displayAmount > 0 || data.sales > 0 || data.carryOver !== 0) {
-      allItems.push({
-        name: data.config.name,
-        amount: Math.ceil(Math.max(0, displayAmount)),
-        unit: displayUnit,
-        status: overrides[`${machineId}-${key}`]?.status || 'none',
-        salesAmount: Math.ceil(salesDisplayAmount),
-        previousDeficit: Math.ceil(deficitDisplayAmount),
-        isCore:
-          !!modelKey &&
-          coreIngredientConfigs.some(c => c.name === data.config.name),
-        type: data.config.type, // Передаем тип
-        syrupOptions: data.config.syrupOptions, // Передаем варианты сиропа
-        // Для чекбоксов по умолчанию не отмечены
-        checked: false,
-      });
-    }
+    // ВСЕГДА добавляем товар в список
+    allItems.push({
+      name: data.config.name,
+      amount: Math.ceil(Math.max(0, displayAmount)),
+      unit: displayUnit,
+      status: overrides[`${machineId}-${key}`]?.status || 'none',
+      salesAmount: Math.ceil(salesDisplayAmount),
+      previousDeficit: Math.ceil(deficitDisplayAmount),
+      isCore:
+        !!modelKey &&
+        coreIngredientConfigs.some(c => c.name === data.config.name),
+      type: data.config.type || 'auto',
+      syrupOptions: data.config.syrupOptions,
+      checked: false,
+    });
   });
 
   // 4. Сортируем

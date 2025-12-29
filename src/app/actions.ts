@@ -1,4 +1,3 @@
-//actions.ts
 'use server';
 
 import { kv } from '@/lib/kv';
@@ -55,7 +54,7 @@ export async function getSpecialMachineDates(): Promise<Record<string, string>> 
     return dates || {};
   } catch (error) {
     console.error('Ошибка чтения дат из KV:', error);
-    throw new Error('Не удалось прочитать файл с датами.');
+    return {};
   }
 }
 
@@ -71,29 +70,28 @@ export async function setSpecialMachineDate(id: string, date: string): Promise<{
   }
 }
 
-
 // --- Функции для работы с файлом истории заявок ---
 
 const SCHEDULES_KEY_PREFIX = 'daily-schedule:';
 
 export async function getDailySchedule(date: string): Promise<string[] | null> {
-    try {
-        const schedule = await kv.get<string[]>(`${SCHEDULES_KEY_PREFIX}${date}`);
-        return schedule || null;
-    } catch (error) {
-        console.error('Ошибка чтения заявки из KV:', error);
-        throw new Error('Не удалось прочитать файл с заявками.');
-    }
+  try {
+    const schedule = await kv.get<string[]>(`${SCHEDULES_KEY_PREFIX}${date}`);
+    return schedule || null;
+  } catch (error) {
+    console.error('Ошибка чтения заявки из KV:', error);
+    return null;
+  }
 }
 
 export async function saveDailySchedule(date: string, machineIds: string[]): Promise<{ success: boolean }> {
-    try {
-        await kv.set(`${SCHEDULES_KEY_PREFIX}${date}`, machineIds);
-        return { success: true };
-    } catch (error) {
-        console.error('Ошибка сохранения заявки в KV:', error);
-        return { success: false };
-    }
+  try {
+    await kv.set(`${SCHEDULES_KEY_PREFIX}${date}`, machineIds);
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка сохранения заявки в KV:', error);
+    return { success: false };
+  }
 }
 
 // --- Функции для работы с состоянием загрузки ингредиентов ---
@@ -108,7 +106,7 @@ async function readAllOverrides(): Promise<LoadingOverrides> {
     return overrides || {};
   } catch (error) {
     console.error('Ошибка чтения состояний загрузки из KV:', error);
-    throw new Error('Не удалось прочитать файл состояний.');
+    return {};
   }
 }
 
@@ -140,8 +138,13 @@ export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): P
     // Обновляем или добавляем override'ы
     Object.keys(overridesToSave).forEach(key => {
       const override = overridesToSave[key];
-      // Теперь carryOver может быть отрицательным (излишек)
-      const carryOver = (override.requiredAmount || 0) - (override.loadedAmount || 0);
+      
+      // Используем переданный carryOver или рассчитываем
+      let carryOver = override.carryOver;
+      if (carryOver === undefined || carryOver === null) {
+        carryOver = (override.requiredAmount || 0) - (override.loadedAmount || 0);
+      }
+      
       updatedOverrides[key] = {
         ...override,
         carryOver,
@@ -152,7 +155,7 @@ export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): P
     await kv.set(OVERRIDES_KEY, updatedOverrides);
     return { success: true };
   } catch (error) {
-    console.error(error);
+    console.error('Ошибка сохранения overrides:', error);
     return { success: false };
   }
 }
