@@ -11,11 +11,14 @@ import type {
   TelemetronSaleItem,
   LoadingStatus,
   LoadingOverrides,
+  LoadingOverride,
   ShoppingListItem,
 } from '@/types/telemetron';
 import {
   getLoadingOverrides,
+  saveLastSaveTime,
   saveLoadingOverrides,
+  saveTelemetronPress,
   setSpecialMachineDate,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
@@ -93,51 +96,52 @@ export const ShoppingList = ({
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
-  const isKreaTouch = useMemo(() => {
-    const machine = allMachines.find(m => m.id === machineIds[0]);
-    return machine?.model?.toLowerCase().includes('krea');
-  }, [machineIds]);
-
-  const isOpera = useMemo(() => {
-    const machine = allMachines.find(m => m.id === machineIds[0]);
-    return machine?.model?.toLowerCase().includes('opera');
-  }, [machineIds]);
-
-  const { getSalesByProducts, getMachineOverview } = useTelemetronApi();
+  const { getSalesByProducts } = useTelemetronApi();
   const { toast } = useToast();
 
   useEffect(() => {
     setMachineIds(initialMachineIds);
   }, [initialMachineIds]);
 
-  const getKreaTouchItemType = (
-    itemName: string
-  ): 'normal' | 'checkbox' | 'syrup' => {
-    if (!isKreaTouch) return 'normal';
-    const lowerName = itemName.toLowerCase();
-    const checkboxItems = ['стаканчик', 'крышка', 'размешиватель', 'сахар'];
-    if (checkboxItems.some(name => lowerName.includes(name))) return 'checkbox';
-    if (lowerName.includes('сироп')) return 'syrup';
-    return 'normal';
-  };
- 
-  const getOperaItemType = (
-    itemName: string
-  ): 'normal' | 'checkbox' => {
-    if (!isOpera) return 'normal';
-    const lowerName = itemName.toLowerCase();
-    
-    if (lowerName.includes('крышк')) return 'checkbox';
-    return 'normal';
-  };
-
   const handleCheckboxChange = (
     index: number,
     checked: boolean,
-    checkedType?: string
+    checkedType?: 'big' | 'small'
   ) => {
     setShoppingList(prev =>
-      prev.map((item, i) => (i === index ? { ...item, checked } : item))
+      prev.map((item, i) => {
+        if (i !== index) return item;
+
+        const itemName = item.name.toLowerCase();
+        const isCupOrLid =
+          itemName.includes('стакан') || itemName.includes('крышк');
+
+        if (isCupOrLid && checkedType) {
+          // Для стаканчиков и крышек с размерами
+          if (checkedType === item.checkedType) {
+            // Снимаем текущий выбор
+            return {
+              ...item,
+              checked: false,
+              checkedType: undefined,
+            };
+          } else {
+            // Выбираем новый тип
+            return {
+              ...item,
+              checked: true,
+              checkedType: checkedType,
+            };
+          }
+        } else {
+          // Для остальных просто переключаем состояние
+          return {
+            ...item,
+            checked: !item.checked,
+            checkedType: undefined,
+          };
+        }
+      })
     );
   };
 
@@ -186,28 +190,6 @@ export const ShoppingList = ({
       for (const vmId of machineIds) {
         try {
           const startDate = dateFrom;
-          // const isSpecial = isSpecialMachine(
-          //   allMachines?.find(m => m.id === vmId)
-          // );
-
-          // const machineOverview = await getMachineOverview(vmId);
-          // const lastCollection = machineOverview?.data?.cache
-          //   ?.last_collection_at
-          //   ? new Date(machineOverview.data.cache.last_collection_at)
-          //   : null;
-
-          // if (isSpecial && specialMachineDates[vmId]) {
-          //   startDate = new Date(specialMachineDates[vmId]);
-          // } else if (lastCollection) {
-          //   // Для обычных аппаратов - используем ПОЗДНЮЮ дату из lastCollection ИЛИ dateFrom
-          //   startDate = dateFrom > lastCollection ? dateFrom : lastCollection;
-          // } else {
-          //   const machineOverview = await getMachineOverview(vmId);
-          //   startDate = machineOverview?.data?.cache?.last_collection_at
-          //     ? new Date(machineOverview.data.cache.last_collection_at)
-          //     : dateFrom;
-          // }
-
           const salesData: TelemetronSalesResponse = await getSalesByProducts(
             vmId,
             format(startDate, 'yyyy-MM-dd HH:mm:ss'),
@@ -241,23 +223,28 @@ export const ShoppingList = ({
         item => {
           const overrideKey = `${machineIds[0]}-${item.name}`;
           const override = machineOverrides[overrideKey];
+
           return {
             ...item,
             status: override?.status || 'none',
-            loadedAmount: item.amount,
+            loadedAmount: override?.loadedAmount ?? item.amount,
+            checked: override?.checked ?? false,
+            checkedType: override?.checkedType,
+            selectedSyrups: override?.selectedSyrups || [],
           };
         }
       );
 
       setShoppingList(listWithStatus);
-      setLoadedAmounts(listWithStatus.map(item => item.amount));
+      setLoadedAmounts(
+        listWithStatus.map(item => item.loadedAmount ?? item.amount)
+      );
 
       if (listWithStatus.length === 0) {
         toast({
           variant: 'default',
           title: 'Нет продаж',
-          description:
-            'За выбранный период продаж не найдено или все пополнено.',
+          description: 'За выбранный период продаж не найдено.',
         });
       }
     } catch (error) {
@@ -273,15 +260,7 @@ export const ShoppingList = ({
     } finally {
       setLoading(false);
     }
-  }, [
-    machineIds,
-    getSalesByProducts,
-    getMachineOverview,
-    toast,
-    specialMachineDates,
-    sort,
-    dateFrom,
-  ]);
+  }, [machineIds, getSalesByProducts, toast, sort, dateFrom]);
 
   useEffect(() => {
     if (forceLoad) loadShoppingList();
@@ -295,7 +274,9 @@ export const ShoppingList = ({
               ...item,
               status,
               loadedAmount:
-                status === 'partial' ? loadedAmounts[index] : undefined,
+                status === 'partial'
+                  ? item.loadedAmount || item.amount
+                  : undefined,
             }
           : item
       )
@@ -331,19 +312,48 @@ export const ShoppingList = ({
 
     try {
       const overridesToSave: LoadingOverrides = {};
+
       shoppingList.forEach((item, index) => {
         const key = `${machineId}-${item.name}`;
-        if (item.status === 'none') {
-          overridesToSave[key] = {
-            status: 'none',
-            requiredAmount: item.amount,
-            loadedAmount: item.amount,
-            timestamp: new Date().toISOString(),
-          };
+        const actualLoadedAmount = loadedAmounts[index] || item.amount;
+
+        const override: LoadingOverride = {
+          status: item.status,
+          requiredAmount: item.amount,
+          loadedAmount: actualLoadedAmount,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Сохраняем состояние чекбоксов
+        if (item.type === 'checkbox' || item.type === 'manual') {
+          override.checked = item.checked;
+          override.checkedType = item.checkedType;
         }
+
+        // Сохраняем выбранные сиропы
+        if (item.type === 'select') {
+          override.selectedSyrups = item.selectedSyrups || [];
+        }
+
+        // Рассчитываем carryOver для обычных товаров
+        if (item.type === 'auto') {
+          const itemType = item.type || 'auto';
+          if (!['checkbox', 'manual', 'select'].includes(itemType)) {
+            if (item.status === 'none') {
+              override.carryOver = item.amount;
+            } else if (item.status === 'partial') {
+              override.carryOver = item.amount - actualLoadedAmount;
+            }
+          }
+        }
+
+        overridesToSave[key] = override;
       });
 
       const result = await saveLoadingOverrides(overridesToSave);
+
+      await saveLastSaveTime(machineId, new Date().toISOString());
+
       const machine = allMachines.find(m => m.id === machineId);
 
       if (machine && (isSpecialMachine(machine) || markAsServiced)) {
@@ -353,6 +363,9 @@ export const ShoppingList = ({
           machineId,
           newTimestamp
         );
+
+        await saveTelemetronPress(machineId, newTimestamp);
+
         if (dateUpdateResult.success && onTimestampUpdate) {
           onTimestampUpdate(newTimestamp);
           toast({
@@ -368,12 +381,15 @@ export const ShoppingList = ({
       if (result.success) {
         toast({
           title: 'Сохранено',
-          description: 'Статус пополнения сохранен.',
+          description: 'Состояние всех позиций сохранено.',
         });
+
+        loadShoppingList();
       } else {
         throw new Error('Не удалось сохранить данные на сервере.');
       }
     } catch (error) {
+      console.error('Ошибка сохранения:', error);
       toast({
         variant: 'destructive',
         title: 'Ошибка сохранения',
@@ -525,11 +541,20 @@ export const ShoppingList = ({
               <TooltipProvider>
                 {shoppingList.map((item, index) => {
                   if (item.name.toLowerCase() === 'item') return null;
+
                   const isFullyReplenished = item.amount === 0;
                   const hasSales = item.salesAmount && item.salesAmount > 0;
                   const deficit = item.previousDeficit || 0;
                   const hasDeficit = deficit > 0;
                   const hasSurplus = deficit < 0;
+
+                  const isCheckboxItem =
+                    item.type === 'checkbox' || item.type === 'manual';
+                  const isSyrupItem = item.type === 'select';
+
+                  const isCupOrLid = ['стаканчик', 'крышка'].some(name =>
+                    item.name.toLowerCase().includes(name)
+                  );
 
                   return (
                     <div
@@ -548,17 +573,13 @@ export const ShoppingList = ({
                           {item.name}
                         </div>
 
-                        {(isKreaTouch &&
-                          getKreaTouchItemType(item.name) === 'checkbox') ||
-                        (getKreaTouchItemType(item.name) === 'syrup') || (getOperaItemType(item.name) === 'checkbox' )? (
-                          // Только для чекбокс-товаров Krea-Touch: показываем только продажи
-                          hasSales && (
-                            <div className='text-sm text-gray-400'>
-                              Продажи: {item.salesAmount} {item.unit}
-                            </div>
-                          )
+                        {isCheckboxItem || isSyrupItem ? (
+                          <div className='text-sm text-gray-400'>
+                            {hasSales
+                              ? `Продажи: ${item.salesAmount} ${item.unit}`
+                              : 'Расходные материалы'}
+                          </div>
                         ) : (
-                          // Для всех остальных товаров
                           <>
                             {(hasSales || hasDeficit || hasSurplus) && (
                               <div className='text-sm text-gray-400'>
@@ -590,134 +611,142 @@ export const ShoppingList = ({
                           </>
                         )}
                       </div>
-                      {!isFullyReplenished && (
-                        <div className='flex items-center gap-2'>
-                          {(isKreaTouch &&
-                          getKreaTouchItemType(item.name) === 'checkbox') || (isOpera && getOperaItemType(item.name) === 'checkbox') ? (
-                            // ТОЛЬКО чекбокс для чекбокс-товаров
-                            <div className='flex flex-col gap-2'>
-                              {/* Если это стаканчик или крышка - показываем 2 чекбокса */}
-                              {['стаканчик', 'крышка'].some(name =>
-                                item.name.toLowerCase().includes(name)
-                              ) ? (
-                                <>
-                                  <div className='flex items-center gap-2'>
-                                    <button
-                                      onClick={() =>
-                                        handleCheckboxChange(
-                                          index,
-                                          !item.checked,
-                                          'big'
-                                        )
-                                      }
-                                      className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-                                    >
-                                      {item.checkedType === 'big' && (
-                                        <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                      )}
-                                    </button>
-                                    <span
-                                      className={`text-sm ${
-                                        item.checkedType === 'big'
-                                          ? 'text-green-500'
-                                          : 'text-yellow-200'
-                                      }`}
-                                    >
-                                      {item.checkedType === 'big'
-                                        ? 'Не надо'
-                                        : 'Большой'}
-                                    </span>
-                                  </div>
 
-                                  <div className='flex items-center gap-2'>
-                                    <button
-                                      onClick={() =>
-                                        handleCheckboxChange(
-                                          index,
-                                          !item.checked,
-                                          'small'
-                                        )
-                                      }
-                                      className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-                                    >
-                                      {item.checkedType === 'small' && (
-                                        <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                      )}
-                                    </button>
-                                    <span
-                                      className={`text-sm ${
-                                        item.checkedType === 'small'
-                                          ? 'text-green-500'
-                                          : 'text-yellow-200'
-                                      }`}
-                                    >
-                                      {item.checkedType === 'small'
-                                        ? 'Не надо'
-                                        : 'Малый'}
-                                    </span>
-                                  </div>
-                                </>
-                              ) : (
-                                // Для остальных чекбокс-товаров (размешиватель, сахар) - один чекбокс
+                      <div className='flex items-center gap-2'>
+                        {isCheckboxItem ? (
+                          // Чекбокс-товары
+                          <div className='flex flex-col gap-2'>
+                            {isCupOrLid ? (
+                              <>
+                                {/* Большой размер */}
                                 <div className='flex items-center gap-2'>
+                                  <span className='text-sm text-yellow-200 mr-2'>
+                                    {item.name
+                                      .toLowerCase()
+                                      .includes('стаканчик')
+                                      ? 'Большой'
+                                      : 'Большая'}
+                                  </span>
                                   <button
                                     onClick={() =>
                                       handleCheckboxChange(
                                         index,
                                         !item.checked,
-                                        item?.checkedType
+                                        'big'
                                       )
                                     }
                                     className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
                                   >
-                                    {item.checked && (
+                                    {item.checkedType === 'big' && (
                                       <CircleCheckBig className='h-4 w-4 text-green-500' />
                                     )}
                                   </button>
                                   <span
                                     className={`text-sm ${
-                                      item.checked
+                                      item.checkedType === 'big'
                                         ? 'text-green-500'
                                         : 'text-yellow-200'
                                     }`}
                                   >
-                                    {item.checked ? 'Не надо' : 'Нужно'}
+                                    {item.checkedType === 'big'
+                                      ? 'Не надо'
+                                      : 'Нужно'}
                                   </span>
                                 </div>
-                              )}
-                            </div>
-                          ) : isKreaTouch &&
-                            getKreaTouchItemType(item.name) === 'syrup' ? ( // ТОЛЬКО селектор сиропов (без кнопок X/Pencil)
-                            <div className='w-48'>
-                              <div className='text-sm text-gray-300 mb-1'>
-                                Выберите сиропы:
-                              </div>
-                              <div className='space-y-1'>
-                                {[
-                                  { id: 'banana', name: 'Банан' },
-                                  { id: 'vanilla', name: 'Ваниль' },
-                                  { id: 'coconut', name: 'Кокос' },
-                                  { id: 'caramel', name: 'Карамель' },
-                                ].map(syrup => {
-                                  const isSelected =
-                                    item.selectedSyrups?.includes(syrup.id) ||
-                                    false;
 
-                                  return (
-                                    <div
-                                      key={syrup.id}
-                                      className='flex items-center gap-2 cursor-pointer'
-                                      onClick={() => {
-                                        const selectedSyrups =
-                                          item.selectedSyrups || [];
-                                        const newSelected = isSelected
-                                          ? selectedSyrups.filter(
-                                              id => id !== syrup.id
-                                            )
-                                          : [...selectedSyrups, syrup.id];
-                                        handleSyrupChange(index, newSelected);
-                                      }}
-                                    >
+                                {/* Малый размер */}
+                                <div className='flex items-center gap-2'>
+                                  <span className='text-sm text-yellow-200 mr-2'>
+                                    {item.name
+                                      .toLowerCase()
+                                      .includes('стаканчик')
+                                      ? 'Малый'
+                                      : 'Малая'}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      handleCheckboxChange(
+                                        index,
+                                        !item.checked,
+                                        'small'
+                                      )
+                                    }
+                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                  >
+                                    {item.checkedType === 'small' && (
+                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                    )}
+                                  </button>
+                                  <span
+                                    className={`text-sm ${
+                                      item.checkedType === 'small'
+                                        ? 'text-green-500'
+                                        : 'text-yellow-200'
+                                    }`}
+                                  >
+                                    {item.checkedType === 'small'
+                                      ? 'Не надо'
+                                      : 'Нужно'}
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              // Для остальных чекбокс-товаров
+                              <div className='flex items-center gap-2'>
+                                <button
+                                  onClick={() =>
+                                    handleCheckboxChange(
+                                      index,
+                                      !item.checked,
+                                      item?.checkedType
+                                    )
+                                  }
+                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                >
+                                  {item.checked && (
+                                    <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                  )}
+                                </button>
+                                <span
+                                  className={`text-sm ${
+                                    item.checked
+                                      ? 'text-green-500'
+                                      : 'text-yellow-200'
+                                  }`}
+                                >
+                                  {item.checked ? 'Не надо' : 'Нужно'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : isSyrupItem ? (
+                          // Селектор сиропов
+                          <div className='w-48'>
+                            <div className='text-sm text-gray-300 mb-1'>
+                              Выберите сиропы:
+                            </div>
+                            <div className='space-y-1'>
+                              {item.syrupOptions?.map(syrup => {
+                                const isSelected =
+                                  item.selectedSyrups?.includes(syrup.id) ||
+                                  false;
+
+                                return (
+                                  <div
+                                    key={syrup.id}
+                                    className='flex items-center justify-between cursor-pointer'
+                                    onClick={() => {
+                                      const selectedSyrups =
+                                        item.selectedSyrups || [];
+                                      const newSelected = isSelected
+                                        ? selectedSyrups.filter(
+                                            id => id !== syrup.id
+                                          )
+                                        : [...selectedSyrups, syrup.id];
+                                      handleSyrupChange(index, newSelected);
+                                    }}
+                                  >
+                                    <div className='flex items-center gap-2'>
                                       <div
                                         className={cn(
                                           'flex items-center justify-center h-5 w-5 rounded-full border-2',
@@ -741,205 +770,124 @@ export const ShoppingList = ({
                                         {syrup.name}
                                       </span>
                                     </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className={cn(
-                                      'rounded-full',
-                                      item.status === 'none' &&
-                                        'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                    )}
-                                    onClick={() =>
-                                      handleStatusChange(index, 'none')
-                                    }
-                                  >
-                                    <X className='h-5 w-5' />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Пополнено полностью</p>
-                                </TooltipContent>
-                              </Tooltip>
-
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className={cn(
-                                      'rounded-full',
-                                      item.status === 'partial' &&
-                                        'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                                    )}
-                                    onClick={() =>
-                                      handleStatusChange(index, 'partial')
-                                    }
-                                  >
-                                    <Pencil className='h-5 w-5' />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Пополнено частично</p>
-                                </TooltipContent>
-                              </Tooltip>
-
-                              {item.status === 'partial' &&
-                                !isFullyReplenished && (
-                                  <div className='ml-2'>
-                                    {(() => {
-                                      const itemType = getKreaTouchItemType(
-                                        item.name
-                                      );
-
-                                      if (isKreaTouch && itemType === 'syrup') {
-                                        return (
-                                          <div className='w-48'>
-                                            <div className='text-sm text-gray-300 mb-1'>
-                                              Выберите сиропы:
-                                            </div>
-                                            <div className='space-y-1'>
-                                              {[
-                                                { id: 'banana', name: 'Банан' },
-                                                {
-                                                  id: 'vanilla',
-                                                  name: 'Ваниль',
-                                                },
-                                                {
-                                                  id: 'coconut',
-                                                  name: 'Кокос',
-                                                },
-                                                {
-                                                  id: 'caramel',
-                                                  name: 'Карамель',
-                                                },
-                                              ].map(syrup => {
-                                                const isSelected =
-                                                  item.selectedSyrups?.includes(
-                                                    syrup.id
-                                                  ) || false;
-
-                                                return (
-                                                  <div
-                                                    key={syrup.id}
-                                                    className='flex items-center gap-2 cursor-pointer'
-                                                    onClick={() => {
-                                                      const selectedSyrups =
-                                                        item.selectedSyrups ||
-                                                        [];
-                                                      const newSelected =
-                                                        isSelected
-                                                          ? selectedSyrups.filter(
-                                                              id =>
-                                                                id !== syrup.id
-                                                            )
-                                                          : [
-                                                              ...selectedSyrups,
-                                                              syrup.id,
-                                                            ];
-                                                      handleSyrupChange(
-                                                        index,
-                                                        newSelected
-                                                      );
-                                                    }}
-                                                  >
-                                                    <div
-                                                      className={cn(
-                                                        'flex items-center justify-center h-5 w-5 rounded-full border-2 transition-all duration-200',
-                                                        isSelected
-                                                          ? 'border-green-500 bg-green-500/10'
-                                                          : 'border-gray-400 hover:border-gray-300'
-                                                      )}
-                                                    >
-                                                      {isSelected && (
-                                                        <CircleCheckBig className='h-3 w-3 text-green-500 animate-scale-in' />
-                                                      )}
-                                                    </div>
-                                                    <span
-                                                      className={cn(
-                                                        'text-sm transition-colors duration-200',
-                                                        isSelected
-                                                          ? 'text-green-300'
-                                                          : 'text-gray-300'
-                                                      )}
-                                                    >
-                                                      {syrup.name}
-                                                    </span>
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                          </div>
-                                        );
-                                      }
-                                      return (
-                                        <div className='flex items-center gap-1'>
-                                          <Button
-                                            variant='outline'
-                                            size='icon'
-                                            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                            onClick={() => {
-                                              const current =
-                                                item.loadedAmount ||
-                                                item.amount;
-                                              handleAmountChange(
-                                                index,
-                                                (current - 1).toString()
-                                              );
-                                            }}
-                                          >
-                                            -
-                                          </Button>
-                                          <div className='w-20'>
-                                            <Input
-                                              type='number'
-                                              value={(
-                                                item.loadedAmount ?? item.amount
-                                              )?.toString()}
-                                              onChange={e =>
-                                                handleAmountChange(
-                                                  index,
-                                                  e.target.value
-                                                )
-                                              }
-                                              placeholder={item.amount?.toString()}
-                                              className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
-                                              inputMode='numeric'
-                                              autoComplete='off'
-                                            />
-                                          </div>
-                                          <Button
-                                            variant='outline'
-                                            size='icon'
-                                            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                            onClick={() => {
-                                              const current =
-                                                item.loadedAmount ||
-                                                item.amount;
-                                              handleAmountChange(
-                                                index,
-                                                (current + 1).toString()
-                                              );
-                                            }}
-                                          >
-                                            +
-                                          </Button>
-                                        </div>
-                                      );
-                                    })()}
+                                    <span
+                                      className={`text-sm ${
+                                        isSelected
+                                          ? 'text-green-500'
+                                          : 'text-yellow-200'
+                                      }`}
+                                    >
+                                      {isSelected ? 'Не надо' : 'Нужно'}
+                                    </span>
                                   </div>
-                                )}
-                            </>
-                          )}
-                        </div>
-                      )}
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          // Обычные товары с кнопками X и Pencil
+                          <>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className={cn(
+                                    'rounded-full',
+                                    item.status === 'none' &&
+                                      'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                  )}
+                                  onClick={() =>
+                                    handleStatusChange(index, 'none')
+                                  }
+                                >
+                                  <X className='h-5 w-5' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Не пополнено</p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className={cn(
+                                    'rounded-full',
+                                    item.status === 'partial' &&
+                                      'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                  )}
+                                  onClick={() =>
+                                    handleStatusChange(index, 'partial')
+                                  }
+                                >
+                                  <Pencil className='h-5 w-5' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Пополнено частично</p>
+                              </TooltipContent>
+                            </Tooltip>
+
+                            {item.status === 'partial' && (
+                              <div className='ml-2'>
+                                <div className='flex items-center gap-1'>
+                                  <Button
+                                    variant='outline'
+                                    size='icon'
+                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
+                                    onClick={() => {
+                                      const current =
+                                        item.loadedAmount || item.amount;
+                                      handleAmountChange(
+                                        index,
+                                        (current - 1).toString()
+                                      );
+                                    }}
+                                  >
+                                    -
+                                  </Button>
+                                  <div className='w-20'>
+                                    <Input
+                                      type='number'
+                                      value={(
+                                        item.loadedAmount ?? item.amount
+                                      )?.toString()}
+                                      onChange={e =>
+                                        handleAmountChange(
+                                          index,
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder={item.amount?.toString()}
+                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
+                                      inputMode='numeric'
+                                      autoComplete='off'
+                                    />
+                                  </div>
+                                  <Button
+                                    variant='outline'
+                                    size='icon'
+                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
+                                    onClick={() => {
+                                      const current =
+                                        item.loadedAmount || item.amount;
+                                      handleAmountChange(
+                                        index,
+                                        (current + 1).toString()
+                                      );
+                                    }}
+                                  >
+                                    +
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
