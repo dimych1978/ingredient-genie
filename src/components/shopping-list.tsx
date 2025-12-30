@@ -495,7 +495,7 @@ const downloadList = () => {
 
         {shoppingList.length > 0 && (
           <div className='space-y-3'>
-            <div className='flex gap-3'>
+            <div className='flex gap-3 flex-col'>
               {machineIds.length === 1 && (
                 <Button
                   onClick={handleSaveOverrides}
