@@ -1881,7 +1881,7 @@ export const getIngredientConfig = (
   
   // Ищем ингредиент в конфиге модели
   return machineIngredients[modelKey].find(ingredient => 
-    ingredient.apiNames.some(api => api.toLowerCase() === normalizedApiName) ||
+    ingredient.apiNames.some(api => api.toLowerCase().includes(normalizedApiName)) ||
     ingredient.name.toLowerCase() === normalizedApiName
   );
 };

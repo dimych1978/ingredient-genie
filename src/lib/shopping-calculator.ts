@@ -5,22 +5,21 @@ import type {
   Ingredient,
 } from '@/types/telemetron';
 
-import {
-  allMachines,
-  machineIngredients,
-  getIngredientConfig,
-} from './data';
+import { allMachines, machineIngredients, getIngredientConfig } from './data';
 
 export type SortType = 'grouped' | 'alphabetical';
 
 const normalizeForPlanogramComparison = (name: string): string => {
   return name
     .replace(/["«»"']/g, '')
+    .replace(/[.,]$/g, '')
+    .replace(/\s*в ассорт(именте)?\.?/gi, ' в ассорт')
+    .replace(/\s*\d+[.,]?\d*\s*(гр?|мл|л)\.?/gi, '') // Убираем вес/объем
+    .replace(/\s*\/.*$/g, '') // Убираем всё после "/" (для вариантов)
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
 };
-
 const getDisplayUnit = (
   apiAmount: number,
   configUnit: 'г' | 'кг' | 'мл' | 'л' | 'шт'
@@ -139,7 +138,7 @@ export const calculateShoppingList = (
           carryOver: 0,
         };
       }
-      
+
       totals[key].amount += override.carryOver;
       totals[key].carryOver = override.carryOver;
     }
@@ -195,17 +194,27 @@ export const calculateShoppingList = (
     }
 
     // Сортировка снеков по планограмме
+    // Сортировка снеков по планограмме
     if (planogram && planogram.length > 0) {
-      const indexA = planogram.findIndex(
-        p =>
-          normalizeForPlanogramComparison(p) ===
-          normalizeForPlanogramComparison(a.name)
-      );
-      const indexB = planogram.findIndex(
-        p =>
-          normalizeForPlanogramComparison(p) ===
-          normalizeForPlanogramComparison(b.name)
-      );
+      const normalizedItem = normalizeForPlanogramComparison(a.name);
+
+      const indexA = planogram.findIndex(p => {
+        const normalizedPlanogram = normalizeForPlanogramComparison(p);
+        return (
+          normalizedPlanogram.includes(normalizedItem) ||
+          normalizedItem.includes(normalizedPlanogram)
+        );
+      });
+
+      const indexB = planogram.findIndex(p => {
+        const normalizedPlanogram = normalizeForPlanogramComparison(p);
+        return (
+          normalizedPlanogram.includes(
+            normalizeForPlanogramComparison(b.name)
+          ) ||
+          normalizeForPlanogramComparison(b.name).includes(normalizedPlanogram)
+        );
+      });
 
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
       if (indexA !== -1) return -1;
