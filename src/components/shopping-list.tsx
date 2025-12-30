@@ -38,6 +38,7 @@ import {
   Save,
   Pencil,
   CircleCheckBig,
+  AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -279,113 +280,118 @@ export const ShoppingList = ({
     );
   };
 
-const handleSaveOverrides = async () => {
-  if (machineIds.length > 1) {
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка',
-      description: 'Сохранение статусов доступно только для одного аппарата.',
-    });
-    return;
-  }
-
-  setSaving(true);
-  const machineId = machineIds[0];
-
-  try {
-    const overridesToSave: LoadingOverrides = {};
-    
-    shoppingList.forEach((item, index) => {
-      const key = `${machineId}-${item.name}`;
-      const actualLoadedAmount = item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
-      
-      const isCupOrLid = ['стаканчик', 'крышка'].some(name => 
-        item.name.toLowerCase().includes(name)
-      );
-      
-      const override: LoadingOverride = {
-        status: item.status,
-        requiredAmount: item.amount,
-        loadedAmount: actualLoadedAmount,
-        timestamp: new Date().toISOString(),
-      };
-      
-      // Сохраняем состояние чекбоксов
-      if (item.type === 'checkbox' || item.type === 'manual') {
-        override.checked = item.checked;
-        override.checkedType = item.checkedType;
-        
-        // Сохраняем выбранные размеры для стаканчиков/крышек
-        if (isCupOrLid) {
-          override.selectedSizes = item.selectedSizes || [];
-        }
-      }
-      
-      // Сохраняем выбранные сиропы
-      if (item.type === 'select') {
-        override.selectedSyrups = item.selectedSyrups || [];
-      }
-      
-      // Рассчитываем carryOver для обычных товаров
-      if (item.type === 'auto') {
-        if (item.status === 'none') {
-          override.carryOver = item.amount;
-        } else if (item.status === 'partial') {
-          override.carryOver = item.amount - actualLoadedAmount;
-        }
-      }
-      
-      overridesToSave[key] = override;
-    });
-
-    const result = await saveLoadingOverrides(overridesToSave);
-    
-    await saveLastSaveTime(machineId, new Date().toISOString());
-    
-    const machine = allMachines.find(m => m.id === machineId);
-
-    if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-      const now = new Date();
-      const newTimestamp = now.toISOString();
-      const dateUpdateResult = await setSpecialMachineDate(machineId, newTimestamp);
-      
-      await saveTelemetronPress(machineId, newTimestamp);
-      
-      if (dateUpdateResult.success && onTimestampUpdate) {
-        onTimestampUpdate(newTimestamp);
-        toast({
-          title: 'Дата инкассации обновлена',
-          description: `Теперь продажи будут считаться с ${format(
-            new Date(newTimestamp),
-            'dd.MM.yyyy HH:mm'
-          )}`,
-        });
-      }
-    }
-
-    if (result.success) {
+  const handleSaveOverrides = async () => {
+    if (machineIds.length > 1) {
       toast({
-        title: 'Сохранено',
-        description: 'Состояние всех позиций сохранено.',
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Сохранение статусов доступно только для одного аппарата.',
       });
-      
-      loadShoppingList();
-    } else {
-      throw new Error('Не удалось сохранить данные на сервере.');
+      return;
     }
-  } catch (error) {
-    console.error('Ошибка сохранения:', error);
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка сохранения',
-      description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
-    });
-  } finally {
-    setSaving(false);
-  }
-};
-  
-const downloadList = () => {
+
+    setSaving(true);
+    const machineId = machineIds[0];
+
+    try {
+      const overridesToSave: LoadingOverrides = {};
+
+      shoppingList.forEach((item, index) => {
+        const key = `${machineId}-${item.name}`;
+        const actualLoadedAmount =
+          item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
+
+        const isCupOrLid = ['стаканчик', 'крышка'].some(name =>
+          item.name.toLowerCase().includes(name)
+        );
+
+        const override: LoadingOverride = {
+          status: item.status,
+          requiredAmount: item.amount,
+          loadedAmount: actualLoadedAmount,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Сохраняем состояние чекбоксов
+        if (item.type === 'checkbox' || item.type === 'manual') {
+          override.checked = item.checked;
+          override.checkedType = item.checkedType;
+
+          // Сохраняем выбранные размеры для стаканчиков/крышек
+          if (isCupOrLid) {
+            override.selectedSizes = item.selectedSizes || [];
+          }
+        }
+
+        // Сохраняем выбранные сиропы
+        if (item.type === 'select') {
+          override.selectedSyrups = item.selectedSyrups || [];
+        }
+
+        // Рассчитываем carryOver для обычных товаров
+        if (item.type === 'auto') {
+          if (item.status === 'none') {
+            override.carryOver = item.amount;
+          } else if (item.status === 'partial') {
+            override.carryOver = item.amount - actualLoadedAmount;
+          }
+        }
+
+        overridesToSave[key] = override;
+      });
+
+      const result = await saveLoadingOverrides(overridesToSave);
+
+      await saveLastSaveTime(machineId, new Date().toISOString());
+
+      const machine = allMachines.find(m => m.id === machineId);
+
+      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+        const now = new Date();
+        const newTimestamp = now.toISOString();
+        const dateUpdateResult = await setSpecialMachineDate(
+          machineId,
+          newTimestamp
+        );
+
+        await saveTelemetronPress(machineId, newTimestamp);
+
+        if (dateUpdateResult.success && onTimestampUpdate) {
+          onTimestampUpdate(newTimestamp);
+          toast({
+            title: 'Дата инкассации обновлена',
+            description: `Теперь продажи будут считаться с ${format(
+              new Date(newTimestamp),
+              'dd.MM.yyyy HH:mm'
+            )}`,
+          });
+        }
+      }
+
+      if (result.success) {
+        toast({
+          title: 'Сохранено',
+          description: 'Состояние всех позиций сохранено.',
+        });
+
+        loadShoppingList();
+      } else {
+        throw new Error('Не удалось сохранить данные на сервере.');
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка сохранения',
+        description:
+          error instanceof Error ? error.message : 'Неизвестная ошибка.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const downloadList = () => {
     const periodStr = `${format(dateFrom, 'dd.MM.yyyy HH:mm')}-Сейчас`;
     const header = `${title}\nПериод: ${periodStr}\nАппараты: ${machineIdsString}\n\n`;
     const itemsText = shoppingList
@@ -554,9 +560,28 @@ const downloadList = () => {
                     >
                       <div className='flex-1 space-y-1'>
                         <div className='font-medium capitalize'>
-                          {item.name}
+                          <div className='flex items-center gap-2'>
+                            {item.planogramName || item.name}
+                            {item.planogramName &&
+                              item.planogramName !== item.name && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <AlertTriangle className='h-4 w-4 text-yellow-500' />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>В аппарате: {item.name}</p>
+                                    <p>В планограмме: {item.planogramName}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                          </div>
+                          {item.planogramName &&
+                            item.planogramName !== item.name && (
+                              <div className='text-sm text-gray-400 mt-1'>
+                                Фактически: {item.name}
+                              </div>
+                            )}
                         </div>
-
                         {isCheckboxItem || isSyrupItem ? (
                           <div className='text-sm text-gray-400'>
                             {hasSales

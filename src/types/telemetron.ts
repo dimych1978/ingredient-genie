@@ -73,4 +73,5 @@ export interface ShoppingListItem {
   type?: IngredientType; // 'auto' | 'checkbox' | 'select'
   syrupOptions?: SyrupOption[]; // для сиропа
   checked?: boolean;
+  planogramName: string | null;
 }

@@ -14,12 +14,45 @@ const normalizeForPlanogramComparison = (name: string): string => {
     .replace(/["«»"']/g, '')
     .replace(/[.,]$/g, '')
     .replace(/\s*в ассорт(именте)?\.?/gi, ' в ассорт')
-    .replace(/\s*\d+[.,]?\d*\s*(гр?|мл|л)\.?/gi, '') // Убираем вес/объем
-    .replace(/\s*\/.*$/g, '') // Убираем всё после "/" (для вариантов)
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
 };
+
+const findPlanogramEntry = (
+  itemName: string,
+  planogram: string[]
+): string | null => {
+  const normalizedItem = normalizeForPlanogramComparison(itemName);
+
+  for (const planogramEntry of planogram) {
+    // Разбиваем планограмму на варианты через "/"
+    const variants = planogramEntry.split('/').map(v => v.trim());
+
+    for (const variant of variants) {
+      const normalizedVariant = normalizeForPlanogramComparison(variant);
+
+      // Проверяем частичное совпадение
+      if (
+        normalizedItem.includes(normalizedVariant) ||
+        normalizedVariant.includes(normalizedItem)
+      ) {
+        return planogramEntry; // Возвращаем полную запись из планограммы
+      }
+    }
+  }
+
+  return null; // Не найдено
+};
+
+const findPlanogramIndex = (itemName: string, planogram: string[]): number => {
+  const entry = findPlanogramEntry(itemName, planogram);
+  if (entry) {
+    return planogram.indexOf(entry);
+  }
+  return -1;
+};
+
 const getDisplayUnit = (
   apiAmount: number,
   configUnit: 'г' | 'кг' | 'мл' | 'л' | 'шт'
@@ -76,7 +109,6 @@ export const calculateShoppingList = (
     const ingredients = sale.planogram.ingredients;
 
     if (ingredients && ingredients.length > 0) {
-      // Кофейный напиток
       ingredients.forEach(apiIngredient => {
         const config = getIngredientConfig(apiIngredient.name, machine?.model);
         if (config) {
@@ -91,7 +123,6 @@ export const calculateShoppingList = (
         }
       });
     } else {
-      // Снек или бутылка
       const config = getIngredientConfig(sale.planogram.name, machine?.model);
       const key = config ? config.name : sale.planogram.name;
       if (!totals[key]) {
@@ -138,7 +169,7 @@ export const calculateShoppingList = (
           carryOver: 0,
         };
       }
-
+      
       totals[key].amount += override.carryOver;
       totals[key].carryOver = override.carryOver;
     }
@@ -146,7 +177,7 @@ export const calculateShoppingList = (
 
   const allItems: ShoppingListItem[] = [];
 
-  // 3. Формируем финальный список - ВСЕГДА ВЫВОДИМ ВСЕ ТОВАРЫ
+  // 3. Формируем финальный список
   Object.keys(totals).forEach(key => {
     const data = totals[key];
     const { unit: displayUnit, displayAmount } = getDisplayUnit(
@@ -162,17 +193,20 @@ export const calculateShoppingList = (
       data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
     );
 
-    // ВСЕГДА добавляем товар в список
+    // Находим соответствие в планограмме для сортировки
+    const planogramName = planogram && planogram.length > 0
+      ? findPlanogramEntry(data.config.name, planogram)
+      : null;
+
     allItems.push({
       name: data.config.name,
+      planogramName, // Для сортировки по планограмме
       amount: Math.ceil(Math.max(0, displayAmount)),
       unit: displayUnit,
       status: overrides[`${machineId}-${key}`]?.status || 'none',
       salesAmount: Math.ceil(salesDisplayAmount),
       previousDeficit: Math.ceil(deficitDisplayAmount),
-      isCore:
-        !!modelKey &&
-        coreIngredientConfigs.some(c => c.name === data.config.name),
+      isCore: !!modelKey && coreIngredientConfigs.some(c => c.name === data.config.name),
       type: data.config.type || 'auto',
       syrupOptions: data.config.syrupOptions,
       checked: false,
@@ -194,27 +228,14 @@ export const calculateShoppingList = (
     }
 
     // Сортировка снеков по планограмме
-    // Сортировка снеков по планограмме
     if (planogram && planogram.length > 0) {
-      const normalizedItem = normalizeForPlanogramComparison(a.name);
-
-      const indexA = planogram.findIndex(p => {
-        const normalizedPlanogram = normalizeForPlanogramComparison(p);
-        return (
-          normalizedPlanogram.includes(normalizedItem) ||
-          normalizedItem.includes(normalizedPlanogram)
-        );
-      });
-
-      const indexB = planogram.findIndex(p => {
-        const normalizedPlanogram = normalizeForPlanogramComparison(p);
-        return (
-          normalizedPlanogram.includes(
-            normalizeForPlanogramComparison(b.name)
-          ) ||
-          normalizeForPlanogramComparison(b.name).includes(normalizedPlanogram)
-        );
-      });
+      const indexA = a.planogramName
+        ? planogram.indexOf(a.planogramName)
+        : findPlanogramIndex(a.name, planogram);
+        
+      const indexB = b.planogramName
+        ? planogram.indexOf(b.planogramName)
+        : findPlanogramIndex(b.name, planogram);
 
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
       if (indexA !== -1) return -1;
