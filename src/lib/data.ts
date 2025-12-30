@@ -1648,7 +1648,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'сливки', apiNames: ['Сливки сухие', 'Сливки'], unit: 'г', type: 'auto' },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
-    { name: 'банан', apiNames: ['Банан'], unit: 'г', type: 'auto' },
+    { name: 'банан', apiNames: ['Банан', "Раф Банан"], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'стаканы 300', apiNames: ['Стаканчик', 'Стакан'], unit: 'шт', type: 'auto' },
     { name: 'крышки 80', apiNames: ['Крышка'], unit: 'шт', type: 'manual' },
@@ -1675,6 +1675,18 @@ export const machineIngredients: MachineIngredients = {
     type: 'auto' 
   },
   { 
+    name: 'шоколад', 
+    apiNames: ['Шоколад'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  { 
+    name: 'ваниль', 
+    apiNames: ['Ваниль', 'Капучино ваниль'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  { 
     name: 'сахар', 
     apiNames: ['Сахар'], 
     unit: 'г', 
@@ -1696,6 +1708,70 @@ export const machineIngredients: MachineIngredients = {
   { 
     name: 'крышка большая', 
     apiNames: ['Крышка'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  { 
+    name: 'крышка малая', 
+    apiNames: ['Крышка'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  { 
+    name: 'размешиватель', 
+    apiNames: ['Размешиватель'], 
+    unit: 'шт', 
+    type: 'checkbox' 
+  },
+  // Селектор для сиропа
+  { 
+    name: 'сироп', 
+    apiNames: ['Сироп'], 
+    unit: 'мл', 
+    type: 'select',
+    syrupOptions: [
+      { id: 'banana', name: 'банан', selected: false },
+      { id: 'vanilla', name: 'ваниль', selected: false },
+      { id: 'coconut', name: 'кокос', selected: false },
+      { id: 'caramel', name: 'карамель', selected: false },
+    ]
+  },
+  ],
+  koro: [
+    { 
+    name: 'вода', 
+    apiNames: ['Вода'], 
+    unit: 'мл', 
+    type: 'auto' 
+  },
+  { 
+    name: 'кофе', 
+    apiNames: ['Кофе зерновой'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  { 
+    name: 'сливки', 
+    apiNames: ['Сливки сухие'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+    { 
+    name: 'шоколад', 
+    apiNames: ['Шоколад'], 
+    unit: 'г', 
+    type: 'auto' 
+  },
+  { 
+    name: 'сахар', 
+    apiNames: ['Сахар'], 
+    unit: 'г', 
+    type: 'checkbox' 
+  },
+  // Чекбоксы
+  { 
+    name: 'стаканчик малый', 
+    apiNames: ['Стаканчик'], 
     unit: 'шт', 
     type: 'checkbox' 
   },
@@ -1766,7 +1842,7 @@ export const machineIngredients: MachineIngredients = {
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'стаканы пластик', apiNames: ['Стаканчик', 'Стакан пластиковый'], unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    { name: 'размешиватели 105', apiNames: ['Размешиватель', 'Размешиватель, 105 мм'], unit: 'шт', type: 'auto' },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
 };

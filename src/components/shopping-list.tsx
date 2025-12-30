@@ -58,6 +58,7 @@ interface ShoppingListItemWithStatus extends ShoppingListItem {
   checked?: boolean;
   checkedType?: 'big' | 'small';
   selectedSyrups?: string[];
+  selectedSizes?: ('big' | 'small')[];
 }
 
 interface ShoppingListProps {
@@ -103,49 +104,29 @@ export const ShoppingList = ({
     setMachineIds(initialMachineIds);
   }, [initialMachineIds]);
 
-  const handleCheckboxChange = (
-    index: number,
-    checked: boolean,
-    checkedType?: 'big' | 'small'
-  ) => {
-    setShoppingList(prev =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
+const handleCheckboxChange = (index: number) => {
+  setShoppingList(prev =>
+    prev.map((item, i) => {
+      if (i !== index) return item;
+      return { ...item, checked: !item.checked };
+    })
+  );
+};
 
-        const itemName = item.name.toLowerCase();
-        const isCupOrLid =
-          itemName.includes('стакан') || itemName.includes('крышк');
+const handleCupLidChange = (index: number, size: 'big' | 'small') => {
+  setShoppingList(prev =>
+    prev.map((item, i) => {
+      if (i !== index) return item;
+      const currentSizes = item.selectedSizes || [];
+      const newSizes = currentSizes.includes(size)
+        ? currentSizes.filter(s => s !== size)
+        : [...currentSizes, size];
+      return { ...item, selectedSizes: newSizes };
+    })
+  );
+};
 
-        if (isCupOrLid && checkedType) {
-          // Для стаканчиков и крышек с размерами
-          if (checkedType === item.checkedType) {
-            // Снимаем текущий выбор
-            return {
-              ...item,
-              checked: false,
-              checkedType: undefined,
-            };
-          } else {
-            // Выбираем новый тип
-            return {
-              ...item,
-              checked: true,
-              checkedType: checkedType,
-            };
-          }
-        } else {
-          // Для остальных просто переключаем состояние
-          return {
-            ...item,
-            checked: !item.checked,
-            checkedType: undefined,
-          };
-        }
-      })
-    );
-  };
-
-  const handleSyrupChange = (index: number, syrupIds: string[]) => {
+const handleSyrupChange = (index: number, syrupIds: string[]) => {
     setShoppingList(prev =>
       prev.map((item, i) =>
         i === index ? { ...item, selectedSyrups: syrupIds } : item
@@ -613,281 +594,167 @@ export const ShoppingList = ({
                       </div>
 
                       <div className='flex items-center gap-2'>
-                        {isCheckboxItem ? (
-                          // Чекбокс-товары
-                          <div className='flex flex-col gap-2'>
-                            {isCupOrLid ? (
-                              <>
-                                {/* Большой размер */}
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-sm text-yellow-200 mr-2'>
-                                    {item.name
-                                      .toLowerCase()
-                                      .includes('стаканчик')
-                                      ? 'Большой'
-                                      : 'Большая'}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      handleCheckboxChange(
-                                        index,
-                                        !item.checked,
-                                        'big'
-                                      )
-                                    }
-                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-                                  >
-                                    {item.checkedType === 'big' && (
-                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                    )}
-                                  </button>
-                                  <span
-                                    className={`text-sm ${
-                                      item.checkedType === 'big'
-                                        ? 'text-green-500'
-                                        : 'text-yellow-200'
-                                    }`}
-                                  >
-                                    {item.checkedType === 'big'
-                                      ? 'Не надо'
-                                      : 'Нужно'}
-                                  </span>
-                                </div>
+{isCheckboxItem ? (
+  isCupOrLid ? (
+    // Стаканчики и крышки с двумя размерами
+    <div className='flex flex-col gap-2'>
+      {/* Большой размер */}
+      <div className='flex items-center gap-2'>
+        <span className='text-sm text-yellow-200 mr-2'>
+          {item.name.toLowerCase().includes('стаканчик') ? 'Большой' : 'Большая'}
+        </span>
+        <button
+          onClick={() => handleCupLidChange(index, 'big')}
+          className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+        >
+          {item.selectedSizes?.includes('big') && (
+            <CircleCheckBig className='h-4 w-4 text-green-500' />
+          )}
+        </button>
+        <span className={`text-sm ${item.selectedSizes?.includes('big') ? 'text-green-500' : 'text-yellow-200'}`}>
+          {item.selectedSizes?.includes('big') ? 'Не надо' : 'Нужно'}
+        </span>
+      </div>
 
-                                {/* Малый размер */}
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-sm text-yellow-200 mr-2'>
-                                    {item.name
-                                      .toLowerCase()
-                                      .includes('стаканчик')
-                                      ? 'Малый'
-                                      : 'Малая'}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      handleCheckboxChange(
-                                        index,
-                                        !item.checked,
-                                        'small'
-                                      )
-                                    }
-                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-                                  >
-                                    {item.checkedType === 'small' && (
-                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                    )}
-                                  </button>
-                                  <span
-                                    className={`text-sm ${
-                                      item.checkedType === 'small'
-                                        ? 'text-green-500'
-                                        : 'text-yellow-200'
-                                    }`}
-                                  >
-                                    {item.checkedType === 'small'
-                                      ? 'Не надо'
-                                      : 'Нужно'}
-                                  </span>
-                                </div>
-                              </>
-                            ) : (
-                              // Для остальных чекбокс-товаров
-                              <div className='flex items-center gap-2'>
-                                <button
-                                  onClick={() =>
-                                    handleCheckboxChange(
-                                      index,
-                                      !item.checked,
-                                      item?.checkedType
-                                    )
-                                  }
-                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
-                                >
-                                  {item.checked && (
-                                    <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                  )}
-                                </button>
-                                <span
-                                  className={`text-sm ${
-                                    item.checked
-                                      ? 'text-green-500'
-                                      : 'text-yellow-200'
-                                  }`}
-                                >
-                                  {item.checked ? 'Не надо' : 'Нужно'}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ) : isSyrupItem ? (
-                          // Селектор сиропов
-                          <div className='w-48'>
-                            <div className='text-sm text-gray-300 mb-1'>
-                              Выберите сиропы:
-                            </div>
-                            <div className='space-y-1'>
-                              {item.syrupOptions?.map(syrup => {
-                                const isSelected =
-                                  item.selectedSyrups?.includes(syrup.id) ||
-                                  false;
+      {/* Малый размер */}
+      <div className='flex items-center gap-2'>
+        <span className='text-sm text-yellow-200 mr-2'>
+          {item.name.toLowerCase().includes('стаканчик') ? 'Малый' : 'Малая'}
+        </span>
+        <button
+          onClick={() => handleCupLidChange(index, 'small')}
+          className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+        >
+          {item.selectedSizes?.includes('small') && (
+            <CircleCheckBig className='h-4 w-4 text-green-500' />
+          )}
+        </button>
+        <span className={`text-sm ${item.selectedSizes?.includes('small') ? 'text-green-500' : 'text-yellow-200'}`}>
+          {item.selectedSizes?.includes('small') ? 'Не надо' : 'Нужно'}
+        </span>
+      </div>
+    </div>
+  ) : (
+    // Обычные чекбоксы (сахар, размешиватель)
+    <div className='flex items-center gap-2'>
+      <button
+        onClick={() => handleCheckboxChange(index)}
+        className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+      >
+        {item.checked && <CircleCheckBig className='h-4 w-4 text-green-500' />}
+      </button>
+      <span className={`text-sm ${item.checked ? 'text-green-500' : 'text-yellow-200'}`}>
+        {item.checked ? 'Не надо' : 'Нужно'}
+      </span>
+    </div>
+  )
+) : isSyrupItem ? (
+  // Селектор сиропов
+  <div className='w-48'>
+    <div className='text-sm text-gray-300 mb-1'>Выберите сиропы:</div>
+    <div className='space-y-1'>
+      {item.syrupOptions?.map(syrup => {
+        const isSelected = item.selectedSyrups?.includes(syrup.id) || false;
+        return (
+          <div
+            key={syrup.id}
+            className='flex items-center justify-between cursor-pointer'
+            onClick={() => {
+              const selectedSyrups = item.selectedSyrups || [];
+              const newSelected = isSelected
+                ? selectedSyrups.filter(id => id !== syrup.id)
+                : [...selectedSyrups, syrup.id];
+              handleSyrupChange(index, newSelected);
+            }}
+          >
+            <div className='flex items-center gap-2'>
+              <div className={cn('flex items-center justify-center h-5 w-5 rounded-full border-2', isSelected ? 'border-green-500 bg-green-500/10' : 'border-gray-400 hover:border-gray-300')}>
+                {isSelected && <CircleCheckBig className='h-3 w-3 text-green-500' />}
+              </div>
+              <span className={cn('text-sm', isSelected ? 'text-green-300' : 'text-gray-300')}>
+                {syrup.name}
+              </span>
+            </div>
+            <span className={`text-sm ${isSelected ? 'text-green-500' : 'text-yellow-200'}`}>
+              {isSelected ? 'Не надо' : 'Нужно'}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+) : (
+  // Обычные товары с кнопками X и Pencil
+  <>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant='ghost'
+          size='icon'
+          className={cn('rounded-full', item.status === 'none' && 'bg-red-500/20 text-red-400 hover:bg-red-500/30')}
+          onClick={() => handleStatusChange(index, 'none')}
+        >
+          <X className='h-5 w-5' />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent><p>Не пополнено</p></TooltipContent>
+    </Tooltip>
 
-                                return (
-                                  <div
-                                    key={syrup.id}
-                                    className='flex items-center justify-between cursor-pointer'
-                                    onClick={() => {
-                                      const selectedSyrups =
-                                        item.selectedSyrups || [];
-                                      const newSelected = isSelected
-                                        ? selectedSyrups.filter(
-                                            id => id !== syrup.id
-                                          )
-                                        : [...selectedSyrups, syrup.id];
-                                      handleSyrupChange(index, newSelected);
-                                    }}
-                                  >
-                                    <div className='flex items-center gap-2'>
-                                      <div
-                                        className={cn(
-                                          'flex items-center justify-center h-5 w-5 rounded-full border-2',
-                                          isSelected
-                                            ? 'border-green-500 bg-green-500/10'
-                                            : 'border-gray-400 hover:border-gray-300'
-                                        )}
-                                      >
-                                        {isSelected && (
-                                          <CircleCheckBig className='h-3 w-3 text-green-500' />
-                                        )}
-                                      </div>
-                                      <span
-                                        className={cn(
-                                          'text-sm',
-                                          isSelected
-                                            ? 'text-green-300'
-                                            : 'text-gray-300'
-                                        )}
-                                      >
-                                        {syrup.name}
-                                      </span>
-                                    </div>
-                                    <span
-                                      className={`text-sm ${
-                                        isSelected
-                                          ? 'text-green-500'
-                                          : 'text-yellow-200'
-                                      }`}
-                                    >
-                                      {isSelected ? 'Не надо' : 'Нужно'}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          // Обычные товары с кнопками X и Pencil
-                          <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  className={cn(
-                                    'rounded-full',
-                                    item.status === 'none' &&
-                                      'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                  )}
-                                  onClick={() =>
-                                    handleStatusChange(index, 'none')
-                                  }
-                                >
-                                  <X className='h-5 w-5' />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Не пополнено</p>
-                              </TooltipContent>
-                            </Tooltip>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant='ghost'
+          size='icon'
+          className={cn('rounded-full', item.status === 'partial' && 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30')}
+          onClick={() => handleStatusChange(index, 'partial')}
+        >
+          <Pencil className='h-5 w-5' />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent><p>Пополнено частично</p></TooltipContent>
+    </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  className={cn(
-                                    'rounded-full',
-                                    item.status === 'partial' &&
-                                      'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                                  )}
-                                  onClick={() =>
-                                    handleStatusChange(index, 'partial')
-                                  }
-                                >
-                                  <Pencil className='h-5 w-5' />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Пополнено частично</p>
-                              </TooltipContent>
-                            </Tooltip>
-
-                            {item.status === 'partial' && (
-                              <div className='ml-2'>
-                                <div className='flex items-center gap-1'>
-                                  <Button
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                    onClick={() => {
-                                      const current =
-                                        item.loadedAmount || item.amount;
-                                      handleAmountChange(
-                                        index,
-                                        (current - 1).toString()
-                                      );
-                                    }}
-                                  >
-                                    -
-                                  </Button>
-                                  <div className='w-20'>
-                                    <Input
-                                      type='number'
-                                      value={(
-                                        item.loadedAmount ?? item.amount
-                                      )?.toString()}
-                                      onChange={e =>
-                                        handleAmountChange(
-                                          index,
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder={item.amount?.toString()}
-                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
-                                      inputMode='numeric'
-                                      autoComplete='off'
-                                    />
-                                  </div>
-                                  <Button
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                    onClick={() => {
-                                      const current =
-                                        item.loadedAmount || item.amount;
-                                      handleAmountChange(
-                                        index,
-                                        (current + 1).toString()
-                                      );
-                                    }}
-                                  >
-                                    +
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
+    {item.status === 'partial' && (
+      <div className='ml-2'>
+        <div className='flex items-center gap-1'>
+          <Button
+            variant='outline'
+            size='icon'
+            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
+            onClick={() => {
+              const current = item.loadedAmount || item.amount;
+              handleAmountChange(index, (current - 1).toString());
+            }}
+          >
+            -
+          </Button>
+          <div className='w-20'>
+            <Input
+              type='number'
+              value={(item.loadedAmount ?? item.amount)?.toString()}
+              onChange={e => handleAmountChange(index, e.target.value)}
+              placeholder={item.amount?.toString()}
+              className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
+              inputMode='numeric'
+              autoComplete='off'
+            />
+          </div>
+          <Button
+            variant='outline'
+            size='icon'
+            className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
+            onClick={() => {
+              const current = item.loadedAmount || item.amount;
+              handleAmountChange(index, (current + 1).toString());
+            }}
+          >
+            +
+          </Button>
+        </div>
+      </div>
+    )}
+  </>
+)}                      </div>
                     </div>
                   );
                 })}
