@@ -280,7 +280,7 @@ export default function MachineStatusPage() {
 
         <div className='space-y-6'>
           <div className='mb-6'>
-            <div className='flex items-center space-x-2'>
+            {/* <div className='flex items-center space-x-2'>
               <input
                 type='checkbox'
                 id='serviced'
@@ -291,12 +291,12 @@ export default function MachineStatusPage() {
               <label htmlFor='serviced' className='text-sm font-medium'>
                 Аппарат обслужен (нажата кнопка Telemetron)
               </label>
-            </div>
-            {isServiced && (
+            </div> */}
+            {/* {isServiced && (
               <p className='text-sm text-green-600 mt-1'>
                 ✅ Следующее обслуживание будет рассчитываться от текущей даты
               </p>
-            )}
+            )} */}
           </div>
           {isSpecialMachine(machineData) && !effectiveStartDate && (
             <div className='mb-6 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg'>
