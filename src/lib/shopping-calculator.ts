@@ -29,9 +29,14 @@ export const calculateShoppingList = (
   overrides: LoadingOverrides = {},
   machineId: string,
   planogram?: string[],
-  machineModel?: string
+  machineModel?: string,
+  salesThisPeriod?: Map<string, number> ,
 ): ShoppingListItem[] => {
-  console.log('=== calculateShoppingList вызвана ===');
+console.log('=== calculateShoppingList вызвана ===');
+  console.log('salesThisPeriod передан?:', !!salesThisPeriod);
+  if (salesThisPeriod) {
+    console.log('Продажи за "этот период":', Array.from(salesThisPeriod.entries()));
+  }
   
   // 1. Создаем мапу продаж по КЛЮЧУ: product_number + name
   const salesMap = new Map<string, { quantity: number; name: string; productNumber: string }>();
@@ -39,9 +44,7 @@ export const calculateShoppingList = (
   salesData.data.forEach(sale => {
     if (!sale.product_number || !sale.planogram?.name) return;
     
-    // Ключ включает product_number для различения одинаковых названий на разных ячейках
     const key = `${sale.product_number}-${sale.planogram.name}`;
-    
     const current = salesMap.get(key) || { 
       quantity: 0, 
       name: sale.planogram.name,
@@ -51,7 +54,7 @@ export const calculateShoppingList = (
     salesMap.set(key, current);
   });
   
-  console.log('salesMap размер (уникальных product_number + name):', salesMap.size);
+  console.log('salesMap размер:', salesMap.size);
   
   // 2. Если есть планограмма - используем её как основной источник
   if (planogram && planogram.length > 0) {
@@ -61,24 +64,51 @@ export const calculateShoppingList = (
     const usedKeys = new Set<string>();
     
     planogram.forEach(planogramEntry => {
-      // Извлекаем product_number и название из планограммы
-      // Формат: "1. Бонаква негаз. 0,5"
       const match = planogramEntry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-      
       if (!match) return;
       
       const productNumber = match[1];
-      const planogramName = match[2].trim();
+      const planogramName = match[2];
       
-      // Ключ для поиска продаж
-      const salesKey = `${productNumber}-${planogramName}`;
+      // Ищем ВСЕ варианты продаж для этого productNumber
+      const allSalesForCell = Array.from(salesMap.entries())
+        .filter(([key, value]) => key.startsWith(`${productNumber}-`));
       
-      // Находим продажи для этой конкретной ячейки
-      const sales = salesMap.get(salesKey);
-      const salesQuantity = sales?.quantity || 0;
+      console.log(`Для ${productNumber} найдено вариантов:`, allSalesForCell.length);
       
-      // Находим override (используем полное название с product_number для уникальности)
-      const overrideKey = `${machineId}-${productNumber}-${planogramName}`;
+      // Выбираем правильный вариант на основе salesThisPeriod
+      let selectedSales = null;
+      let selectedName = planogramName;
+      
+      if (allSalesForCell.length > 0) {
+        // Проверяем, есть ли продажи за "этот период" для этого productNumber
+        const hasSalesInThisPeriod = salesThisPeriod 
+          ? (salesThisPeriod.get(productNumber) || 0) > 0
+          : false;
+        
+        if (hasSalesInThisPeriod) {
+          // Ищем вариант с продажами > 0
+          const salesWithQuantity = allSalesForCell.find(([_, sales]) => sales.quantity > 0);
+          if (salesWithQuantity) {
+            selectedSales = salesWithQuantity[1];
+            selectedName = salesWithQuantity[1].name;
+            console.log(`Для ${productNumber} выбран вариант с продажами: ${selectedName}`);
+          }
+        }
+        
+        // Если не нашли вариант с продажами или нет salesThisPeriod
+        if (!selectedSales && allSalesForCell.length > 0) {
+          // Берем первый вариант
+          selectedSales = allSalesForCell[0][1];
+          selectedName = allSalesForCell[0][1].name;
+          console.log(`Для ${productNumber} выбран первый вариант: ${selectedName}`);
+        }
+      }
+      
+      const salesQuantity = selectedSales?.quantity || 0;
+      
+      // Находим override
+      const overrideKey = `${machineId}-${productNumber}-${selectedName}`;
       const override = overrides[overrideKey];
       const carryOver = override?.carryOver || 0;
       
@@ -86,7 +116,7 @@ export const calculateShoppingList = (
       const totalNeeded = Math.max(0, salesQuantity + carryOver);
       
       // Определяем тип товара
-      const config = getIngredientConfig(planogramName, machineModel);
+      const config = getIngredientConfig(selectedName, machineModel);
       
       // Определяем единицу измерения
       let unit = 'шт';
@@ -102,8 +132,8 @@ export const calculateShoppingList = (
       }
       
       result.push({
-        name: planogramName,
-        planogramName: planogramName,
+        name: selectedName,
+        planogramName: selectedName,
         productNumber: productNumber,
         amount: totalNeeded,
         unit: unit,
@@ -116,7 +146,9 @@ export const calculateShoppingList = (
         checked: override?.checked || false,
       });
       
-      usedKeys.add(salesKey);
+      if (selectedSales) {
+        usedKeys.add(`${productNumber}-${selectedName}`);
+      }
     });
     
     console.log('После планограммы, result:', result.length);
@@ -161,7 +193,7 @@ export const calculateShoppingList = (
         });
       }
     });
-    
+        
     console.log('После добавления salesMap, result:', result.length);
 
     // 4. Определяем core ingredients

@@ -54,6 +54,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { allMachines, isSpecialMachine } from '@/lib/data';
+import { usePlanogramData } from '@/hooks/usePlanogramData';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -97,6 +98,7 @@ export const ShoppingList = ({
     ShoppingListItemWithStatus[]
   >([]);
   const [savingPlanogram, setSavingPlanogram] = useState(false); 
+  const [salesThisPeriod, setSalesThisPeriod] = useState<Map<string, number>>(new Map());
   const [showPlanogramDialog, setShowPlanogramDialog] = useState(false); 
   const [loadedAmounts, setLoadedAmounts] = useState<number[]>([]);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
@@ -104,7 +106,8 @@ export const ShoppingList = ({
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
-  const { getSalesByProducts, getPlanogram } = useTelemetronApi();
+  const { getSalesByProducts } = useTelemetronApi();
+  const { loadPlanogramData } = usePlanogramData();
   const { toast } = useToast();
 
      const handleSavePlanogram = async () => {
@@ -175,14 +178,15 @@ useEffect(() => {
   
   const loadPlanogram = async () => {
     if (machineIds.length === 1) {
-      console.log('Запускаем загрузку планограммы для', machineIds[0]);
+      console.log('Загружаем планограмму через usePlanogramData для', machineIds[0]);
       try {
-        const result = await getPlanogram(machineIds[0]);
-        console.log('Планограмма получена, длина:', result.length);
+        const result = await loadPlanogramData(machineIds[0]);
         
         if (isMounted) {
-          setPlanogram(result);
-          console.log('planogram установлен в состоянии');
+          setPlanogram(result.planogram);
+          setSalesThisPeriod(result.salesThisPeriod)
+          // Теперь у нас есть result.salesThisPeriod для использования в shoppingList
+          console.log('Планограмма загружена, элементов:', result.planogram.length);
         }
       } catch (error) {
         console.error('Ошибка загрузки планограммы:', error);
@@ -203,8 +207,7 @@ useEffect(() => {
   return () => {
     isMounted = false;
   };
-}, [machineIds, getPlanogram]);
-
+}, [machineIds, loadPlanogramData]); // ИЗМЕНИТЬ зависимость
 useEffect(() => {
   console.log('✅ planogram обновился:', planogram.length > 0 ? `есть ${planogram.length} элементов` : 'пустой');
   console.log('Пример элемента планограммы:', planogram[0]);
@@ -303,7 +306,8 @@ const loadShoppingList = useCallback(async () => {
       machineOverrides,
       machineIds[0],
       planogram,
-      machineData?.model
+      machineData?.model,
+      salesThisPeriod
     );
 
     console.log('✅ calculateShoppingList вернула:', calculatedList.length);
