@@ -51,7 +51,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { allMachines, isSpecialMachine, planograms } from '@/lib/data';
+import { allMachines, isSpecialMachine } from '@/lib/data';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -96,14 +96,56 @@ export const ShoppingList = ({
   >([]);
   const [loadedAmounts, setLoadedAmounts] = useState<number[]>([]);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
+  const [planogram, setPlanogram] = useState<string[]>([]);
+
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
 
-  const { getSalesByProducts } = useTelemetronApi();
+  const { getSalesByProducts, getPlanogram } = useTelemetronApi();
   const { toast } = useToast();
 
   useEffect(() => {
     setMachineIds(initialMachineIds);
   }, [initialMachineIds]);
+
+useEffect(() => {
+  let isMounted = true;
+  
+  const loadPlanogram = async () => {
+    if (machineIds.length === 1) {
+      console.log('Запускаем загрузку планограммы для', machineIds[0]);
+      try {
+        const result = await getPlanogram(machineIds[0]);
+        console.log('Планограмма получена, длина:', result.length);
+        
+        if (isMounted) {
+          setPlanogram(result);
+          console.log('planogram установлен в состоянии');
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки планограммы:', error);
+        if (isMounted) {
+          setPlanogram([]);
+        }
+      }
+    } else {
+      console.log('Не загружаем планограмму для нескольких аппаратов');
+      if (isMounted) {
+        setPlanogram([]);
+      }
+    }
+  };
+  
+  loadPlanogram();
+  
+  return () => {
+    isMounted = false;
+  };
+}, [machineIds, getPlanogram]);
+
+useEffect(() => {
+  console.log('✅ planogram обновился:', planogram.length > 0 ? `есть ${planogram.length} элементов` : 'пустой');
+  console.log('Пример элемента планограммы:', planogram[0]);
+}, [planogram]);
 
   const handleCheckboxChange = (index: number) => {
     setShoppingList(prev =>
@@ -148,106 +190,110 @@ export const ShoppingList = ({
     setMachineIds(ids);
   };
 
-  const loadShoppingList = useCallback(async () => {
-    if (machineIds.length === 0) {
-      if (forceLoad) {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не указаны ID аппаратов.',
-        });
-      }
-      return;
+const loadShoppingList = useCallback(async () => {
+  console.log('🚀 loadShoppingList вызван');
+  console.log('📋 machineIds:', machineIds);
+  console.log('🗺️  planogram в loadShoppingList:', planogram.length);
+  
+  if (machineIds.length === 0) {
+    if (forceLoad) {
+      toast({ variant: 'destructive', title: 'Ошибка', description: 'Не указаны ID аппаратов.' });
     }
-    setLoading(true);
-    setShoppingList([]);
+    return;
+  }
+  
+  if (machineIds.length === 1 && planogram.length === 0) {
+    console.log('⏳ Ждем загрузки планограммы...');
+    return;
+  }
+  
+  setLoading(true);
+  setShoppingList([]);
+  
+  try {
+    const allSales: TelemetronSaleItem[] = [];
+    const dateTo = new Date();
+    const machineOverrides: LoadingOverrides =
+      machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
+    const machineData = allMachines.find(m => m.id === machineIds[0]);
 
-    try {
-      const allSales: TelemetronSaleItem[] = [];
-      const dateTo = new Date();
-      const machineOverrides: LoadingOverrides =
-        machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
-      const machineData = allMachines.find(m => m.id === machineIds[0]);
+    for (const vmId of machineIds) {
+      try {
+        const startDate = dateFrom;
+        const salesData: TelemetronSalesResponse = await getSalesByProducts(
+          vmId,
+          format(startDate, 'yyyy-MM-dd HH:mm:ss'),
+          format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+        );
 
-      for (const vmId of machineIds) {
-        try {
-          const startDate = dateFrom;
-          const salesData: TelemetronSalesResponse = await getSalesByProducts(
-            vmId,
-            format(startDate, 'yyyy-MM-dd HH:mm:ss'),
-            format(dateTo, 'yyyy-MM-dd HH:mm:ss')
-          );
-
-          if (salesData?.data) allSales.push(...salesData.data);
-        } catch (e) {
-          console.error(`Ошибка для аппарата ${vmId}:`, e);
-          toast({
-            variant: 'destructive',
-            title: `Ошибка для аппарата ${vmId}`,
-            description:
-              e instanceof Error ? e.message : 'Не удалось загрузить данные.',
-          });
-        }
+        if (salesData?.data) allSales.push(...salesData.data);
+      } catch (e) {
+        console.error(`Ошибка для аппарата ${vmId}:`, e);
       }
-
-      const planogram =
-        machineIds.length === 1 ? planograms[machineIds[0]] : undefined;
-      const calculatedList = calculateShoppingList(
-        { data: allSales },
-        sort,
-        machineOverrides,
-        machineIds[0],
-        planogram,
-        machineData?.model
-      );
-
-      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
-        item => {
-          const overrideKey = `${machineIds[0]}-${item.name}`;
-          const override = machineOverrides[overrideKey];
-
-          return {
-            ...item,
-            status: override?.status || 'none',
-            loadedAmount: override?.loadedAmount ?? item.amount,
-            checked: override?.checked ?? false,
-            checkedType: override?.checkedType,
-            selectedSyrups: override?.selectedSyrups || [],
-            selectedSizes: override?.selectedSizes || [],
-          };
-        }
-      );
-
-      setShoppingList(listWithStatus);
-      setLoadedAmounts(
-        listWithStatus.map(item => item.loadedAmount ?? item.amount)
-      );
-
-      if (listWithStatus.length === 0) {
-        toast({
-          variant: 'default',
-          title: 'Нет продаж',
-          description: 'За выбранный период продаж не найдено.',
-        });
-      }
-    } catch (error) {
-      console.error('Ошибка загрузки shopping list:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Не удалось сформировать список.',
-      });
-    } finally {
-      setLoading(false);
     }
-  }, [machineIds, getSalesByProducts, toast, sort, dateFrom]);
 
-  useEffect(() => {
-    if (forceLoad) loadShoppingList();
-  }, [forceLoad, machineIdsString]);
+    console.log('📈 Продажи загружены:', allSales.length);
+    
+    const calculatedList = calculateShoppingList(
+      { data: allSales },
+      sort,
+      machineOverrides,
+      machineIds[0],
+      planogram,
+      machineData?.model
+    );
+
+    console.log('✅ calculateShoppingList вернула:', calculatedList.length);
+    console.log('Первые 18 элементов из calculateShoppingList:', calculatedList.slice(0, 18));
+    
+    const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
+      item => {
+        // ИСПРАВЛЕНО: добавляем productNumber в ключ
+        const overrideKey = `${machineIds[0]}-${item.productNumber || 'no-number'}-${item.name}`;
+        const override = machineOverrides[overrideKey];
+
+        console.log(`Для ${item.name} (${item.productNumber}) ключ: ${overrideKey}, найден override:`, !!override);
+
+        return {
+          ...item,
+          status: override?.status || 'none',
+          loadedAmount: override?.loadedAmount ?? item.amount,
+          checked: override?.checked ?? false,
+          checkedType: override?.checkedType,
+          selectedSyrups: override?.selectedSyrups || [],
+          selectedSizes: override?.selectedSizes || [],
+        };
+      }
+    );
+
+    setShoppingList(listWithStatus);
+    setLoadedAmounts(
+      listWithStatus.map(item => item.loadedAmount ?? item.amount)
+    );
+
+  } catch (error) {
+    console.error('❌ Ошибка загрузки shopping list:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка',
+      description: error instanceof Error ? error.message : 'Не удалось сформировать список.',
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [machineIds, getSalesByProducts, toast, sort, dateFrom, planogram, forceLoad]);
+
+useEffect(() => {
+  if (forceLoad) {
+    console.log('🔧 forceLoad активирован');
+    if (machineIds.length === 1 && planogram.length === 0) {
+      console.log('⏳ forceLoad: ждем загрузки планограммы');
+    } else {
+      console.log('🚀 forceLoad: запускаем loadShoppingList');
+      loadShoppingList();
+    }
+  }
+}, [forceLoad, machineIds, planogram, loadShoppingList]);
 
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
     setShoppingList(prev =>
@@ -280,116 +326,71 @@ export const ShoppingList = ({
     );
   };
 
-  const handleSaveOverrides = async () => {
-    if (machineIds.length > 1) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Сохранение статусов доступно только для одного аппарата.',
-      });
-      return;
-    }
+const handleSaveOverrides = async () => {
+  if (machineIds.length > 1) {
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка',
+      description: 'Сохранение статусов доступно только для одного аппарата.',
+    });
+    return;
+  }
 
-    setSaving(true);
-    const machineId = machineIds[0];
+  setSaving(true);
+  const machineId = machineIds[0];
 
-    try {
-      const overridesToSave: LoadingOverrides = {};
+  try {
+    const overridesToSave: LoadingOverrides = {};
 
-      shoppingList.forEach((item, index) => {
-        const key = `${machineId}-${item.name}`;
-        const actualLoadedAmount =
-          item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
+    shoppingList.forEach((item, index) => {
+      // ИСПРАВЛЕНО: добавляем productNumber в ключ
+      const key = `${machineId}-${item.productNumber || 'no-number'}-${item.name}`;
+      const actualLoadedAmount =
+        item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
 
-        const isCupOrLid = ['стаканчик', 'крышка'].some(name =>
-          item.name.toLowerCase().includes(name)
-        );
+      const override: LoadingOverride = {
+        status: item.status,
+        requiredAmount: item.amount,
+        loadedAmount: actualLoadedAmount,
+        timestamp: new Date().toISOString(),
+      };
 
-        const override: LoadingOverride = {
-          status: item.status,
-          requiredAmount: item.amount,
-          loadedAmount: actualLoadedAmount,
-          timestamp: new Date().toISOString(),
-        };
+      if (item.type === 'checkbox' || item.type === 'manual') {
+        override.checked = item.checked;
+        override.checkedType = item.checkedType;
+      }
 
-        // Сохраняем состояние чекбоксов
-        if (item.type === 'checkbox' || item.type === 'manual') {
-          override.checked = item.checked;
-          override.checkedType = item.checkedType;
+      if (item.type === 'select') {
+        override.selectedSyrups = item.selectedSyrups || [];
+      }
 
-          // Сохраняем выбранные размеры для стаканчиков/крышек
-          if (isCupOrLid) {
-            override.selectedSizes = item.selectedSizes || [];
-          }
-        }
-
-        // Сохраняем выбранные сиропы
-        if (item.type === 'select') {
-          override.selectedSyrups = item.selectedSyrups || [];
-        }
-
-        // Рассчитываем carryOver для обычных товаров
-        if (item.type === 'auto') {
-          if (item.status === 'none') {
-            override.carryOver = item.amount;
-          } else if (item.status === 'partial') {
-            override.carryOver = item.amount - actualLoadedAmount;
-          }
-        }
-
-        overridesToSave[key] = override;
-      });
-
-      const result = await saveLoadingOverrides(overridesToSave);
-
-      await saveLastSaveTime(machineId, new Date().toISOString());
-
-      const machine = allMachines.find(m => m.id === machineId);
-
-      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-        const now = new Date();
-        const newTimestamp = now.toISOString();
-        const dateUpdateResult = await setSpecialMachineDate(
-          machineId,
-          newTimestamp
-        );
-
-        await saveTelemetronPress(machineId, newTimestamp);
-
-        if (dateUpdateResult.success && onTimestampUpdate) {
-          onTimestampUpdate(newTimestamp);
-          toast({
-            title: 'Дата инкассации обновлена',
-            description: `Теперь продажи будут считаться с ${format(
-              new Date(newTimestamp),
-              'dd.MM.yyyy HH:mm'
-            )}`,
-          });
+      if (item.type === 'auto') {
+        if (item.status === 'none') {
+          override.carryOver = item.amount;
+        } else if (item.status === 'partial') {
+          override.carryOver = item.amount - actualLoadedAmount;
         }
       }
 
-      if (result.success) {
-        toast({
-          title: 'Сохранено',
-          description: 'Состояние всех позиций сохранено.',
-        });
+      console.log(`Сохраняем override для ${key}:`, override);
+      overridesToSave[key] = override;
+    });
 
-        loadShoppingList();
-      } else {
-        throw new Error('Не удалось сохранить данные на сервере.');
-      }
-    } catch (error) {
-      console.error('Ошибка сохранения:', error);
+    const result = await saveLoadingOverrides(overridesToSave);
+    
+    if (result.success) {
       toast({
-        variant: 'destructive',
-        title: 'Ошибка сохранения',
-        description:
-          error instanceof Error ? error.message : 'Неизвестная ошибка.',
+        title: 'Сохранено',
+        description: 'Состояние всех позиций сохранено.',
       });
-    } finally {
-      setSaving(false);
+      loadShoppingList();
     }
-  };
+  } catch (error) {
+    console.error('Ошибка сохранения:', error);
+  } finally {
+    setSaving(false);
+  }
+};
 
   const downloadList = () => {
     const periodStr = `${format(dateFrom, 'dd.MM.yyyy HH:mm')}-Сейчас`;

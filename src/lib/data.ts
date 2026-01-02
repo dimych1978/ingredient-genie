@@ -1,4 +1,4 @@
-import type {Ingredient} from '@/types/telemetron'
+import type { Ingredient } from '@/types/telemetron';
 export type Machine = {
   id: string;
   name: string;
@@ -1556,84 +1556,87 @@ export const allMachines: Machine[] = [
 ];
 
 export const planograms: Record<string, string[]> = {
-  '33354': [
-    'Вафли Веселая тёлочка',
-    'Сухарики Кириешки',
-    'Чипсы Лейс',
-    'Круассаны Яшкино 45г / Чудо / Степ',
-    'Круассаны 7 дней миди',
-    'Пирожное basker wheels панкейк 36гр / Орион Чоко-пай/Тонди',
-    'Сухарики Фишка 40г',
-    'Круассаны 7 дней мини',
-    'Шок.бат. Твикс',
-    'Шок.бат. Пикник',
-    'Шок.бат. Сникерс',
-    'Шок.бат. Баунти',
-    'Шок. Хрутка криспи',
-    'Скитлс',
-    'Киндер Делис пирож. глаз.',
-    'Печенье Школьн. шпарг. /Посольское ',
-    'Вафли голандские с начинкой яшкино',
-    'Орион Чоко-пай/Тонди',
-    'Шок. M&M',
-    'Меллер / Ментос',
-    'Дирол X-FRESH 18',
-    'Йота',
-    'Батончик Здоровый перекус',
-    'Мармелад Яшкино/frunel',
-    'Вафли голандские с начинкой яшкино',
-    'Соломка',
-    'Батончик Смарт Формула/Протеин',
-    'Конф. Простое Чудо',
-    'Левушка/Мятти',
-    'Лимонад "Добрый" 0,5 в ассорт',
-    'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
-    'Калинов морс 0,5',
-    'Морс "Дас Морс" 0,55л',
-    'Акваминерале Актив 0.5л',
-    'Мал. лимон - Актив Малаховская 0.5',
-    'Чай Рич 0,5',
-    'Лимонад Черноголовка 0,5 в ассорт.',
-    'Добрый/Черноголовка вода+сок в ассорт',
-    'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
-    'Лимонад "Добрый" ж/б 0,33 в ассорт',
-    'Сок Добрый в ассорт 0.33',
-    'Сок Рич в ассорт.',
-    'Сок Палпи в ассорт. 0.45',
-    'Сок 0,2л',
-    'Лимонад "Добрый" ж/б 0,33 в ассорт',
-    'Лимонад Черноголовка ж/б 0.33 в ассорт',
-    'Батончик Гуд Микс',
-    'Чипсы "От Мартина" 100г',
-    'Печенье Mr. О, 96гр',
-    'Крекер Яшкино с сыром 135гр',
-    'Печенье Форсайт 190гр',
-  ],
-  '33367': [
-    'Читос',
-    'Чипсы Лейс',
-    'Сухарики Кириешки',
-    'Шок.бат. Пикник',
-    'Баскер / Соломка',
-    'Шок.бат. Сникерс',
-    'Шок.бат. Твикс',
-    'Йота',
-    'Батончик Смарт Формула/Протеин',
-    'Арахис',
-    'Шоколад Беби фокс/ВАфли 40гр',
-    'Шок. M&M',
-    'Конф. Простое Чудо',
-    "Лимонад 'Добрый' 0,5 в ассорт",
-    'Калинов морс 0,5',
-    'Акваминерале Актив 0.5л',
-    'Сок Палпи в ассорт. 0.45',
-    'Чай Рич 0,5',
-    "Лимонад 'Добрый' ж/б 0,33 в ассорт",
-    'Милкис',
-    'Сок 0,2л',
-    'Мармелад Яшкино/frunel',
-    'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
-  ],
+  // '33354': [
+  //   'Вафли Веселая тёлочка',
+  //   'Сухарики Кириешки 33г',
+  //   'Чипсы Лейс 37гр',
+  //   'Круассаны Яшкино 45г / Чудо / Степ',
+  //   'Круассаны 7 дней миди ',
+  //   'Арахис бирка',
+  //   'Сухарики Фишка 40г',
+  //   'Круассаны 7 дней мини',
+  //   'Шок.бат. Сникерс 55 гр.',
+  //   'Шок.бат. Пикник 42гр.',
+  //   'Шок.бат. Твикс',
+  //   'Шок.бат. Баунти/Натс',
+  //   'Шок. Хрутка  криспи  22г.',
+  //   'Скитлс',
+  //   'Шок.бат. Твикс',
+  //   'Киндер Делис пирож. глаз. 42 гр.',
+  //   'Шоколад Беби фокс/ВАфли 40гр.',
+  //   'Печенье Школьн. шпарг. 50гр./Посольское 44гр.',
+  //   'Пирожное basker wheels панкейк 36гр / Вафли голандские с начинкой яшкино / Орион Чоко-пай/Тонди',
+  //   'Орион Чоко-пай/Тонди',
+  //   'Шок.  M&M 45г',
+  //   'Меллер/Ментос',
+  //   'Дирол X-FRESH 18г',
+  //   'Шок.бат. Сникерс 55 гр.',
+  //   'Йота',
+  //   'Батончик Здоровый перекус 50гр',
+  //   'Мармелад Яшкино/frunel',
+  //   'Вафли голандские с начинкой яшкино',
+  //   'Соломка 40.гр',
+  //   'Батончик Смарт Формула/Протеин',
+  //   'Конф. Простое Чудо',
+  //   'Левушка/Мятти',
+  //   'Лимонад "Добрый" 0,5 в ассорт.',
+  //   'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
+  //   'Калинов морс 0,5',
+  //   'Морс "Дас Морс" 0,55л',
+  //   'Мал. лимон - Актив Малаховская 0.5л.',
+  //   'Чай Рич 0,5',
+  //   'Добрый/Черноголовка вода+сок в ассорт. ',
+  //   'Лимонад Черноголовка 0,5 в ассорт.',
+  //   'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
+  //   'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
+  //   'Лимонад \"Добрый\" ж/б 0,33 в ассорт.',
+  //   'Сок Добрый в ассорт 0.33',
+  //   'Сок Рич в ассорт.',
+  //   'Сок Палпи в ассорт. 0.45',
+  //   'Сок 0,2л',
+  //   'Лимонад \"Добрый\" ж/б 0,33 в ассорт.',
+  //   'Лимонад Черноголовка ж/б 0.33 в ассорт.',
+  //   'Батончик Гуд Микс',
+  //   'Чипсы "От Мартина" 100г',
+  //   'Печенье Mr. О, 96гр',
+  //   'Крекер Яшкино с сыром 135гр',
+  //   'Печенье Форсайт 190гр',
+  // ],
+  // '33367': [
+  //   'Читос',
+  //   'Чипсы Лейс',
+  //   'Сухарики Кириешки',
+  //   'Шок.бат. Пикник',
+  //   'Баскер / Соломка',
+  //   'Шок.бат. Сникерс',
+  //   'Шок.бат. Твикс',
+  //   'Йота',
+  //   'Батончик Смарт Формула/Протеин',
+  //   'Арахис',
+  //   'Шоколад Беби фокс/ВАфли 40гр',
+  //   'Шок. M&M',
+  //   'Конф. Простое Чудо',
+  //   "Лимонад 'Добрый' 0,5 в ассорт",
+  //   'Калинов морс 0,5',
+  //   'Акваминерале Актив 0.5л',
+  //   'Сок Палпи в ассорт. 0.45',
+  //   'Чай Рич 0,5',
+  //   "Лимонад 'Добрый' ж/б 0,33 в ассорт",
+  //   'Милкис',
+  //   'Сок 0,2л',
+  //   'Мармелад Яшкино/frunel',
+  //   'Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5',
+  // ],
 };
 
 export type MachineIngredients = {
@@ -1643,183 +1646,248 @@ export type MachineIngredients = {
 export const machineIngredients: MachineIngredients = {
   opera: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    { name: 'кофе', apiNames: ['Кофе зерновой', 'Кофе'], unit: 'г', type: 'auto' },
-    { name: 'сливки', apiNames: ['Сливки сухие', 'Сливки'], unit: 'г', type: 'auto' },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'Кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'Сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
-    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
-    { name: 'банан', apiNames: ['Банан', "Раф Банан"], unit: 'г', type: 'auto' },
+    {
+      name: 'капучино ваниль',
+      apiNames: ['Капучино Ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'банан',
+      apiNames: ['Банан', 'Раф Банан'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
-    { name: 'стаканы 300', apiNames: ['Стаканчик', 'Стакан'], unit: 'шт', type: 'auto' },
+    {
+      name: 'стаканы 300',
+      apiNames: ['Стаканчик', 'Стакан'],
+      unit: 'шт',
+      type: 'auto',
+    },
     { name: 'крышки 80', apiNames: ['Крышка'], unit: 'шт', type: 'checkbox' },
-    { name: 'размешиватели 125', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    {
+      name: 'размешиватели 125',
+      apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'auto',
+    },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   'krea touch': [
-    { 
-    name: 'вода', 
-    apiNames: ['Вода'], 
-    unit: 'мл', 
-    type: 'auto' 
-  },
-  { 
-    name: 'кофе', 
-    apiNames: ['Кофе зерновой'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-  { 
-    name: 'сливки', 
-    apiNames: ['Сливки сухие'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-  { 
-    name: 'шоколад', 
-    apiNames: ['Шоколад'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-  { 
-    name: 'ваниль', 
-    apiNames: ['Ваниль', 'Капучино ваниль'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-  { 
-    name: 'сахар', 
-    apiNames: ['Сахар'], 
-    unit: 'г', 
-    type: 'checkbox' 
-  },
-  // Чекбоксы
-  { 
-    name: 'стаканчик большой', 
-    apiNames: ['Стаканчик'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  { 
-    name: 'стаканчик малый', 
-    apiNames: ['Стаканчик'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  { 
-    name: 'крышка большая', 
-    apiNames: ['Крышка'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  { 
-    name: 'крышка малая', 
-    apiNames: ['Крышка'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  { 
-    name: 'размешиватель', 
-    apiNames: ['Размешиватель'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  // Селектор для сиропа
-  { 
-    name: 'сироп', 
-    apiNames: ['Сироп'], 
-    unit: 'мл', 
-    type: 'select',
-    syrupOptions: [
-      { id: 'banana', name: 'банан', selected: false },
-      { id: 'vanilla', name: 'ваниль', selected: false },
-      { id: 'coconut', name: 'кокос', selected: false },
-      { id: 'caramel', name: 'карамель', selected: false },
-    ]
-  },
+    {
+      name: 'вода',
+      apiNames: ['Вода'],
+      unit: 'мл',
+      type: 'auto',
+    },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'шоколад',
+      apiNames: ['Шоколад'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'ваниль',
+      apiNames: ['Ваниль', 'Капучино ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сахар',
+      apiNames: ['Сахар'],
+      unit: 'г',
+      type: 'checkbox',
+    },
+    // Чекбоксы
+    {
+      name: 'стаканчик большой',
+      apiNames: ['Стаканчик'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'стаканчик малый',
+      apiNames: ['Стаканчик'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'крышка большая',
+      apiNames: ['Крышка'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'крышка малая',
+      apiNames: ['Крышка'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'размешиватель',
+      apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    // Селектор для сиропа
+    {
+      name: 'сироп',
+      apiNames: ['Сироп'],
+      unit: 'мл',
+      type: 'select',
+      syrupOptions: [
+        { id: 'banana', name: 'банан', selected: false },
+        { id: 'vanilla', name: 'ваниль', selected: false },
+        { id: 'coconut', name: 'кокос', selected: false },
+        { id: 'caramel', name: 'карамель', selected: false },
+      ],
+    },
   ],
   koro: [
-    { 
-    name: 'вода', 
-    apiNames: ['Вода'], 
-    unit: 'мл', 
-    type: 'auto' 
-  },
-  { 
-    name: 'кофе', 
-    apiNames: ['Кофе зерновой'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-  { 
-    name: 'сливки', 
-    apiNames: ['Сливки сухие'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-    { 
-    name: 'шоколад', 
-    apiNames: ['Шоколад'], 
-    unit: 'г', 
-    type: 'auto' 
-  },
-  { 
-    name: 'сахар', 
-    apiNames: ['Сахар'], 
-    unit: 'г', 
-    type: 'checkbox' 
-  },
-  // Чекбоксы
-  { 
-    name: 'стаканчик малый', 
-    apiNames: ['Стаканчик'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  { 
-    name: 'крышка малая', 
-    apiNames: ['Крышка'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  { 
-    name: 'размешиватель', 
-    apiNames: ['Размешиватель'], 
-    unit: 'шт', 
-    type: 'checkbox' 
-  },
-  // Селектор для сиропа
-  { 
-    name: 'сироп', 
-    apiNames: ['Сироп'], 
-    unit: 'мл', 
-    type: 'select',
-    syrupOptions: [
-      { id: 'banana', name: 'банан', selected: false },
-      { id: 'vanilla', name: 'ваниль', selected: false },
-      { id: 'coconut', name: 'кокос', selected: false },
-      { id: 'caramel', name: 'карамель', selected: false },
-    ]
-  },
+    {
+      name: 'вода',
+      apiNames: ['Вода'],
+      unit: 'мл',
+      type: 'auto',
+    },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'шоколад',
+      apiNames: ['Шоколад'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сахар',
+      apiNames: ['Сахар'],
+      unit: 'г',
+      type: 'checkbox',
+    },
+    // Чекбоксы
+    {
+      name: 'стаканчик малый',
+      apiNames: ['Стаканчик'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'крышка малая',
+      apiNames: ['Крышка'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'размешиватель',
+      apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    // Селектор для сиропа
+    {
+      name: 'сироп',
+      apiNames: ['Сироп'],
+      unit: 'мл',
+      type: 'select',
+      syrupOptions: [
+        { id: 'banana', name: 'банан', selected: false },
+        { id: 'vanilla', name: 'ваниль', selected: false },
+        { id: 'coconut', name: 'кокос', selected: false },
+        { id: 'caramel', name: 'карамель', selected: false },
+      ],
+    },
   ],
   kikko: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    { name: 'кофе зерновой', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
-    { name: 'сливки сухие', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    {
+      name: 'кофе зерновой',
+      apiNames: ['Кофе зерновой'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки сухие',
+      apiNames: ['Сливки сухие'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
-    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    {
+      name: 'капучино ваниль',
+      apiNames: ['Капучино Ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
-    { name: 'стаканчик', apiNames: ['Стаканчик', 'Стакан пластиковый'], unit: 'шт', type: 'auto' },
-    { name: 'размешиватель', apiNames: ['Размешиватель', 'Размешиватель, 105 мм'], unit: 'шт', type: 'auto' },
+    {
+      name: 'стаканчик',
+      apiNames: ['Стаканчик', 'Стакан пластиковый'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'размешиватель',
+      apiNames: ['Размешиватель', 'Размешиватель, 105 мм'],
+      unit: 'шт',
+      type: 'auto',
+    },
   ],
   saeco: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
     { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
-    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    {
+      name: 'капучино ваниль',
+      apiNames: ['Капучино Ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'стаканы 150', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    {
+      name: 'размешиватели 105',
+      apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'auto',
+    },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   'saeco-max': [
@@ -1827,11 +1895,21 @@ export const machineIngredients: MachineIngredients = {
     { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
     { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
-    { name: 'капучино ваниль', apiNames: ['Капучино Ваниль'], unit: 'г', type: 'auto' },
+    {
+      name: 'капучино ваниль',
+      apiNames: ['Капучино Ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'кисель', apiNames: ['Кисель'], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'стаканы 150', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', apiNames: ['Размешиватель'], unit: 'шт', type: 'auto' },
+    {
+      name: 'размешиватели 105',
+      apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'auto',
+    },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
   colibri: [
@@ -1840,8 +1918,18 @@ export const machineIngredients: MachineIngredients = {
     { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
-    { name: 'стаканы пластик', apiNames: ['Стаканчик', 'Стакан пластиковый'], unit: 'шт', type: 'auto' },
-    { name: 'размешиватели 105', apiNames: ['Размешиватель', 'Размешиватель, 105 мм'], unit: 'шт', type: 'auto' },
+    {
+      name: 'стаканы пластик',
+      apiNames: ['Стаканчик', 'Стакан пластиковый'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'размешиватели 105',
+      apiNames: ['Размешиватель', 'Размешиватель, 105 мм'],
+      unit: 'шт',
+      type: 'auto',
+    },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
 };
@@ -1870,17 +1958,19 @@ export const getIngredientConfig = (
 ): Ingredient | undefined => {
   // Нормализуем название из API
   const normalizedApiName = apiName.toLowerCase().trim();
-  
+
   // Ищем модель
-  const modelKey = Object.keys(machineIngredients).find(model => 
+  const modelKey = Object.keys(machineIngredients).find(model =>
     machineModel?.toLowerCase().includes(model.toLowerCase())
   );
-  
+
   if (!modelKey) return undefined;
-  
+
   // Ищем ингредиент в конфиге модели
-  return machineIngredients[modelKey].find(ingredient => 
-    ingredient.apiNames.some(api => api.toLowerCase().includes(normalizedApiName)) ||
-    ingredient.name.toLowerCase() === normalizedApiName
+  return machineIngredients[modelKey].find(
+    ingredient =>
+      ingredient.apiNames.some(api =>
+        api.toLowerCase().includes(normalizedApiName)
+      ) || ingredient.name.toLowerCase() === normalizedApiName
   );
 };

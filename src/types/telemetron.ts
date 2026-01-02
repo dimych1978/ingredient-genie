@@ -74,4 +74,5 @@ export interface ShoppingListItem {
   syrupOptions?: SyrupOption[]; // для сиропа
   checked?: boolean;
   planogramName: string | null;
+  productNumber?: string;
 }

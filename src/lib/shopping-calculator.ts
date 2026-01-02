@@ -1,3 +1,4 @@
+// shopping-calculator.ts
 import type {
   TelemetronSaleItem,
   LoadingOverrides,
@@ -8,50 +9,6 @@ import type {
 import { allMachines, machineIngredients, getIngredientConfig } from './data';
 
 export type SortType = 'grouped' | 'alphabetical';
-
-const normalizeForPlanogramComparison = (name: string): string => {
-  return name
-    .replace(/["«»"']/g, '')
-    .replace(/[.,]$/g, '')
-    .replace(/\s*в ассорт(именте)?\.?/gi, ' в ассорт')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-};
-
-const findPlanogramEntry = (
-  itemName: string,
-  planogram: string[]
-): string | null => {
-  const normalizedItem = normalizeForPlanogramComparison(itemName);
-
-  for (const planogramEntry of planogram) {
-    // Разбиваем планограмму на варианты через "/"
-    const variants = planogramEntry.split('/').map(v => v.trim());
-
-    for (const variant of variants) {
-      const normalizedVariant = normalizeForPlanogramComparison(variant);
-
-      // Проверяем частичное совпадение
-      if (
-        normalizedItem.includes(normalizedVariant) ||
-        normalizedVariant.includes(normalizedItem)
-      ) {
-        return planogramEntry; // Возвращаем полную запись из планограммы
-      }
-    }
-  }
-
-  return null; // Не найдено
-};
-
-const findPlanogramIndex = (itemName: string, planogram: string[]): number => {
-  const entry = findPlanogramEntry(itemName, planogram);
-  if (entry) {
-    return planogram.indexOf(entry);
-  }
-  return -1;
-};
 
 const getDisplayUnit = (
   apiAmount: number,
@@ -74,10 +31,209 @@ export const calculateShoppingList = (
   planogram?: string[],
   machineModel?: string
 ): ShoppingListItem[] => {
-  const machine = allMachines.find(m => m.id === machineId);
+  console.log('=== calculateShoppingList вызвана ===');
+  
+  // 1. Создаем мапу продаж по КЛЮЧУ: product_number + name
+  const salesMap = new Map<string, { quantity: number; name: string; productNumber: string }>();
+  
+  salesData.data.forEach(sale => {
+    if (!sale.product_number || !sale.planogram?.name) return;
+    
+    // Ключ включает product_number для различения одинаковых названий на разных ячейках
+    const key = `${sale.product_number}-${sale.planogram.name}`;
+    
+    const current = salesMap.get(key) || { 
+      quantity: 0, 
+      name: sale.planogram.name,
+      productNumber: sale.product_number
+    };
+    current.quantity += sale.number;
+    salesMap.set(key, current);
+  });
+  
+  console.log('salesMap размер (уникальных product_number + name):', salesMap.size);
+  
+  // 2. Если есть планограмма - используем её как основной источник
+  if (planogram && planogram.length > 0) {
+    console.log('=== Используем планограмму, элементов:', planogram.length);
+    
+    const result: ShoppingListItem[] = [];
+    const usedKeys = new Set<string>();
+    
+    planogram.forEach(planogramEntry => {
+      // Извлекаем product_number и название из планограммы
+      // Формат: "1. Бонаква негаз. 0,5"
+      const match = planogramEntry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+      
+      if (!match) return;
+      
+      const productNumber = match[1];
+      const planogramName = match[2].trim();
+      
+      // Ключ для поиска продаж
+      const salesKey = `${productNumber}-${planogramName}`;
+      
+      // Находим продажи для этой конкретной ячейки
+      const sales = salesMap.get(salesKey);
+      const salesQuantity = sales?.quantity || 0;
+      
+      // Находим override (используем полное название с product_number для уникальности)
+      const overrideKey = `${machineId}-${productNumber}-${planogramName}`;
+      const override = overrides[overrideKey];
+      const carryOver = override?.carryOver || 0;
+      
+      // Вычисляем сколько нужно
+      const totalNeeded = Math.max(0, salesQuantity + carryOver);
+      
+      // Определяем тип товара
+      const config = getIngredientConfig(planogramName, machineModel);
+      
+      // Определяем единицу измерения
+      let unit = 'шт';
+      let displaySales = salesQuantity;
+      let displayDeficit = carryOver;
+      
+      if (config) {
+        const salesUnit = getDisplayUnit(salesQuantity, config.unit as any);
+        const deficitUnit = getDisplayUnit(carryOver, config.unit as any);
+        unit = salesUnit.unit;
+        displaySales = Math.ceil(salesUnit.displayAmount);
+        displayDeficit = Math.ceil(deficitUnit.displayAmount);
+      }
+      
+      result.push({
+        name: planogramName,
+        planogramName: planogramName,
+        productNumber: productNumber,
+        amount: totalNeeded,
+        unit: unit,
+        salesAmount: displaySales,
+        previousDeficit: displayDeficit,
+        isCore: false,
+        type: config?.type || 'auto',
+        syrupOptions: config?.syrupOptions,
+        status: override?.status || 'none',
+        checked: override?.checked || false,
+      });
+      
+      usedKeys.add(salesKey);
+    });
+    
+    console.log('После планограммы, result:', result.length);
+    
+    // 3. Добавляем товары, которые есть в продажах, но нет в планограмме
+    salesMap.forEach((sales, key) => {
+      if (!usedKeys.has(key)) {
+        const [productNumber, name] = key.split('-', 2);
+        
+        const overrideKey = `${machineId}-${productNumber}-${name}`;
+        const override = overrides[overrideKey];
+        const carryOver = override?.carryOver || 0;
+        const totalNeeded = Math.max(0, sales.quantity + carryOver);
+        
+        const config = getIngredientConfig(name, machineModel);
+        
+        let unit = 'шт';
+        let displaySales = sales.quantity;
+        let displayDeficit = carryOver;
+        
+        if (config) {
+          const salesUnit = getDisplayUnit(sales.quantity, config.unit as any);
+          const deficitUnit = getDisplayUnit(carryOver, config.unit as any);
+          unit = salesUnit.unit;
+          displaySales = Math.ceil(salesUnit.displayAmount);
+          displayDeficit = Math.ceil(deficitUnit.displayAmount);
+        }
+        
+        result.push({
+          name: name,
+          planogramName: name,
+          productNumber: productNumber,
+          amount: totalNeeded,
+          unit: unit,
+          salesAmount: displaySales,
+          previousDeficit: displayDeficit,
+          isCore: false,
+          type: config?.type || 'auto',
+          syrupOptions: config?.syrupOptions,
+          status: override?.status || 'none',
+          checked: override?.checked || false,
+        });
+      }
+    });
+    
+    console.log('После добавления salesMap, result:', result.length);
 
+    // 4. Определяем core ingredients
+    const machine = allMachines.find(m => m.id === machineId);
+    console.log('Machine найден?', !!machine);
+    console.log('Machine model:', machine?.model);
+    
+    const lowerMachineModel = machine?.model?.toLowerCase();
+    const matchingKeys = lowerMachineModel
+      ? Object.keys(machineIngredients).filter(key =>
+          lowerMachineModel.includes(key.toLowerCase())
+        )
+      : [];
+    
+    console.log('Matching keys:', matchingKeys);
+    
+    matchingKeys.sort((a, b) => b.length - a.length);
+    const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
+    const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
+    
+    console.log('Model key:', modelKey);
+    console.log('Core ingredient configs длина:', coreIngredientConfigs.length);
+    console.log('Core ingredient configs:', coreIngredientConfigs);
+    
+    // Помечаем core ingredients
+    result.forEach(item => {
+      const isCore = coreIngredientConfigs.some(c => 
+        c.apiNames?.some(apiName => 
+          item.name.toLowerCase().includes(apiName.toLowerCase())
+        ) || c.name === item.name
+      );
+      if (isCore) {
+        console.log('Найден core ingredient:', item.name);
+        item.isCore = true;
+      }
+    });
+    
+    // 5. Сортируем: сначала core, потом по порядку планограммы
+    const coreItems = result.filter(item => item.isCore);
+    const nonCoreItems = result.filter(item => !item.isCore);
+    
+    console.log('Core items:', coreItems.length);
+    console.log('Non-core items:', nonCoreItems.length);
+    
+    // Core items сортируем как раньше
+    coreItems.sort((a, b) => {
+      const indexA = coreIngredientConfigs.findIndex(c => 
+        c.apiNames?.some(apiName => a.name.toLowerCase().includes(apiName.toLowerCase())) || c.name === a.name
+      );
+      const indexB = coreIngredientConfigs.findIndex(c => 
+        c.apiNames?.some(apiName => b.name.toLowerCase().includes(apiName.toLowerCase())) || c.name === b.name
+      );
+      return indexA - indexB;
+    });
+    
+    const finalResult = [...coreItems, ...nonCoreItems];
+    
+    console.log('Итоговый результат длина:', finalResult.length);
+console.log('Итоговый результат первые 25:', finalResult.slice(0, 25).map(item => ({
+  name: item.name,
+  productNumber: item.productNumber,
+  amount: item.amount
+})));
+    console.log('=== Завершение calculateShoppingList ===');
+    
+    return finalResult;
+  }
+  
+  console.log('=== Планограммы нет, используем старую логику ===');
+  
+ const machine = allMachines.find(m => m.id === machineId);
   const lowerMachineModel = machine?.model?.toLowerCase();
-
   const matchingKeys = lowerMachineModel
     ? Object.keys(machineIngredients).filter(key =>
         lowerMachineModel.includes(key.toLowerCase())
@@ -85,9 +241,7 @@ export const calculateShoppingList = (
     : [];
 
   matchingKeys.sort((a, b) => b.length - a.length);
-
   const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
-
   const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
 
   const totals: Record<
@@ -95,15 +249,9 @@ export const calculateShoppingList = (
     { amount: number; config: Ingredient; sales: number; carryOver: number }
   > = {};
 
-  // 1. Обработка продаж из API
+  // Обработка продаж
   salesData.data.forEach(sale => {
-    if (
-      !sale.planogram ||
-      !sale.planogram.name ||
-      sale.planogram.name.toLowerCase() === 'item'
-    ) {
-      return;
-    }
+    if (!sale.planogram?.name || sale.planogram.name.toLowerCase() === 'item') return;
 
     const quantity = sale.number;
     const ingredients = sale.planogram.ingredients;
@@ -143,7 +291,7 @@ export const calculateShoppingList = (
     }
   });
 
-  // 2. Обработка переносов (overrides)
+  // Обработка переносов
   Object.keys(overrides).forEach(overrideKey => {
     if (!overrideKey.startsWith(`${machineId}-`)) return;
 
@@ -175,9 +323,8 @@ export const calculateShoppingList = (
     }
   });
 
-  const allItems: ShoppingListItem[] = [];
+  const allItems: ShoppingListItem[] = []; // ← ВОТ ТАК ДОЛЖНО БЫТЬ ОПРЕДЕЛЕНО!
 
-  // 3. Формируем финальный список
   Object.keys(totals).forEach(key => {
     const data = totals[key];
     const { unit: displayUnit, displayAmount } = getDisplayUnit(
@@ -193,14 +340,9 @@ export const calculateShoppingList = (
       data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
     );
 
-    // Находим соответствие в планограмме для сортировки
-    const planogramName = planogram && planogram.length > 0
-      ? findPlanogramEntry(data.config.name, planogram)
-      : null;
-
     allItems.push({
       name: data.config.name,
-      planogramName, // Для сортировки по планограмме
+      planogramName: null,
       amount: Math.ceil(Math.max(0, displayAmount)),
       unit: displayUnit,
       status: overrides[`${machineId}-${key}`]?.status || 'none',
@@ -213,7 +355,7 @@ export const calculateShoppingList = (
     });
   });
 
-  // 4. Сортируем
+  // Сортируем
   allItems.sort((a, b) => {
     const aIsCore = a.isCore;
     const bIsCore = b.isCore;
@@ -227,23 +369,10 @@ export const calculateShoppingList = (
       return indexA - indexB;
     }
 
-    // Сортировка снеков по планограмме
-    if (planogram && planogram.length > 0) {
-      const indexA = a.planogramName
-        ? planogram.indexOf(a.planogramName)
-        : findPlanogramIndex(a.name, planogram);
-        
-      const indexB = b.planogramName
-        ? planogram.indexOf(b.planogramName)
-        : findPlanogramIndex(b.name, planogram);
-
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-    }
-
     return a.name.localeCompare(b.name, 'ru');
   });
 
-  return allItems;
+  const finalResult = allItems; // из старой логики
+  console.log('Итоговый результат (старая логика):', finalResult.length);
+  return finalResult;
 };
