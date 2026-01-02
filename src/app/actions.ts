@@ -10,6 +10,42 @@ const DATES_KEY = 'special-machine-dates';
 const TELEMETRON_PRESS_KEY_PREFIX = 'telemetron-press:';
 const LAST_SAVE_KEY_PREFIX = 'last-save:';
 
+// --- Функции для работы с планограммами ---
+
+const PLANOGRAM_KEY_PREFIX = 'planogram:';
+
+// Сохраняем планограмму
+export async function savePlanogram(machineId: string, planogram: Record<string, string>): Promise<{ success: boolean }> {
+  try {
+    await kv.set(`${PLANOGRAM_KEY_PREFIX}${machineId}`, planogram);
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка сохранения планограммы:', error);
+    return { success: false };
+  }
+}
+
+// Получаем сохраненную планограмму
+export async function getSavedPlanogram(machineId: string): Promise<Record<string, string> | null> {
+  try {
+    return await kv.get<Record<string, string>>(`${PLANOGRAM_KEY_PREFIX}${machineId}`);
+  } catch (error) {
+    console.error('Ошибка чтения планограммы:', error);
+    return null;
+  }
+}
+
+// Удаляем сохраненную планограмму
+export async function deleteSavedPlanogram(machineId: string): Promise<{ success: boolean }> {
+  try {
+    await kv.del(`${PLANOGRAM_KEY_PREFIX}${machineId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка удаления планограммы:', error);
+    return { success: false };
+  }
+}
+
 // Сохраняем время нажатия Telemetron
 export async function saveTelemetronPress(machineId: string, timestamp: string): Promise<void> {
   try {

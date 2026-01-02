@@ -1,7 +1,8 @@
 // hooks/useTelemetronApi.ts
 import { useCallback } from "react";
-import { format } from "date-fns"; // <-- меняем formatISO на format
+import { format } from "date-fns";
 import { TelemetronSalesResponse } from "@/types/telemetron";
+import { getSavedPlanogram } from "@/app/actions"; // Добавляем импорт
 
 export const useTelemetronApi = () => {
   const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
@@ -49,28 +50,37 @@ export const useTelemetronApi = () => {
     );
   }, [apiRequest]);
 
-// hooks/useTelemetronApi.ts - исправляем getPlanogram
+// Обновленная функция getPlanogram
 const getPlanogram = useCallback(async (vmId: string): Promise<string[]> => {
   const cacheKey = `planogram-${vmId}`;
-
   
+  // 1. Пытаемся получить сохраненную планограмму из Redis
+  const savedPlanogram = await getSavedPlanogram(vmId);
+  if (savedPlanogram && Object.keys(savedPlanogram).length > 0) {
+    console.log('Используем сохраненную планограмму из Redis для аппарата', vmId);
+    
+    // Преобразуем объект в массив строк
+    const planogramArray = Object.entries(savedPlanogram)
+      .map(([productNumber, name]) => `${productNumber}. ${name}`);
+    
+    // Сортируем по naturalProductNumberSort
+    const sorted = planogramArray.sort((a, b) => {
+      const aMatch = a.match(/^(\d+)([A-Za-z]*?)\./);
+      const bMatch = b.match(/^(\d+)([A-Za-z]*?)\./);
+      const aNum = aMatch ? aMatch[0] : '';
+      const bNum = bMatch ? bMatch[0] : '';
+      return naturalProductNumberSort({ product_number: aNum }, { product_number: bNum });
+    });
+    
+    return sorted;
+  }
   
-  // Проверяем кэш (24 часа для планограммы)
-  // const cached = sessionStorage.getItem(cacheKey);
-  // const cacheTime = sessionStorage.getItem(`${cacheKey}:time`);
-  
-  // if (cached && cacheTime && Date.now() - parseInt(cacheTime) < 24 * 60 * 60 * 1000) {
-  //   console.log('Возвращаем кэшированную планограмму для', vmId);
-  //   return JSON.parse(cached);
-  // }
+  console.log('Сохраненной планограммы нет, генерируем из данных продаж для аппарата', vmId);
   
   // Загружаем данные для создания планограммы
   const dateTo = new Date();
   const dateFrom = new Date();
-  dateFrom.setDate(dateFrom.getDate() - 30); // Берем продажи за 7 дней
-  
-  console.log('Генерируем планограмму для аппарата', vmId);
-  console.log('Период:', dateFrom, '-', dateTo);
+  dateFrom.setDate(dateFrom.getDate() - 30); // Берем продажи за 30 дней
   
   try {
     const salesData: TelemetronSalesResponse = await getSalesByProducts(
@@ -90,12 +100,7 @@ const getPlanogram = useCallback(async (vmId: string): Promise<string[]> => {
     // Генерируем планограмму из данных
     const planogram = generatePlanogramFromSalesData(salesData);
     
-    console.log('Сгенерированная планограмма:', planogram);
-    console.log('Длина планограммы:', planogram.length);
-    
-    // Сохраняем в кэш
-    // sessionStorage.setItem(cacheKey, JSON.stringify(planogram));
-    // sessionStorage.setItem(`${cacheKey}:time`, Date.now().toString());
+    console.log('Сгенерированная планограмма:', planogram.length, 'элементов');
     
     return planogram;
   } catch (error) {
@@ -111,24 +116,26 @@ function naturalProductNumberSort(a: {product_number: string}, b: {product_numbe
   const aNum = parseInt(aMatch?.[1] || "0");
   const bNum = parseInt(bMatch?.[1] || "0");
   
-  // Ключевое исправление: сравниваем ВСЕ числовые части
-  // 10, 11, 12... должны идти перед 1A, 1B
-  // Сравниваем по числовой части
   if (aNum !== bNum) {
-    // Если числовые части разные, сравниваем их
     return aNum - bNum;
   }
   
   const aSuffix = aMatch?.[2] || "";
   const bSuffix = bMatch?.[2] || "";
   
-  // Если числовые части равны, то:
-  // 1. Без суффикса идет перед с суффиксом
-  if (aSuffix === "" && bSuffix !== "") return -1;  // "10" < "1A"
-  if (aSuffix !== "" && bSuffix === "") return 1;   // "1A" > "10"
+  if (aSuffix === "" && bSuffix !== "") return -1;
+  if (aSuffix !== "" && bSuffix === "") return 1;
   
-  // Оба с суффиксами: сортируем по алфавиту
   return aSuffix.localeCompare(bSuffix);
+}
+
+function normalizeName(name: string): string {
+  // Убираем лишние пробелы в начале/конце
+  // Убираем точку в конце, если она есть
+  return name
+    .trim()
+    .replace(/\.+$/, '') // Убираем точку в конце
+    .replace(/\s+/g, ' '); // Заменяем множественные пробелы на один
 }
 
 function generatePlanogramFromSalesData(salesData: TelemetronSalesResponse): string[] {
@@ -136,20 +143,51 @@ function generatePlanogramFromSalesData(salesData: TelemetronSalesResponse): str
   
   if (!salesData.data || salesData.data.length === 0) return [];
   
-  const validItems = salesData.data.filter(item => 
-    item.product_number && item.planogram?.name
-  );
+  // 1. Собираем все записи, применяем .trim() к именам
+  const itemsByProductNumber = new Map<string, Array<{
+    originalName: string;
+    totalSales: number;
+  }>>();
   
-  // Собираем существующие комбинации из API
-  const existingCombinations = new Map<string, string>();
-  
-  validItems.forEach(item => {
-    const key = `${item.product_number}.${item.planogram.name}`;
-    const value = `${item.product_number}. ${item.planogram.name}`;
-    existingCombinations.set(key, value);
+  salesData.data.forEach(item => {
+    if (!item.product_number || !item.planogram?.name) return;
+    
+    const productNumber = item.product_number;
+    const originalName = item.planogram.name.trim();
+    
+    // Пропускаем "пр"
+    if (originalName === "пр") {
+      return;
+    }
+    
+    if (!itemsByProductNumber.has(productNumber)) {
+      itemsByProductNumber.set(productNumber, []);
+    }
+    
+    const items = itemsByProductNumber.get(productNumber)!;
+    const existingItem = items.find(i => i.originalName === originalName);
+    
+    if (existingItem) {
+      existingItem.totalSales += item.number;
+    } else {
+      items.push({
+        originalName: originalName,
+        totalSales: item.number
+      });
+    }
   });
   
-  // Генерируем полную планограмму: 10-19, 1A, 1B, 20-29, 2A, 2B, ..., 60-69
+  // 2. Выбираем лучший вариант для каждого productNumber
+  const bestNames = new Map<string, string>();
+  
+  itemsByProductNumber.forEach((items, productNumber) => {
+    if (items.length === 0) return;
+    
+    // Берем любой вариант (все имена одинаковые после .trim())
+    bestNames.set(productNumber, items[0].originalName);
+  });
+  
+  // 3. Генерируем полную планограмму из 72 ячеек
   const fullPlanogram: string[] = [];
   
   // Для каждой полки (1-6)
@@ -158,12 +196,12 @@ function generatePlanogramFromSalesData(salesData: TelemetronSalesResponse): str
     for (let i = 0; i <= 9; i++) {
       const cellNum = shelf * 10 + i; // 10, 11, ..., 19
       const key = `${cellNum}`;
-      const existing = existingCombinations.get(`${key}.${getItemNameByKey(existingCombinations, key)}`);
       
-      if (existing) {
-        fullPlanogram.push(existing);
+      const bestName = bestNames.get(key);
+      if (bestName) {
+        fullPlanogram.push(`${key}. ${bestName}`);
       } else {
-        fullPlanogram.push(`${key}. [Нет данных]`);
+        // Не добавляем "[Нет данных]" - пропускаем пустые ячейки
       }
     }
     
@@ -171,28 +209,17 @@ function generatePlanogramFromSalesData(salesData: TelemetronSalesResponse): str
     const letters = ['A', 'B'];
     for (const letter of letters) {
       const key = `${shelf}${letter}`; // 1A, 1B
-      const existing = existingCombinations.get(`${key}.${getItemNameByKey(existingCombinations, key)}`);
       
-      if (existing) {
-        fullPlanogram.push(existing);
+      const bestName = bestNames.get(key);
+      if (bestName) {
+        fullPlanogram.push(`${key}. ${bestName}`);
       } else {
-        fullPlanogram.push(`${key}. [Нет данных]`);
+        // Не добавляем "[Нет данных]" - пропускаем пустые ячейки
       }
     }
   }
   
-  // Функция для получения названия по ключу
-  function getItemNameByKey(map: Map<string, string>, key: string): string {
-    for (const [mapKey, value] of map.entries()) {
-      if (mapKey.startsWith(`${key}.`)) {
-        const match = value.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-        return match ? match[2] : '';
-      }
-    }
-    return '';
-  }
-  
-  // Сортируем по naturalProductNumberSort
+  // 4. Сортируем полную планограмму
   const sorted = fullPlanogram.sort((a, b) => {
     const aMatch = a.match(/^(\d+)([A-Za-z]*?)\./);
     const bMatch = b.match(/^(\d+)([A-Za-z]*?)\./);
@@ -201,13 +228,12 @@ function generatePlanogramFromSalesData(salesData: TelemetronSalesResponse): str
     return naturalProductNumberSort({ product_number: aNum }, { product_number: bNum });
   });
   
-  console.log('Итоговая планограмма:', sorted.length);
-  console.log('Первые 20 элементов:', sorted.slice(0, 20));
-  
+  console.log('Итоговая планограмма:', sorted.length, 'элементов из возможных 72');
+  console.log('Сортировка:', sorted.slice(0, 10));
   return sorted;
 }
 
-  return {
+return {
     getMachineOverview,
     getSalesByProducts,
     apiRequest, 

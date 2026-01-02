@@ -18,6 +18,7 @@ import {
   getLoadingOverrides,
   saveLastSaveTime,
   saveLoadingOverrides,
+  savePlanogram,
   saveTelemetronPress,
   setSpecialMachineDate,
 } from '@/app/actions';
@@ -39,6 +40,7 @@ import {
   Pencil,
   CircleCheckBig,
   AlertTriangle,
+  Bookmark,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -94,6 +96,8 @@ export const ShoppingList = ({
   const [shoppingList, setShoppingList] = useState<
     ShoppingListItemWithStatus[]
   >([]);
+  const [savingPlanogram, setSavingPlanogram] = useState(false); 
+  const [showPlanogramDialog, setShowPlanogramDialog] = useState(false); 
   const [loadedAmounts, setLoadedAmounts] = useState<number[]>([]);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const [planogram, setPlanogram] = useState<string[]>([]);
@@ -102,6 +106,65 @@ export const ShoppingList = ({
 
   const { getSalesByProducts, getPlanogram } = useTelemetronApi();
   const { toast } = useToast();
+
+     const handleSavePlanogram = async () => {
+    if (machineIds.length !== 1 || planogram.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Для сохранения планограммы выберите один аппарат и дождитесь загрузки планограммы.',
+      });
+      return;
+    }
+
+    setSavingPlanogram(true);
+    setShowPlanogramDialog(true);
+  };
+
+  // ДОБАВЛЯЕМ функцию подтверждения сохранения планограммы
+  const confirmSavePlanogram = async () => {
+    const machineId = machineIds[0];
+    
+    try {
+      // Преобразуем массив строк в объект product_number -> name
+      const planogramObject: Record<string, string> = {};
+      
+      planogram.forEach(item => {
+        const match = item.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+        if (match) {
+          const productNumber = match[1];
+          const name = match[2].trim();
+          planogramObject[productNumber] = name;
+        }
+      });
+      
+      const result = await savePlanogram(machineId, planogramObject);
+      
+      if (result.success) {
+        toast({
+          title: 'Планограмма сохранена',
+          description: 'Текущая планограмма сохранена как эталонная.',
+        });
+        setShowPlanogramDialog(false);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось сохранить планограмму.',
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения планограммы:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Произошла ошибка при сохранении планограммы.',
+      });
+    } finally {
+      setSavingPlanogram(false);
+    }
+  };
+
 
   useEffect(() => {
     setMachineIds(initialMachineIds);
@@ -490,6 +553,22 @@ const handleSaveOverrides = async () => {
             )}
           </div>
         )}
+
+ {machineIds.length === 1 && planogram.length > 0 && (
+                    <Button
+                      onClick={handleSavePlanogram}
+                      variant='outline'
+                      className='border-purple-600 text-purple-300 hover:bg-purple-900/50'
+                      disabled={savingPlanogram}
+                    >
+                      {savingPlanogram ? (
+                        <Loader2 className='animate-spin mr-2 h-4 w-4' />
+                      ) : (
+                        <Bookmark className='mr-2 h-4 w-4' />
+                      )}
+                      Сохранить планограмму
+                    </Button>
+                  )}
 
         {loading && (
           <div className='text-center py-8'>
