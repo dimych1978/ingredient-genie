@@ -5,6 +5,15 @@ export type Machine = {
   location: string;
   model?: string;
 };
+export type MachineIngredients = {
+  [model: string]: Ingredient[];
+};
+
+export interface GroupedShoppingListsProps {
+  machineIds: string[];
+  specialMachineDates: Record<string, string>;
+  onSaveChanges: () => void;
+}
 
 export const allMachines: Machine[] = [
   {
@@ -1555,7 +1564,26 @@ export const allMachines: Machine[] = [
   },
 ];
 
-export const planograms: Record<string, string[]> = {
+export const planogramsHardCode: Record<string, string[]> = {
+  bottle: [
+    'Бонаква негаз. 0,5',
+    'Бонаква газ. 0,5',
+    'Сок Добрый Мультифрукт 0,33',
+    'Сок Добрый Яблоко 0,33',
+    'Сок Палпи Апельсин 0,45',
+    'Сок Палпи Вишня 0,45',
+    'Чай Рич/Черноголовка Черный 0,5',
+    'Чай Рич/Черноголовка Зеленый 0,5',
+    'Лимонад "Добрый  Кола Зеро" 0,5',
+    'Лимонад "Добрый Кола" 0,5',
+    'Лимонад "Добрый Кола Малина" 0,5',
+    'Лимонад "Добрый Фанта" 0,5',
+    'Лимонад "Добрый Спрайт" 0,5',
+    'Лимонад "Добрый Кола Зеро" 0,33 ж/б',
+    'Лимонад "Добрый Кола " 0,33 ж/б',
+    'Лимонад "Добрый Фанта" 0,33 ж/б',
+    'Лимонад "Добрый Спрайт" 0,33 ж/б',
+  ],
   // '33354': [
   //   'Вафли Веселая тёлочка',
   //   'Сухарики Кириешки 33г',
@@ -1639,8 +1667,29 @@ export const planograms: Record<string, string[]> = {
   // ],
 };
 
-export type MachineIngredients = {
-  [model: string]: Ingredient[];
+export const getMachineType = (
+  machine: Machine
+): 'coffee' | 'snack' | 'bottle' => {
+  const model = machine.model?.toLowerCase();
+  if (!model) return 'snack'; // Default
+  console.log('Определение типа аппарата:', {
+    model,
+    machineId: machine.id,
+    machineName: machine.name,
+  });
+
+  if (
+    ['krea', 'opera', 'kikko', 'colibri', 'saeco', 'jetinno'].includes(model)
+  ) {
+    return 'coffee';
+  }
+  if (['snakky', 'tcn', 'fas', 'foodbox'].includes(model)) {
+    return 'snack';
+  }
+  if (['sanden', 'sve'].some(type => model.includes(type))) {
+    return 'bottle';
+  }
+  return 'snack';
 };
 
 export const machineIngredients: MachineIngredients = {

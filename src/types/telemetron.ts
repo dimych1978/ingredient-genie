@@ -25,6 +25,7 @@ export interface TelemetronPlanogram {
   name: string;
   receipt: boolean;
   ingredients: TelemetronIngredient[] | null;
+  price?: number;
 }
 
 export interface TelemetronSaleItem {

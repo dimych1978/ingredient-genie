@@ -1,4 +1,3 @@
-// shopping-calculator.ts
 import type {
   TelemetronSaleItem,
   LoadingOverrides,
@@ -6,7 +5,12 @@ import type {
   Ingredient,
 } from '@/types/telemetron';
 
-import { allMachines, machineIngredients, getIngredientConfig } from './data';
+import {
+  allMachines,
+  machineIngredients,
+  getIngredientConfig,
+  planogramsHardCode,
+} from './data';
 
 export type SortType = 'grouped' | 'alphabetical';
 
@@ -30,335 +34,319 @@ export const calculateShoppingList = (
   machineId: string,
   planogram?: string[],
   machineModel?: string,
-  salesThisPeriod?: Map<string, number> ,
+  salesThisPeriod?: Map<string, number>,
+  coffeeProductNumbers?: string[],
+  machineType?: 'coffee' | 'snack' | 'bottle'
 ): ShoppingListItem[] => {
-console.log('=== calculateShoppingList вызвана ===');
-  console.log('salesThisPeriod передан?:', !!salesThisPeriod);
-  if (salesThisPeriod) {
-    console.log('Продажи за "этот период":', Array.from(salesThisPeriod.entries()));
-  }
-  
-  // 1. Создаем мапу продаж по КЛЮЧУ: product_number + name
-  const salesMap = new Map<string, { quantity: number; name: string; productNumber: string }>();
-  
-  salesData.data.forEach(sale => {
-    if (!sale.product_number || !sale.planogram?.name) return;
-    
-    const key = `${sale.product_number}-${sale.planogram.name}`;
-    const current = salesMap.get(key) || { 
-      quantity: 0, 
-      name: sale.planogram.name,
-      productNumber: sale.product_number
-    };
-    current.quantity += sale.number;
-    salesMap.set(key, current);
-  });
-  
-  console.log('salesMap размер:', salesMap.size);
-  
-  // 2. Если есть планограмма - используем её как основной источник
-  if (planogram && planogram.length > 0) {
-    console.log('=== Используем планограмму, элементов:', planogram.length);
-    
-    const result: ShoppingListItem[] = [];
-    const usedKeys = new Set<string>();
-    
-    planogram.forEach(planogramEntry => {
-      const match = planogramEntry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-      if (!match) return;
-      
-      const productNumber = match[1];
-      const planogramName = match[2];
-      
-      // Ищем ВСЕ варианты продаж для этого productNumber
-      const allSalesForCell = Array.from(salesMap.entries())
-        .filter(([key, value]) => key.startsWith(`${productNumber}-`));
-      
-      console.log(`Для ${productNumber} найдено вариантов:`, allSalesForCell.length);
-      
-      // Выбираем правильный вариант на основе salesThisPeriod
-      let selectedSales = null;
-      let selectedName = planogramName;
-      
-      if (allSalesForCell.length > 0) {
-        // Проверяем, есть ли продажи за "этот период" для этого productNumber
-        const hasSalesInThisPeriod = salesThisPeriod 
-          ? (salesThisPeriod.get(productNumber) || 0) > 0
-          : false;
-        
-        if (hasSalesInThisPeriod) {
-          // Ищем вариант с продажами > 0
-          const salesWithQuantity = allSalesForCell.find(([_, sales]) => sales.quantity > 0);
-          if (salesWithQuantity) {
-            selectedSales = salesWithQuantity[1];
-            selectedName = salesWithQuantity[1].name;
-            console.log(`Для ${productNumber} выбран вариант с продажами: ${selectedName}`);
-          }
-        }
-        
-        // Если не нашли вариант с продажами или нет salesThisPeriod
-        if (!selectedSales && allSalesForCell.length > 0) {
-          // Берем первый вариант
-          selectedSales = allSalesForCell[0][1];
-          selectedName = allSalesForCell[0][1].name;
-          console.log(`Для ${productNumber} выбран первый вариант: ${selectedName}`);
-        }
-      }
-      
-      const salesQuantity = selectedSales?.quantity || 0;
-      
-      // Находим override
-      const overrideKey = `${machineId}-${productNumber}-${selectedName}`;
-      const override = overrides[overrideKey];
-      const carryOver = override?.carryOver || 0;
-      
-      // Вычисляем сколько нужно
-      const totalNeeded = Math.max(0, salesQuantity + carryOver);
-      
-      // Определяем тип товара
-      const config = getIngredientConfig(selectedName, machineModel);
-      
-      // Определяем единицу измерения
-      let unit = 'шт';
-      let displaySales = salesQuantity;
-      let displayDeficit = carryOver;
-      
-      if (config) {
-        const salesUnit = getDisplayUnit(salesQuantity, config.unit as any);
-        const deficitUnit = getDisplayUnit(carryOver, config.unit as any);
-        unit = salesUnit.unit;
-        displaySales = Math.ceil(salesUnit.displayAmount);
-        displayDeficit = Math.ceil(deficitUnit.displayAmount);
-      }
-      
-      result.push({
-        name: selectedName,
-        planogramName: selectedName,
-        productNumber: productNumber,
-        amount: totalNeeded,
-        unit: unit,
-        salesAmount: displaySales,
-        previousDeficit: displayDeficit,
-        isCore: false,
-        type: config?.type || 'auto',
-        syrupOptions: config?.syrupOptions,
-        status: override?.status || 'none',
-        checked: override?.checked || false,
-      });
-      
-      if (selectedSales) {
-        usedKeys.add(`${productNumber}-${selectedName}`);
-      }
-    });
-    
-    console.log('После планограммы, result:', result.length);
-    
-    // 3. Добавляем товары, которые есть в продажах, но нет в планограмме
-    salesMap.forEach((sales, key) => {
-      if (!usedKeys.has(key)) {
-        const [productNumber, name] = key.split('-', 2);
-        
-        const overrideKey = `${machineId}-${productNumber}-${name}`;
-        const override = overrides[overrideKey];
-        const carryOver = override?.carryOver || 0;
-        const totalNeeded = Math.max(0, sales.quantity + carryOver);
-        
-        const config = getIngredientConfig(name, machineModel);
-        
-        let unit = 'шт';
-        let displaySales = sales.quantity;
-        let displayDeficit = carryOver;
-        
-        if (config) {
-          const salesUnit = getDisplayUnit(sales.quantity, config.unit as any);
-          const deficitUnit = getDisplayUnit(carryOver, config.unit as any);
-          unit = salesUnit.unit;
-          displaySales = Math.ceil(salesUnit.displayAmount);
-          displayDeficit = Math.ceil(deficitUnit.displayAmount);
-        }
-        
-        result.push({
-          name: name,
-          planogramName: name,
-          productNumber: productNumber,
-          amount: totalNeeded,
-          unit: unit,
-          salesAmount: displaySales,
-          previousDeficit: displayDeficit,
-          isCore: false,
-          type: config?.type || 'auto',
-          syrupOptions: config?.syrupOptions,
-          status: override?.status || 'none',
-          checked: override?.checked || false,
-        });
-      }
-    });
-        
-    console.log('После добавления salesMap, result:', result.length);
+  console.log('=== Единый калькулятор запущен ===');
 
-    // 4. Определяем core ingredients
-    const machine = allMachines.find(m => m.id === machineId);
-    console.log('Machine найден?', !!machine);
-    console.log('Machine model:', machine?.model);
-    
-    const lowerMachineModel = machine?.model?.toLowerCase();
-    const matchingKeys = lowerMachineModel
-      ? Object.keys(machineIngredients).filter(key =>
-          lowerMachineModel.includes(key.toLowerCase())
-        )
-      : [];
-    
-    console.log('Matching keys:', matchingKeys);
-    
-    matchingKeys.sort((a, b) => b.length - a.length);
-    const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
-    const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
-    
-    console.log('Model key:', modelKey);
-    console.log('Core ingredient configs длина:', coreIngredientConfigs.length);
-    console.log('Core ingredient configs:', coreIngredientConfigs);
-    
-    // Помечаем core ingredients
-    result.forEach(item => {
-      const isCore = coreIngredientConfigs.some(c => 
-        c.apiNames?.some(apiName => 
-          item.name.toLowerCase().includes(apiName.toLowerCase())
-        ) || c.name === item.name
-      );
-      if (isCore) {
-        console.log('Найден core ingredient:', item.name);
-        item.isCore = true;
-      }
-    });
-    
-    // 5. Сортируем: сначала core, потом по порядку планограммы
-    const coreItems = result.filter(item => item.isCore);
-    const nonCoreItems = result.filter(item => !item.isCore);
-    
-    console.log('Core items:', coreItems.length);
-    console.log('Non-core items:', nonCoreItems.length);
-    
-    // Core items сортируем как раньше
-    coreItems.sort((a, b) => {
-      const indexA = coreIngredientConfigs.findIndex(c => 
-        c.apiNames?.some(apiName => a.name.toLowerCase().includes(apiName.toLowerCase())) || c.name === a.name
-      );
-      const indexB = coreIngredientConfigs.findIndex(c => 
-        c.apiNames?.some(apiName => b.name.toLowerCase().includes(apiName.toLowerCase())) || c.name === b.name
-      );
-      return indexA - indexB;
-    });
-    
-    const finalResult = [...coreItems, ...nonCoreItems];
-    
-    console.log('Итоговый результат длина:', finalResult.length);
-console.log('Итоговый результат первые 25:', finalResult.slice(0, 25).map(item => ({
-  name: item.name,
-  productNumber: item.productNumber,
-  amount: item.amount
-})));
-    console.log('=== Завершение calculateShoppingList ===');
-    
-    return finalResult;
-  }
-  
-  console.log('=== Планограммы нет, используем старую логику ===');
-  
- const machine = allMachines.find(m => m.id === machineId);
-  const lowerMachineModel = machine?.model?.toLowerCase();
-  const matchingKeys = lowerMachineModel
-    ? Object.keys(machineIngredients).filter(key =>
-        lowerMachineModel.includes(key.toLowerCase())
-      )
-    : [];
-
-  matchingKeys.sort((a, b) => b.length - a.length);
-  const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
+  const machine = allMachines.find(m => m.id === machineId);
+  const model = machineModel || machine?.model;
+  const modelKey = getModelKey(model);
   const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
 
-  const totals: Record<
-    string,
-    { amount: number; config: Ingredient; sales: number; carryOver: number }
-  > = {};
+  // Сначала определяем бутматы
+if (machineType === 'bottle') {
+    return calculateBottleShoppingList(salesData, overrides, machineId);
+  }
 
-  // Обработка продаж
+function calculateBottleShoppingList(
+  salesData: { data: TelemetronSaleItem[] },
+  overrides: LoadingOverrides,
+  machineId: string
+): ShoppingListItem[] {
+  // 1. Создаём Map для суммирования продаж по НАЗВАНИЮ
+  const salesByName = new Map<string, number>();
+  
   salesData.data.forEach(sale => {
-    if (!sale.planogram?.name || sale.planogram.name.toLowerCase() === 'item') return;
+    if (!sale.planogram?.name) return;
+    
+    const name = sale.planogram.name;
+    // НОРМАЛИЗУЕМ название - приводим к виду из planogramsHardcode.bottle
+    const normalizedName = normalizeBottleName(name);
+    
+    if (normalizedName) {
+      const current = salesByName.get(normalizedName) || 0;
+      salesByName.set(normalizedName, current + sale.number);
+    }
+  });
+  
+  // 2. Добавляем переносы (carryOver) - тоже группируем по нормализованному имени
+  const carryOverByName = new Map<string, number>();
+  
+  Object.entries(overrides).forEach(([overrideKey, override]) => {
+    if (!overrideKey.startsWith(`${machineId}-`)) return;
+    
+    // Извлекаем название из ключа
+    const parts = overrideKey.replace(`${machineId}-`, '').split('-');
+    if (parts.length < 2) return;
+    
+    const name = parts[1];
+    const normalizedName = normalizeBottleName(name);
+    
+    if (normalizedName && override.carryOver) {
+      const current = carryOverByName.get(normalizedName) || 0;
+      carryOverByName.set(normalizedName, current + override.carryOver);
+    }
+  });
+  
+  // 3. Создаём итоговый список в порядке захардкоженной планограммы
+  const result: ShoppingListItem[] = [];
+  
+  planogramsHardCode.bottle.forEach(itemName => {
+    const sales = salesByName.get(itemName) || 0;
+    const carryOver = carryOverByName.get(itemName) || 0;
+    const totalNeeded = Math.max(0, sales + carryOver);
+    
+    // if (totalNeeded > 0) { // Только товары с продажами или переносом
+      result.push({
+        name: itemName,
+        planogramName: itemName,
+        amount: totalNeeded,
+        unit: 'шт',
+        salesAmount: sales,
+        previousDeficit: carryOver,
+        isCore: false,
+        type: 'auto',
+        status: 'none',
+        checked: false,
+      });
+    // }
+  });
+  
+  return result;
+}
 
-    const quantity = sale.number;
-    const ingredients = sale.planogram.ingredients;
+  // Функция нормализации названия
+function normalizeBottleName(apiName: string): string | null {
+  // Убираем кавычки, лишние пробелы, приводим к нижнему регистру
+  const cleanApiName = apiName
+    .replace(/["«»]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  
+  for (const hardcodedName of planogramsHardCode.bottle) {
+    const cleanHardcoded = hardcodedName
+      .replace(/["«»]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    
+    // Проверяем, содержит ли apiName ключевые слова из hardcodedName
+    const hardcodedWords = cleanHardcoded.split(' ');
+    const matches = hardcodedWords.filter(word => 
+      word.length > 2 && cleanApiName.includes(word)
+    );
+    
+    // Если большинство слов совпадает
+    if (matches.length >= Math.max(1, hardcodedWords.length / 2)) {
+      return hardcodedName;
+    }
+  }
+  return null;
+}
 
-    if (ingredients && ingredients.length > 0) {
-      ingredients.forEach(apiIngredient => {
-        const config = getIngredientConfig(apiIngredient.name, machine?.model);
-        if (config) {
-          const key = config.name;
-          const amount = apiIngredient.volume * quantity;
+  // Шаг 1: Собираем все продажи в структурированном виде
+  const { coffeeItems, snackItems } = processSalesData(
+    salesData.data,
+    machineId,
+    model,
+    overrides,
+    salesThisPeriod
+  );
 
-          if (!totals[key]) {
-            totals[key] = { amount: 0, config, sales: 0, carryOver: 0 };
-          }
-          totals[key].amount += amount;
-          totals[key].sales += amount;
-        }
+  // Шаг 2: Обрабатываем кофейные ингредиенты (преобразуем напитки → ингредиенты)
+  const coffeeIngredients = processCoffeeIngredients(
+    coffeeItems,
+    coreIngredientConfigs,
+    machineId,
+    model,
+    overrides
+  );
+
+  // Шаг 3: Обрабатываем снеки (товары напрямую)
+  const snacks = processSnacks(
+    snackItems,
+    machineId,
+    overrides,
+    planogram,
+    model,
+    salesThisPeriod,
+    coffeeProductNumbers
+  );
+
+  // Шаг 4: Сортируем итоговый список
+  return sortFinalList(
+    coffeeIngredients,
+    snacks,
+    coreIngredientConfigs,
+    planogram,
+    modelKey
+  );
+};
+
+// === Вспомогательные функции ===
+
+function getModelKey(machineModel?: string): string | undefined {
+  if (!machineModel) return undefined;
+  const lowerModel = machineModel.toLowerCase();
+  const matchingKeys = Object.keys(machineIngredients).filter(key =>
+    lowerModel.includes(key.toLowerCase())
+  );
+  matchingKeys.sort((a, b) => b.length - a.length);
+  return matchingKeys[0];
+}
+
+function processSalesData(
+  salesData: TelemetronSaleItem[],
+  machineId: string,
+  machineModel?: string,
+  overrides?: LoadingOverrides,
+  salesThisPeriod?: Map<string, number>
+) {
+  const coffeeItems: Array<{
+    name: string;
+    quantity: number;
+    ingredients: Array<{ name: string; volume: number }>;
+    productNumber?: string;
+  }> = [];
+
+  const snackItems: Array<{
+    name: string;
+    quantity: number;
+    productNumber: string;
+    planogramName: string;
+  }> = [];
+
+  salesData.forEach(sale => {
+    if (!sale.product_number || !sale.planogram?.name) return;
+
+    console.log(
+      `${sale.product_number}. ${sale.planogram.name}:`,
+      'ingredients?',
+      !!sale.planogram.ingredients,
+      'length:',
+      sale.planogram.ingredients?.length
+    );
+
+    if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
+      console.log('  → В coffeeItems');
+      coffeeItems.push({
+        name: sale.planogram.name,
+        quantity: sale.number,
+        ingredients: sale.planogram.ingredients,
+        productNumber: sale.product_number,
       });
     } else {
-      const config = getIngredientConfig(sale.planogram.name, machine?.model);
-      const key = config ? config.name : sale.planogram.name;
-      if (!totals[key]) {
-        totals[key] = {
-          amount: 0,
-          config: config || {
-            name: key,
-            unit: 'шт',
-            type: 'auto',
-            apiNames: [key],
-          },
-          sales: 0,
-          carryOver: 0,
-        };
-      }
-      totals[key].amount += quantity;
-      totals[key].sales += quantity;
+      console.log('  → В snackItems');
+      snackItems.push({
+        name: sale.planogram.name,
+        quantity: sale.number,
+        productNumber: sale.product_number,
+        planogramName: sale.planogram.name,
+      });
+    }
+
+    // Определяем тип: кофейный напиток или снек
+    if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
+      // Кофейный напиток
+      coffeeItems.push({
+        name: sale.planogram.name,
+        quantity: sale.number,
+        ingredients: sale.planogram.ingredients,
+        productNumber: sale.product_number,
+      });
+    } else {
+      // Снек
+      snackItems.push({
+        name: sale.planogram.name,
+        quantity: sale.number,
+        productNumber: sale.product_number,
+        planogramName: sale.planogram.name,
+      });
     }
   });
 
-  // Обработка переносов
-  Object.keys(overrides).forEach(overrideKey => {
+  return { coffeeItems, snackItems };
+}
+
+function processCoffeeIngredients(
+  coffeeItems: Array<{
+    name: string;
+    quantity: number;
+    ingredients: Array<{ name: string; volume: number }>;
+  }>,
+  coreIngredientConfigs: Ingredient[],
+  machineId: string,
+  machineModel?: string,
+  overrides: LoadingOverrides = {}
+) {
+  const ingredientTotals = new Map<
+    string,
+    {
+      amount: number;
+      sales: number;
+      carryOver: number;
+      config: Ingredient;
+    }
+  >();
+
+  // Обработка кофейных напитков → ингредиенты
+  coffeeItems.forEach(item => {
+    item.ingredients.forEach(apiIngredient => {
+      const config = getIngredientConfig(apiIngredient.name, machineModel);
+      if (!config) return;
+
+      const key = config.name;
+      const amount = apiIngredient.volume * item.quantity;
+
+      const current = ingredientTotals.get(key) || {
+        amount: 0,
+        sales: 0,
+        carryOver: 0,
+        config,
+      };
+
+      current.amount += amount;
+      current.sales += amount;
+      ingredientTotals.set(key, current);
+    });
+  });
+
+  // Добавляем переносы (carryOver) из overrides
+  Object.entries(overrides).forEach(([overrideKey, override]) => {
     if (!overrideKey.startsWith(`${machineId}-`)) return;
 
-    const itemNameFromOverride = overrideKey.replace(`${machineId}-`, '');
-    if (itemNameFromOverride.toLowerCase() === 'item') return;
+    // Извлекаем название товара из ключа: "machineId-productNumber-name"
+    const parts = overrideKey.replace(`${machineId}-`, '').split('-');
+    if (parts.length < 2) return;
 
-    const override = overrides[overrideKey];
+    const itemName = parts.slice(1).join('-'); // Восстанавливаем имя с дефисами
+    if (itemName.toLowerCase() === 'item') return;
+
+    const config = getIngredientConfig(itemName, machineModel);
+    if (!config) return;
+
+    const key = config.name;
+    const current = ingredientTotals.get(key) || {
+      amount: 0,
+      sales: 0,
+      carryOver: 0,
+      config,
+    };
 
     if (override.carryOver !== undefined && override.carryOver !== null) {
-      const config = getIngredientConfig(itemNameFromOverride, machine?.model);
-      const key = config ? config.name : itemNameFromOverride;
-
-      if (!totals[key]) {
-        totals[key] = {
-          amount: 0,
-          config: config || {
-            name: key,
-            unit: 'шт',
-            type: 'auto',
-            apiNames: [key],
-          },
-          sales: 0,
-          carryOver: 0,
-        };
-      }
-      
-      totals[key].amount += override.carryOver;
-      totals[key].carryOver = override.carryOver;
+      current.amount += override.carryOver;
+      current.carryOver = override.carryOver;
+      ingredientTotals.set(key, current);
     }
   });
 
-  const allItems: ShoppingListItem[] = []; // ← ВОТ ТАК ДОЛЖНО БЫТЬ ОПРЕДЕЛЕНО!
+  // Преобразуем в ShoppingListItem[]
+  const coffeeIngredients: ShoppingListItem[] = [];
 
-  Object.keys(totals).forEach(key => {
-    const data = totals[key];
+  ingredientTotals.forEach((data, key) => {
     const { unit: displayUnit, displayAmount } = getDisplayUnit(
       data.amount,
       data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
@@ -372,39 +360,226 @@ console.log('Итоговый результат первые 25:', finalResult.
       data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
     );
 
-    allItems.push({
+    const overrideKey = `${machineId}-${key}`;
+    const override = overrides[overrideKey];
+
+    coffeeIngredients.push({
       name: data.config.name,
-      planogramName: null,
+      planogramName: data.config.name,
       amount: Math.ceil(Math.max(0, displayAmount)),
       unit: displayUnit,
-      status: overrides[`${machineId}-${key}`]?.status || 'none',
+      status: override?.status || 'none',
       salesAmount: Math.ceil(salesDisplayAmount),
       previousDeficit: Math.ceil(deficitDisplayAmount),
-      isCore: !!modelKey && coreIngredientConfigs.some(c => c.name === data.config.name),
+      isCore: coreIngredientConfigs.some(c => c.name === data.config.name),
       type: data.config.type || 'auto',
       syrupOptions: data.config.syrupOptions,
-      checked: false,
+      checked: override?.checked || false,
     });
   });
 
-  // Сортируем
-  allItems.sort((a, b) => {
-    const aIsCore = a.isCore;
-    const bIsCore = b.isCore;
+  return coffeeIngredients;
+}
 
-    if (aIsCore && !bIsCore) return -1;
-    if (!aIsCore && bIsCore) return 1;
+function processSnacks(
+  snackItems: Array<{
+    name: string;
+    quantity: number;
+    productNumber: string;
+    planogramName: string;
+  }>,
+  machineId: string,
+  overrides: LoadingOverrides,
+  planogram?: string[],
+  machineModel?: string,
+  salesThisPeriod?: Map<string, number>,
+  coffeeProductNumbers?: string[]
+) {
+  const snacks: ShoppingListItem[] = [];
+  const usedPlanogramEntries = new Set<string>();
 
-    if (aIsCore && bIsCore) {
-      const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
-      const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
-      return indexA - indexB;
+  const coffeeProductNumbersSet = new Set(coffeeProductNumbers || []);
+
+  // Планограмма для снеков ВСЕГДА есть в API
+  if (planogram && planogram.length > 0) {
+    planogram.forEach(planogramEntry => {
+      const match = planogramEntry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+      if (!match) return;
+
+      const productNumber = match[1];
+
+      if (coffeeProductNumbersSet.has(productNumber)) {
+        return; // Пропускаем кофейные напитки
+      }
+
+      const planogramName = match[2];
+
+      // Ищем продажи для этой ячейки
+      const salesForCell = snackItems.filter(
+        item => item.productNumber === productNumber
+      );
+
+      // Выбираем правильное имя на основе salesThisPeriod
+      let selectedName = planogramName;
+      let selectedQuantity = 0;
+
+      if (salesForCell.length > 0) {
+        const hasSalesInThisPeriod = salesThisPeriod
+          ? (salesThisPeriod.get(productNumber) || 0) > 0
+          : true; // Для планограммы всегда считаем, что есть продажи в этом периоде
+
+        if (hasSalesInThisPeriod) {
+          const salesWithQuantity = salesForCell.find(s => s.quantity > 0);
+          if (salesWithQuantity) {
+            selectedName = salesWithQuantity.name;
+            selectedQuantity = salesWithQuantity.quantity;
+          }
+        } else if (salesForCell.length > 0) {
+          selectedName = salesForCell[0].name;
+          selectedQuantity = salesForCell[0].quantity;
+        }
+      }
+
+      // Обработка override и carryOver
+      const overrideKey = `${machineId}-${productNumber}-${selectedName}`;
+      const override = overrides[overrideKey];
+      const carryOver = override?.carryOver || 0;
+      const totalNeeded = Math.max(0, selectedQuantity + carryOver);
+
+      // Определяем тип и единицы
+      const config = getIngredientConfig(selectedName, machineModel);
+      let unit = 'шт';
+      let displaySales = selectedQuantity;
+      let displayDeficit = carryOver;
+
+      if (config) {
+        const salesUnit = getDisplayUnit(selectedQuantity, config.unit as any);
+        const deficitUnit = getDisplayUnit(carryOver, config.unit as any);
+        unit = salesUnit.unit;
+        displaySales = Math.ceil(salesUnit.displayAmount);
+        displayDeficit = Math.ceil(deficitUnit.displayAmount);
+      }
+
+      snacks.push({
+        name: selectedName,
+        planogramName: selectedName,
+        productNumber: productNumber,
+        amount: totalNeeded,
+        unit: unit,
+        salesAmount: displaySales,
+        previousDeficit: displayDeficit,
+        isCore: false,
+        type: config?.type || 'auto',
+        syrupOptions: config?.syrupOptions,
+        status: override?.status || 'none',
+        checked: override?.checked || false,
+      });
+
+      usedPlanogramEntries.add(`${productNumber}-${selectedName}`);
+    });
+  }
+
+  // Добавляем снеки, которые есть в продажах, но нет в планограмме
+  // (если товар продался в этом периоде, но не продавался 30+ дней)
+  snackItems.forEach(item => {
+    const key = `${item.productNumber}-${item.name}`;
+    if (usedPlanogramEntries.has(key)) return;
+
+    const overrideKey = `${machineId}-${item.productNumber}-${item.name}`;
+    const override = overrides[overrideKey];
+    const carryOver = override?.carryOver || 0;
+    const totalNeeded = Math.max(0, item.quantity + carryOver);
+
+    const config = getIngredientConfig(item.name, machineModel);
+    let unit = 'шт';
+    let displaySales = item.quantity;
+    let displayDeficit = carryOver;
+
+    if (config) {
+      const salesUnit = getDisplayUnit(item.quantity, config.unit as any);
+      const deficitUnit = getDisplayUnit(carryOver, config.unit as any);
+      unit = salesUnit.unit;
+      displaySales = Math.ceil(salesUnit.displayAmount);
+      displayDeficit = Math.ceil(deficitUnit.displayAmount);
     }
+
+    snacks.push({
+      name: item.name,
+      planogramName: item.name,
+      productNumber: item.productNumber,
+      amount: totalNeeded,
+      unit: unit,
+      salesAmount: displaySales,
+      previousDeficit: displayDeficit,
+      isCore: false,
+      type: config?.type || 'auto',
+      syrupOptions: config?.syrupOptions,
+      status: override?.status || 'none',
+      checked: override?.checked || false,
+    });
+  });
+
+  return snacks;
+}
+
+function sortFinalList(
+  coffeeIngredients: ShoppingListItem[],
+  snacks: ShoppingListItem[],
+  coreIngredientConfigs: Ingredient[],
+  planogram?: string[],
+  modelKey?: string
+): ShoppingListItem[] {
+  // Сортируем кофейные ингредиенты по порядку из data.ts
+  const sortedCoffee = coffeeIngredients.sort((a, b) => {
+    const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
+    const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
+
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
 
     return a.name.localeCompare(b.name, 'ru');
   });
 
-  const finalResult = allItems; // из старой логики
-  console.log('Итоговый результат (старая логика):', finalResult.length);
-  return finalResult;
-};
+  // Сортируем снеки ТОЛЬКО по планограмме (она всегда есть для снеков)
+  const sortedSnacks = snacks.sort((a, b) => {
+    // Сначала пробуем найти в планограмме
+    if (planogram && planogram.length > 0) {
+      const getProductNumberFromPlanogram = (productNumber?: string) => {
+        if (!productNumber) return null;
+        for (const entry of planogram) {
+          const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+          if (match && match[1] === productNumber) {
+            return match[1];
+          }
+        }
+        return null;
+      };
+
+      const orderA = planogram.findIndex(entry => {
+        const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+        return match && match[1] === a.productNumber;
+      });
+
+      const orderB = planogram.findIndex(entry => {
+        const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+        return match && match[1] === b.productNumber;
+      });
+
+      if (orderA !== -1 && orderB !== -1) return orderA - orderB;
+      if (orderA !== -1) return -1;
+      if (orderB !== -1) return 1;
+    }
+
+    // Если нет в планограмме (например, новый товар) — в конец по алфавиту
+    return a.name.localeCompare(b.name, 'ru');
+  });
+
+  // Для спарки (kikko) или чистого кофейного аппарата: сначала кофейные, потом снеки
+  // Для чистого снекового аппарата: только снеки
+  if (coffeeIngredients.length > 0) {
+    return [...sortedCoffee, ...sortedSnacks];
+  } else {
+    return sortedSnacks;
+  }
+}

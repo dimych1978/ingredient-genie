@@ -1,13 +1,17 @@
 // hooks/usePlanogramData.ts
-import { useCallback } from "react";
-import { format } from "date-fns";
-import { TelemetronSaleItem, TelemetronSalesResponse } from "@/types/telemetron";
-import { 
-  getSavedPlanogram, 
-  getLastTelemetronPress, 
-  getLastSaveTime 
-} from "@/app/actions";
-import { useTelemetronApi } from "./useTelemetronApi";
+import { useCallback } from 'react';
+import { format } from 'date-fns';
+import {
+  TelemetronSaleItem,
+  TelemetronSalesResponse,
+} from '@/types/telemetron';
+import {
+  getSavedPlanogram,
+  getLastTelemetronPress,
+  getLastSaveTime,
+} from '@/app/actions';
+import { useTelemetronApi } from './useTelemetronApi';
+import { allMachines, getMachineType, planogramsHardCode } from '@/lib/data';
 
 export type PlanogramData = {
   planogram: string[]; // Отсортированные строки планограммы
@@ -15,111 +19,139 @@ export type PlanogramData = {
   lastActionDate: string | null; // Дата последнего сохранения/нажатия
   isLoading: boolean;
   error: string | null;
+  coffeeProductNumbers: string[];
 };
 
 export const usePlanogramData = () => {
   const { getSalesByProducts } = useTelemetronApi();
+
+  const loadPlanogramData = useCallback(
+    async (vmId: string): Promise<PlanogramData> => {
+      console.log('=== usePlanogramData.loadPlanogramData для аппарата', vmId);
+
+       const machine = allMachines.find(m => m.id === vmId);
+  const machineType = machine ? getMachineType(machine) : 'snack';
   
-  const loadPlanogramData = useCallback(async (vmId: string): Promise<PlanogramData> => {
-    console.log('=== usePlanogramData.loadPlanogramData для аппарата', vmId);
-    
-    // 1. Получаем сохраненную планограмму
-    const savedPlanogram = await getSavedPlanogram(vmId);
-    if (savedPlanogram && Object.keys(savedPlanogram).length > 0) {
-      console.log('Используем сохраненную планограмму из Redis');
-      
-      const planogramArray = Object.entries(savedPlanogram)
-        .map(([productNumber, name]) => `${productNumber}. ${name}`);
-      
-      const sorted = sortPlanogram(planogramArray);
-      
-      return {
-        planogram: sorted,
-        salesThisPeriod: new Map(),
-        lastActionDate: null,
-        isLoading: false,
-        error: null
-      };
-    }
-    
-    // 2. Получаем дату последнего действия ("этот период")
-    let lastActionDate = await getLastTelemetronPress(vmId);
-    if (!lastActionDate) {
-      lastActionDate = await getLastSaveTime(vmId);
-    }
-    
-    console.log('Дата последнего действия ("этот период"):', lastActionDate);
-    
-    // 3. Загружаем продажи за "этот период" (от lastActionDate до сейчас)
-    const salesThisPeriod = new Map<string, number>();
-    
-    if (lastActionDate) {
-      try {
-        const salesThisPeriodData = await getSalesByProducts(
-          vmId,
-          format(new Date(lastActionDate), 'yyyy-MM-dd HH:mm:ss'),
-          format(new Date(), 'yyyy-MM-dd HH:mm:ss')
-        );
-        
-        if (salesThisPeriodData?.data) {
-          salesThisPeriodData.data.forEach((item: TelemetronSaleItem) => {
-            if (!item.product_number) return;
-            const key = item.product_number;
-            const current = salesThisPeriod.get(key) || 0;
-            salesThisPeriod.set(key, current + item.number);
-          });
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки продаж за "этот период":', error);
-      }
-    }
-    
-    // 4. Загружаем продажи за 30 дней (период планограммы)
-    const dateTo = new Date();
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - 30);
-    
-    let salesData: TelemetronSalesResponse;
-    try {
-      salesData = await getSalesByProducts(
-        vmId,
-        format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
-        format(dateTo, 'yyyy-MM-dd HH:mm:ss')
-      );
-    } catch (error) {
-      console.error('Ошибка загрузки продаж за период планограммы:', error);
-      return {
-        planogram: [],
-        salesThisPeriod,
-        lastActionDate,
-        isLoading: false,
-        error: 'Ошибка загрузки данных продаж'
-      };
-    }
-    
-    if (!salesData?.data || salesData.data.length === 0) {
-      return {
-        planogram: [],
-        salesThisPeriod,
-        lastActionDate,
-        isLoading: false,
-        error: null
-      };
-    }
-    
-    // 5. Генерируем планограмму с учетом продаж за "этот период"
-    const planogram = generatePlanogramFromSalesData(salesData, salesThisPeriod);
-    
+  // Для бутылочных аппаратов используем захардкоженную планограмму
+  console.log("🚀 ~ usePlanogramData ~ machineType:", machineType)
+  if (machineType === 'bottle') {
+     console.log('Используем захардкоженную планограмму для бутылочного аппарата');
+
     return {
-      planogram,
-      salesThisPeriod,
-      lastActionDate,
+      planogram: planogramsHardCode.bottle.map((item, index) => `${index + 1}. ${item}`),
+      coffeeProductNumbers: [], // Бутылочные аппараты не имеют кофейных напитков
+      salesThisPeriod: new Map(),
+      lastActionDate: null,
       isLoading: false,
-      error: null
+      error: null,
     };
-    
-  }, [getSalesByProducts]);
-  
+  }
+      // 1. Получаем сохраненную планограмму
+      const savedPlanogram = await getSavedPlanogram(vmId);
+      if (savedPlanogram && Object.keys(savedPlanogram).length > 0) {
+        console.log('Используем сохраненную планограмму из Redis');
+
+        const planogramArray = Object.entries(savedPlanogram).map(
+          ([productNumber, name]) => `${productNumber}. ${name}`
+        );
+
+        const sorted = sortPlanogram(planogramArray);
+
+        return {
+          planogram: sorted,
+          coffeeProductNumbers: [],
+          salesThisPeriod: new Map(),
+          lastActionDate: null,
+          isLoading: false,
+          error: null,
+        };
+      }
+
+      // 2. Получаем дату последнего действия ("этот период")
+      let lastActionDate = await getLastTelemetronPress(vmId);
+      if (!lastActionDate) {
+        lastActionDate = await getLastSaveTime(vmId);
+      }
+
+      console.log('Дата последнего действия ("этот период"):', lastActionDate);
+
+      // 3. Загружаем продажи за "этот период" (от lastActionDate до сейчас)
+      const salesThisPeriod = new Map<string, number>();
+
+      if (lastActionDate) {
+        try {
+          const salesThisPeriodData = await getSalesByProducts(
+            vmId,
+            format(new Date(lastActionDate), 'yyyy-MM-dd HH:mm:ss'),
+            format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+          );
+
+          if (salesThisPeriodData?.data) {
+            salesThisPeriodData.data.forEach((item: TelemetronSaleItem) => {
+              if (!item.product_number) return;
+              const key = item.product_number;
+              const current = salesThisPeriod.get(key) || 0;
+              salesThisPeriod.set(key, current + item.number);
+            });
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки продаж за "этот период":', error);
+        }
+      }
+
+      // 4. Загружаем продажи за 30 дней (период планограммы)
+      const dateTo = new Date();
+      const dateFrom = new Date();
+      dateFrom.setDate(dateFrom.getDate() - 30);
+
+      let salesData: TelemetronSalesResponse;
+      try {
+        salesData = await getSalesByProducts(
+          vmId,
+          format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
+          format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+        );
+      } catch (error) {
+        console.error('Ошибка загрузки продаж за период планограммы:', error);
+        return {
+          planogram: [],
+          coffeeProductNumbers: [],
+          salesThisPeriod,
+          lastActionDate,
+          isLoading: false,
+          error: 'Ошибка загрузки данных продаж',
+        };
+      }
+
+      if (!salesData?.data || salesData.data.length === 0) {
+        return {
+          planogram: [],
+          coffeeProductNumbers: [],
+          salesThisPeriod,
+          lastActionDate,
+          isLoading: false,
+          error: null,
+        };
+      }
+
+      // 5. Генерируем планограмму с учетом продаж за "этот период"
+      const {planogram, coffeeProductNumbers} = generatePlanogramFromSalesData(
+        salesData,
+        salesThisPeriod
+      );
+
+      return {
+        planogram,
+        coffeeProductNumbers,
+        salesThisPeriod,
+        lastActionDate,
+        isLoading: false,
+        error: null,
+      };
+    },
+    [getSalesByProducts]
+  );
+
   return { loadPlanogramData };
 };
 
@@ -130,82 +162,104 @@ function sortPlanogram(planogram: string[]): string[] {
     const bMatch = b.match(/^(\d+)([A-Za-z]*?)\./);
     const aNum = aMatch ? aMatch[0] : '';
     const bNum = bMatch ? bMatch[0] : '';
-    return naturalProductNumberSort({ product_number: aNum }, { product_number: bNum });
+    return naturalProductNumberSort(
+      { product_number: aNum },
+      { product_number: bNum }
+    );
   });
 }
 
-function naturalProductNumberSort(a: {product_number: string}, b: {product_number: string}) {
+function naturalProductNumberSort(
+  a: { product_number: string },
+  b: { product_number: string }
+) {
   const aMatch = a.product_number.match(/^(\d+)([A-Za-z]*)$/);
   const bMatch = b.product_number.match(/^(\d+)([A-Za-z]*)$/);
-  
-  const aNum = parseInt(aMatch?.[1] || "0");
-  const bNum = parseInt(bMatch?.[1] || "0");
-  
+
+  const aNum = parseInt(aMatch?.[1] || '0');
+  const bNum = parseInt(bMatch?.[1] || '0');
+
   if (aNum !== bNum) {
     return aNum - bNum;
   }
-  
-  const aSuffix = aMatch?.[2] || "";
-  const bSuffix = bMatch?.[2] || "";
-  
-  if (aSuffix === "" && bSuffix !== "") return -1;
-  if (aSuffix !== "" && bSuffix === "") return 1;
-  
+
+  const aSuffix = aMatch?.[2] || '';
+  const bSuffix = bMatch?.[2] || '';
+
+  if (aSuffix === '' && bSuffix !== '') return -1;
+  if (aSuffix !== '' && bSuffix === '') return 1;
+
   return aSuffix.localeCompare(bSuffix);
 }
 
 function generatePlanogramFromSalesData(
   salesData: TelemetronSalesResponse,
   salesThisPeriod: Map<string, number>
-): string[] {
+): { planogram: string[]; coffeeProductNumbers: string[] } {
   console.log('=== generatePlanogramFromSalesData ===');
-  
+
+  const coffeeProductNumbers = new Set<string>();
+
   // 1. Собираем все записи
-  const itemsByProductNumber = new Map<string, Array<{
-    originalName: string;
-    totalSales: number; // Продажи за период планограммы (30 дней)
-  }>>();
-  
+  const itemsByProductNumber = new Map<
+    string,
+    Array<{
+      originalName: string;
+      totalSales: number;
+    }>
+  >();
+
   salesData.data.forEach(item => {
     if (!item.product_number || !item.planogram?.name) return;
-    
+
+    // Запоминаем кофейные напитки
+    if (item.planogram.ingredients && item.planogram.ingredients.length > 0) {
+      coffeeProductNumbers.add(item.product_number);
+    }
+
     const productNumber = item.product_number;
     const originalName = item.planogram.name;
-    
-    if (originalName === "пр") return;
-    
+
+    // Фильтрация мусора
+    if (
+      originalName === 'пр' ||
+      (originalName.toLowerCase().includes('нет данных') &&
+        item.planogram?.price === 0)
+    )
+      return;
+
     if (!itemsByProductNumber.has(productNumber)) {
       itemsByProductNumber.set(productNumber, []);
     }
-    
+
     const items = itemsByProductNumber.get(productNumber)!;
     const existingItem = items.find(i => i.originalName === originalName);
-    
+
     if (existingItem) {
       existingItem.totalSales += item.number;
     } else {
       items.push({
         originalName: originalName,
-        totalSales: item.number
+        totalSales: item.number,
       });
     }
   });
-  
+
   // 2. Выбираем лучший вариант с учетом продаж за "этот период"
   const bestNames = new Map<string, string>();
-  
+
   itemsByProductNumber.forEach((items, productNumber) => {
     if (items.length === 0) return;
-    
+
     if (items.length === 1) {
       bestNames.set(productNumber, items[0].originalName);
       return;
     }
-    
+
     // Проверяем продажи за "этот период" для каждого варианта
     // Ищем вариант, у которого есть продажи в salesThisPeriod
     let bestItem = null;
-    
+
     for (const item of items) {
       const salesInThisPeriod = salesThisPeriod.get(productNumber) || 0;
       if (salesInThisPeriod > 0) {
@@ -213,7 +267,7 @@ function generatePlanogramFromSalesData(
         break;
       }
     }
-    
+
     if (bestItem) {
       bestNames.set(productNumber, bestItem.originalName);
     } else {
@@ -221,10 +275,10 @@ function generatePlanogramFromSalesData(
       bestNames.set(productNumber, items[0].originalName);
     }
   });
-  
+
   // 3. Генерируем полную планограмму (72 ячейки)
   const fullPlanogram: string[] = [];
-  
+
   for (let shelf = 1; shelf <= 6; shelf++) {
     for (let i = 0; i <= 9; i++) {
       const cellNum = shelf * 10 + i;
@@ -232,7 +286,7 @@ function generatePlanogramFromSalesData(
       const bestName = bestNames.get(key);
       if (bestName) fullPlanogram.push(`${key}. ${bestName}`);
     }
-    
+
     const letters = ['A', 'B'];
     for (const letter of letters) {
       const key = `${shelf}${letter}`;
@@ -240,9 +294,11 @@ function generatePlanogramFromSalesData(
       if (bestName) fullPlanogram.push(`${key}. ${bestName}`);
     }
   }
-  
+
   // 4. Сортируем
   const sorted = sortPlanogram(fullPlanogram);
-  console.log('Итоговая планограмма:', sorted.length, 'элементов');
-  return sorted;
+console.log('Итоговая планограмма:', sorted.length, 'элементов');
+  console.log('Кофейные productNumbers:', Array.from(coffeeProductNumbers));
+  
+  return {planogram: sorted, coffeeProductNumbers: Array.from(coffeeProductNumbers)};
 }

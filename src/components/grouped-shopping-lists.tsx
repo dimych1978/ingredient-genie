@@ -2,33 +2,12 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { allMachines, Machine } from '@/lib/data';
+import { allMachines, GroupedShoppingListsProps, getMachineType } from '@/lib/data';
 import { ShoppingList } from './shopping-list';
 import { Coffee, Box, GlassWater } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-interface GroupedShoppingListsProps {
-  machineIds: string[];
-  specialMachineDates: Record<string, string>;
-  onSaveChanges: () => void;
-}
-
-const getMachineType = (machine: Machine): 'coffee' | 'snack' | 'bottle' => {
-  const model = machine.model?.toLowerCase();
-  if (!model) return 'snack'; // Default
-
-  if (['krea', 'opera', 'kikko', 'colibri', 'saeco', 'jetinno'].includes(model)) {
-    return 'coffee';
-  }
-  if (['snakky', 'tcn', 'fas', 'foodbox'].includes(model)) {
-    return 'snack';
-  }
-  if (['sanden', 'sve'].includes(model)) {
-    return 'bottle';
-  }
-  return 'snack';
-};
 
 export const GroupedShoppingLists = ({ 
   machineIds, 
