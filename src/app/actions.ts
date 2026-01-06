@@ -1,3 +1,4 @@
+// src\app\actions.ts
 'use server';
 
 import { kv } from '@/lib/kv';
@@ -136,16 +137,18 @@ const OVERRIDES_KEY = 'loading-overrides';
 
 type LoadingOverrides = Record<string, LoadingOverride>;
 
-async function readAllOverrides(): Promise<LoadingOverrides> {
+export async function readAllOverrides(): Promise<LoadingOverrides> {
   try {
+    console.log('object');
     const overrides = await kv.get<LoadingOverrides>(OVERRIDES_KEY);
+    console.log("🚀 ~ readAllOverrides ~ overrides:", overrides);
     return overrides || {};
   } catch (error) {
     console.error('Ошибка чтения состояний загрузки из KV:', error);
+    // Возвращаем пустой объект при ошибке соединения
     return {};
   }
 }
-
 async function writeAllOverrides(overrides: LoadingOverrides): Promise<void> {
   try {
     await kv.set(OVERRIDES_KEY, overrides);

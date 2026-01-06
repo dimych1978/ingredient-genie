@@ -17,6 +17,7 @@ import type {
 } from '@/types/telemetron';
 import {
   getLoadingOverrides,
+  readAllOverrides,
   saveLastSaveTime,
   saveLoadingOverrides,
   savePlanogram,
@@ -302,6 +303,12 @@ export const ShoppingList = ({
       const dateTo = new Date();
       const machineOverrides: LoadingOverrides =
         machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
+        console.log("🚀 ~ ShoppingList ~ machineIds.length:", machineIds.length)
+        console.log('Перед getLoadingOverrides для', machineIds[0]);
+console.log('После getLoadingOverrides:', Object.keys(machineOverrides).length);
+        console.log('OVERRIDES для аппарата', machineIds[0], ':', machineOverrides);
+        readAllOverrides();
+console.log('Ключи overrides:', Object.keys(machineOverrides));
       const machineData = allMachines.find(m => m.id === machineIds[0]);
 
       for (const vmId of machineIds) {
@@ -331,8 +338,7 @@ export const ShoppingList = ({
         planogram,
         machineData?.model,
         salesThisPeriod,
-        coffeeProductNumbers,
-        machineType
+        coffeeProductNumbers
       );
 
       console.log('✅ calculateShoppingList вернула:', calculatedList.length);
@@ -344,9 +350,7 @@ export const ShoppingList = ({
       const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
         item => {
           // ИСПРАВЛЕНО: добавляем productNumber в ключ
-          const overrideKey = `${machineIds[0]}-${
-            item.productNumber || 'no-number'
-          }-${item.name}`;
+          const overrideKey = `${machineIds[0]}-${item.name}`;
           const override = machineOverrides[overrideKey];
 
           console.log(
@@ -454,9 +458,7 @@ export const ShoppingList = ({
 
       shoppingList.forEach((item, index) => {
         // ИСПРАВЛЕНО: добавляем productNumber в ключ
-        const key = `${machineId}-${item.productNumber || 'no-number'}-${
-          item.name
-        }`;
+        const key = `${machineId}-${item.name}`;
         const actualLoadedAmount =
           item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
 
@@ -523,6 +525,14 @@ export const ShoppingList = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const extractProductName = (planogramName: string | null): string => {
+    if (!planogramName) return '';
+
+    // Извлекаем название из "29. Круассаны Яшкино 45г"
+    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+    return match ? match[1] : planogramName;
   };
 
   return (
@@ -690,22 +700,41 @@ export const ShoppingList = ({
                       <div className='flex-1 space-y-1'>
                         <div className='font-medium capitalize'>
                           <div className='flex items-center gap-2'>
-                            {item.planogramName || item.name}
+                            {extractProductName(item.planogramName) ||
+                              item.name}
                             {item.planogramName &&
-                              item.planogramName !== item.name && (
+                              extractProductName(item.planogramName) !==
+                                item.name && (
                                 <Tooltip>
                                   <TooltipTrigger>
                                     <AlertTriangle className='h-4 w-4 text-yellow-500' />
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>В аппарате: {item.name}</p>
-                                    <p>В планограмме: {item.planogramName}</p>
+                                    <p>
+                                      В планограмме:{' '}
+                                      {extractProductName(item.planogramName)}
+                                    </p>
+                                    {/* Показываем номер ячейки только если он есть */}
+                                    {item.planogramName.match(
+                                      /^\d+[A-Za-z]?\./
+                                    ) && (
+                                      <p className='text-xs text-gray-500 mt-1'>
+                                        Ячейка:{' '}
+                                        {
+                                          item.planogramName.match(
+                                            /^(\d+[A-Za-z]?)\./
+                                          )?.[1]
+                                        }
+                                      </p>
+                                    )}
                                   </TooltipContent>
                                 </Tooltip>
-                              )}
+                              )}{' '}
                           </div>
                           {item.planogramName &&
-                            item.planogramName !== item.name && (
+                            extractProductName(item.planogramName) !==
+                              item.name && (
                               <div className='text-sm text-gray-400 mt-1'>
                                 Фактически: {item.name}
                               </div>
