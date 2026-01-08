@@ -537,7 +537,7 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
 
   return (
     <Card className='w-full bg-gray-900 border-gray-700 text-white'>
-      <CardHeader className='border-b border-gray-700'>
+      <CardHeader className='border-b border-gray-700 px-4 sm:px-6'>
         <CardTitle className='flex items-center justify-between'>
           <div className='flex items-center gap-2'>
             <ShoppingCart className='h-5 w-5 text-yellow-400' />
@@ -554,7 +554,7 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
         )}
       </CardHeader>
 
-      <CardContent className='p-4 space-y-4'>
+      <CardContent className='p-4 sm:p-6 space-y-4'>
         {showControls && (
           <div className='space-y-4'>
             {!forceLoad && (
@@ -689,7 +689,7 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
                     <div
                       key={index}
                       className={cn(
-                        'flex justify-between items-center p-3 border rounded-lg',
+                        'flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 p-3 sm:p-4 border rounded-lg',
                         isFullyReplenished
                           ? 'bg-green-900/20 border-green-600 text-green-300'
                           : item.status === 'none'
@@ -697,7 +697,7 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
                           : 'bg-blue-900/20 border-blue-600 text-blue-300'
                       )}
                     >
-                      <div className='flex-1 space-y-1'>
+                      <div className='flex-1 space-y-1 min-w-0 w-full'>
                         <div className='font-medium capitalize'>
                           <div className='flex items-center gap-2'>
                             {extractProductName(item.planogramName) ||
@@ -977,61 +977,45 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
                               </TooltipContent>
                             </Tooltip>
 
-                            {item.status === 'partial' && (
-                              <div className='ml-2'>
-                                <div className='flex items-center gap-1'>
-                                  <Button
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                    onClick={() => {
-                                      const current =
-                                        item.loadedAmount || item.amount;
-                                      handleAmountChange(
-                                        index,
-                                        (current - 1).toString()
-                                      );
-                                    }}
-                                  >
-                                    -
-                                  </Button>
-                                  <div className='w-20'>
-                                    <Input
-                                      type='number'
-                                      value={(
-                                        item.loadedAmount ?? item.amount
-                                      )?.toString()}
-                                      onChange={e =>
-                                        handleAmountChange(
-                                          index,
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder={item.amount?.toString()}
-                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
-                                      inputMode='numeric'
-                                      autoComplete='off'
-                                    />
-                                  </div>
-                                  <Button
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                    onClick={() => {
-                                      const current =
-                                        item.loadedAmount || item.amount;
-                                      handleAmountChange(
-                                        index,
-                                        (current + 1).toString()
-                                      );
-                                    }}
-                                  >
-                                    +
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </>
+{item.status === 'partial' && (
+  <div className='ml-2'>
+    <div className='flex items-center gap-1'>
+      <Button
+        variant='outline'
+        size='icon'
+        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
+        onClick={() => {
+          const current = item.loadedAmount || item.amount;
+          handleAmountChange(index, (current - 1).toString());
+        }}
+      >
+        -
+      </Button>
+      <div className='min-w-16 sm:min-w-20 max-w-24'>
+        <Input
+          type='number'
+          value={(item.loadedAmount ?? item.amount)?.toString()}
+          onChange={e => handleAmountChange(index, e.target.value)}
+          placeholder={item.amount?.toString()}
+          className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
+          inputMode='numeric'
+          autoComplete='off'
+        />
+      </div>
+      <Button
+        variant='outline'
+        size='icon'
+        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
+        onClick={() => {
+          const current = item.loadedAmount || item.amount;
+          handleAmountChange(index, (current + 1).toString());
+        }}
+      >
+        +
+      </Button>
+    </div>
+  </div>
+)}                          </>
                         )}{' '}
                       </div>
                     </div>

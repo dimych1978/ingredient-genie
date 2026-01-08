@@ -82,3 +82,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .min-w-0 {
+    min-width: 0;
+  }
+  
+  .overflow-ellipsis {
+    text-overflow: ellipsis;
+  }
+}
