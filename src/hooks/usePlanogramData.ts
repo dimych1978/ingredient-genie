@@ -200,6 +200,22 @@ function generatePlanogramFromSalesData(
 
   const coffeeProductNumbers = new Set<string>();
 
+   const allAA = salesData.data.every(item => item.product_number === 'AA');
+  
+  if (allAA) {
+    console.log('Аппарат с ручной планограммой (все product_number = "AA")');
+    
+    // Берём первое уникальное название (или самое популярное)
+    const names = new Set(salesData.data.map(item => item.planogram?.name).filter(Boolean));
+    const firstName = names.values().next().value || 'Товар';
+    
+    // Возвращаем простую планограмму с одной записью
+    return {
+      planogram: [`${firstName}`],
+      coffeeProductNumbers: [],
+    };
+  }
+
   // 1. Собираем все записи
   const itemsByProductNumber = new Map<
     string,
