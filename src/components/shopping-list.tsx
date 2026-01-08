@@ -81,6 +81,15 @@ interface ShoppingListProps {
   markAsServiced: boolean;
 }
 
+ export const extractProductName = (planogramName: string | null): string => {
+    if (!planogramName) return '';
+
+    // Извлекаем название из "29. Круассаны Яшкино 45г"
+    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+    return match ? match[1] : planogramName;
+  };
+
+
 export const ShoppingList = ({
   machineIds: initialMachineIds,
   title = 'Shopping List',
@@ -525,14 +534,6 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const extractProductName = (planogramName: string | null): string => {
-    if (!planogramName) return '';
-
-    // Извлекаем название из "29. Круассаны Яшкино 45г"
-    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-    return match ? match[1] : planogramName;
   };
 
   return (

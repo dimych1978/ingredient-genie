@@ -12,6 +12,7 @@ import {
   planogramsHardCode,
   getMachineType,
 } from './data';
+import { extractProductName } from '@/components/shopping-list';
 
 export type SortType = 'grouped' | 'alphabetical';
 
@@ -259,37 +260,73 @@ export const calculateShoppingList = (
   });
 
   // 4. СОРТИРОВКА (ЛОГИКА ИЗ PLANOGRAM, АДАПТИРОВАННАЯ)
-  allItems.sort((a, b) => {
-    const aIsCore = a.isCore;
-    const bIsCore = b.isCore;
+// 4. СОРТИРОВКА (ЛОГИКА ИЗ PLANOGRAM, АДАПТИРОВАННАЯ)
+allItems.sort((a, b) => {
+  const aIsCore = a.isCore;
+  const bIsCore = b.isCore;
 
-    // Кофейные ингредиенты всегда первые, в порядке из data.ts
-    if (aIsCore && !bIsCore) return -1;
-    if (!aIsCore && bIsCore) return 1;
-    if (aIsCore && bIsCore) {
-      const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
-      const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
-      return indexA - indexB;
-    }
+  // Кофейные ингредиенты всегда первые, в порядке из data.ts
+  if (aIsCore && !bIsCore) return -1;
+  if (!aIsCore && bIsCore) return 1;
+  if (aIsCore && bIsCore) {
+    const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
+    const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
+    return indexA - indexB;
+  }
 
-    // Для снеков: сортировка по планограмме
-    if (planogram && planogram.length > 0 && a.productNumber && b.productNumber) {
-      const getOrder = (productNumber: string) => {
+  // Для снеков: сортировка по планограмме
+  if (planogram && planogram.length > 0) {
+    const getOrder = (item: ShoppingListItem) => {
+      // 1. Пробуем найти по productNumber
+      if (item.productNumber) {
         for (let i = 0; i < planogram.length; i++) {
-          if (planogram[i].startsWith(`${productNumber}.`)) {
+          if (planogram[i].startsWith(`${item.productNumber}.`)) {
             return i;
           }
         }
-        return planogram.length; // Если не найден - в конец
-      };
-      const orderA = getOrder(a.productNumber);
-      const orderB = getOrder(b.productNumber);
+      }
+      
+      // 2. Пробуем найти по названию в планограмме
+      if (item.planogramName) {
+        for (let i = 0; i < planogram.length; i++) {
+          const match = planogram[i].match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+          if (match && match[1] === extractProductName(item.planogramName)) {
+            return i;
+          }
+        }
+      }
+      
+      // 3. Пробуем найти частичное совпадение названия
+      const itemNameForSearch = normalizeForPlanogramComparison(item.name);
+      for (let i = 0; i < planogram.length; i++) {
+        const match = planogram[i].match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+        if (match) {
+          const planogramName = normalizeForPlanogramComparison(match[1]);
+          if (itemNameForSearch.includes(planogramName) || planogramName.includes(itemNameForSearch)) {
+            return i;
+          }
+        }
+      }
+      
+      return planogram.length; // Если не найден - в конец
+    };
+    
+    const orderA = getOrder(a);
+    const orderB = getOrder(b);
+    
+    // Если оба найдены в планограмме - сортируем по порядку
+    if (orderA !== planogram.length && orderB !== planogram.length) {
       return orderA - orderB;
     }
+    // Если только A найден в планограмме - он выше
+    if (orderA !== planogram.length) return -1;
+    // Если только B найден в планограмме - он выше
+    if (orderB !== planogram.length) return 1;
+  }
 
-    return a.name.localeCompare(b.name, 'ru');
-  });
-
+  // Если не в планограмме - по алфавиту
+  return a.name.localeCompare(b.name, 'ru');
+});
   return allItems;
 };
 
