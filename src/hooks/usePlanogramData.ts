@@ -102,7 +102,7 @@ export const usePlanogramData = () => {
       // 4. Загружаем продажи за 30 дней (период планограммы)
       const dateTo = new Date();
       const dateFrom = new Date();
-      dateFrom.setDate(dateFrom.getDate() - 30);
+      dateFrom.setDate(dateFrom.getDate() - 90);
 
       let salesData: TelemetronSalesResponse;
       try {
@@ -199,6 +199,7 @@ function generatePlanogramFromSalesData(
   console.log('=== generatePlanogramFromSalesData ===');
 
   const coffeeProductNumbers = new Set<string>();
+  console.log("🚀 ~ generatePlanogramFromSalesData ~ coffeeProductNumbers:", coffeeProductNumbers)
 
    const allAA = salesData.data.every(item => item.product_number === 'AA');
   
