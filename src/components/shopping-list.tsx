@@ -356,28 +356,40 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
         calculatedList.slice(0, 18)
       );
 
-      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
-        item => {
-          // ИСПРАВЛЕНО: добавляем productNumber в ключ
-          const overrideKey = `${machineIds[0]}-${item.name}`;
-          const override = machineOverrides[overrideKey];
+const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
+  item => {
+    const overrideKey = `${machineIds[0]}-${item.name}`;
+    const override = machineOverrides[overrideKey];
 
-          console.log(
-            `Для ${item.name} (${item.productNumber}) ключ: ${overrideKey}, найден override:`,
-            !!override
-          );
+    // ОПРЕДЕЛЯЕМ состояние на основе ТЕКУЩЕЙ потребности:
+    const hasCarryOver = (item.previousDeficit || 0) !== 0; // Есть излишек/недогруз
+    const hasCurrentSales = (item.salesAmount || 0) > 0; // Есть продажи в этом периоде
+    
+    let initialStatus: 'none' | 'partial' = 'none';
+    let initialLoadedAmount: number = 0;
 
-          return {
-            ...item,
-            status: override?.status || 'none',
-            loadedAmount: override?.loadedAmount ?? item.amount,
-            checked: override?.checked ?? false,
-            checkedType: override?.checkedType,
-            selectedSyrups: override?.selectedSyrups || [],
-            selectedSizes: override?.selectedSizes || [],
-          };
-        }
-      );
+    if (hasCurrentSales || hasCarryOver) {
+      // Есть что пополнять - показываем "карандаш" с текущим "Нужно"
+      initialStatus = 'partial';
+      initialLoadedAmount = item.amount; // АКТУАЛЬНАЯ потребность
+    } else {
+      // Нет продаж и нет излишков/недогруза - "крестик"
+      initialStatus = 'none';
+      initialLoadedAmount = 0;
+    }
+
+    return {
+      ...item,
+      status: initialStatus,
+      loadedAmount: initialLoadedAmount,
+      // Чекбоксы/сиропы сохраняем из override (они логичны)
+      checked: override?.checked ?? false,
+      checkedType: override?.checkedType,
+      selectedSyrups: override?.selectedSyrups || [],
+      selectedSizes: override?.selectedSizes || [],
+    };
+  }
+);
 
       setShoppingList(listWithStatus);
       setLoadedAmounts(
