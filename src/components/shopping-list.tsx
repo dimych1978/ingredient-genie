@@ -81,14 +81,13 @@ interface ShoppingListProps {
   markAsServiced: boolean;
 }
 
- export const extractProductName = (planogramName: string | null): string => {
-    if (!planogramName) return '';
+export const extractProductName = (planogramName: string | null): string => {
+  if (!planogramName) return '';
 
-    // Извлекаем название из "29. Круассаны Яшкино 45г"
-    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-    return match ? match[1] : planogramName;
-  };
-
+  // Извлекаем название из "29. Круассаны Яшкино 45г"
+  const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+  return match ? match[1] : planogramName;
+};
 
 export const ShoppingList = ({
   machineIds: initialMachineIds,
@@ -312,12 +311,20 @@ export const ShoppingList = ({
       const dateTo = new Date();
       const machineOverrides: LoadingOverrides =
         machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
-        console.log("🚀 ~ ShoppingList ~ machineIds.length:", machineIds.length)
-        console.log('Перед getLoadingOverrides для', machineIds[0]);
-console.log('После getLoadingOverrides:', Object.keys(machineOverrides).length);
-        console.log('OVERRIDES для аппарата', machineIds[0], ':', machineOverrides);
-        readAllOverrides();
-console.log('Ключи overrides:', Object.keys(machineOverrides));
+      console.log('🚀 ~ ShoppingList ~ machineIds.length:', machineIds.length);
+      console.log('Перед getLoadingOverrides для', machineIds[0]);
+      console.log(
+        'После getLoadingOverrides:',
+        Object.keys(machineOverrides).length
+      );
+      console.log(
+        'OVERRIDES для аппарата',
+        machineIds[0],
+        ':',
+        machineOverrides
+      );
+      readAllOverrides();
+      console.log('Ключи overrides:', Object.keys(machineOverrides));
       const machineData = allMachines.find(m => m.id === machineIds[0]);
 
       for (const vmId of machineIds) {
@@ -356,40 +363,40 @@ console.log('Ключи overrides:', Object.keys(machineOverrides));
         calculatedList.slice(0, 18)
       );
 
-const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
-  item => {
-    const overrideKey = `${machineIds[0]}-${item.name}`;
-    const override = machineOverrides[overrideKey];
+      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
+        item => {
+          const overrideKey = `${machineIds[0]}-${item.name}`;
+          const override = machineOverrides[overrideKey];
 
-    // ОПРЕДЕЛЯЕМ состояние на основе ТЕКУЩЕЙ потребности:
-    const hasCarryOver = (item.previousDeficit || 0) !== 0; // Есть излишек/недогруз
-    const hasCurrentSales = (item.salesAmount || 0) > 0; // Есть продажи в этом периоде
-    
-    let initialStatus: 'none' | 'partial' = 'none';
-    let initialLoadedAmount: number = 0;
+          // ОПРЕДЕЛЯЕМ состояние на основе ТЕКУЩЕЙ потребности:
+          const hasCarryOver = (item.previousDeficit || 0) !== 0; // Есть излишек/недогруз
+          const hasCurrentSales = (item.salesAmount || 0) > 0; // Есть продажи в этом периоде
 
-    if (hasCurrentSales || hasCarryOver) {
-      // Есть что пополнять - показываем "карандаш" с текущим "Нужно"
-      initialStatus = 'partial';
-      initialLoadedAmount = item.amount; // АКТУАЛЬНАЯ потребность
-    } else {
-      // Нет продаж и нет излишков/недогруза - "крестик"
-      initialStatus = 'none';
-      initialLoadedAmount = 0;
-    }
+          let initialStatus: 'none' | 'partial' = 'none';
+          let initialLoadedAmount: number = 0;
 
-    return {
-      ...item,
-      status: initialStatus,
-      loadedAmount: initialLoadedAmount,
-      // Чекбоксы/сиропы сохраняем из override (они логичны)
-      checked: override?.checked ?? false,
-      checkedType: override?.checkedType,
-      selectedSyrups: override?.selectedSyrups || [],
-      selectedSizes: override?.selectedSizes || [],
-    };
-  }
-);
+          if (hasCurrentSales || hasCarryOver) {
+            // Есть что пополнять - показываем "карандаш" с текущим "Нужно"
+            initialStatus = 'partial';
+            initialLoadedAmount = item.amount; // АКТУАЛЬНАЯ потребность
+          } else {
+            // Нет продаж и нет излишков/недогруза - "крестик"
+            initialStatus = 'none';
+            initialLoadedAmount = 0;
+          }
+
+          return {
+            ...item,
+            status: initialStatus,
+            loadedAmount: initialLoadedAmount,
+            // Чекбоксы/сиропы сохраняем из override (они логичны)
+            checked: override?.checked ?? false,
+            checkedType: override?.checkedType,
+            selectedSyrups: override?.selectedSyrups || [],
+            selectedSizes: override?.selectedSizes || [],
+          };
+        }
+      );
 
       setShoppingList(listWithStatus);
       setLoadedAmounts(
@@ -512,6 +519,37 @@ const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
       });
 
       const result = await saveLoadingOverrides(overridesToSave);
+
+      const machine = allMachines.find(m => m.id === machineId);
+
+      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+        const now = new Date();
+        const newTimestamp = now.toISOString();
+
+        // 1. Обновляем дату в специальных датах
+        const dateUpdateResult = await setSpecialMachineDate(
+          machineId,
+          newTimestamp
+        );
+
+        // 2. Сохраняем время нажатия Telemetron (эмуляция)
+        await saveTelemetronPress(machineId, newTimestamp);
+
+        // 3. Сохраняем время последнего сохранения
+        await saveLastSaveTime(machineId, newTimestamp);
+
+        // 4. Обновляем UI если нужно
+        if (dateUpdateResult.success && onTimestampUpdate) {
+          onTimestampUpdate(newTimestamp);
+          toast({
+            title: 'Дата инкассации обновлена',
+            description: `Теперь продажи будут считаться с ${format(
+              new Date(newTimestamp),
+              'dd.MM.yyyy HH:mm'
+            )}`,
+          });
+        }
+      }
 
       if (result.success) {
         toast({
@@ -967,7 +1005,6 @@ const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
                                 <p>Не пополнено</p>
                               </TooltipContent>
                             </Tooltip>
-
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -989,46 +1026,61 @@ const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
                                 <p>Пополнено частично</p>
                               </TooltipContent>
                             </Tooltip>
-
-{item.status === 'partial' && (
-  <div className='ml-2'>
-    <div className='flex items-center gap-1'>
-      <Button
-        variant='outline'
-        size='icon'
-        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
-        onClick={() => {
-          const current = item.loadedAmount || item.amount;
-          handleAmountChange(index, (current - 1).toString());
-        }}
-      >
-        -
-      </Button>
-      <div className='min-w-16 sm:min-w-20 max-w-24'>
-        <Input
-          type='number'
-          value={(item.loadedAmount ?? item.amount)?.toString()}
-          onChange={e => handleAmountChange(index, e.target.value)}
-          placeholder={item.amount?.toString()}
-          className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
-          inputMode='numeric'
-          autoComplete='off'
-        />
-      </div>
-      <Button
-        variant='outline'
-        size='icon'
-        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
-        onClick={() => {
-          const current = item.loadedAmount || item.amount;
-          handleAmountChange(index, (current + 1).toString());
-        }}
-      >
-        +
-      </Button>
-    </div>
-  </div>
-)}                          </>
+                            {item.status === 'partial' && (
+                              <div className='ml-2'>
+                                <div className='flex items-center gap-1'>
+                                  <Button
+                                    variant='outline'
+                                    size='icon'
+                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
+                                    onClick={() => {
+                                      const current =
+                                        item.loadedAmount || item.amount;
+                                      handleAmountChange(
+                                        index,
+                                        (current - 1).toString()
+                                      );
+                                    }}
+                                  >
+                                    -
+                                  </Button>
+                                  <div className='min-w-16 sm:min-w-20 max-w-24'>
+                                    <Input
+                                      type='number'
+                                      value={(
+                                        item.loadedAmount ?? item.amount
+                                      )?.toString()}
+                                      onChange={e =>
+                                        handleAmountChange(
+                                          index,
+                                          e.target.value
+                                        )
+                                      }
+                                      placeholder={item.amount?.toString()}
+                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
+                                      inputMode='numeric'
+                                      autoComplete='off'
+                                    />
+                                  </div>
+                                  <Button
+                                    variant='outline'
+                                    size='icon'
+                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
+                                    onClick={() => {
+                                      const current =
+                                        item.loadedAmount || item.amount;
+                                      handleAmountChange(
+                                        index,
+                                        (current + 1).toString()
+                                      );
+                                    }}
+                                  >
+                                    +
+                                  </Button>
+                                </div>
+                              </div>
+                            )}{' '}
+                          </>
                         )}{' '}
                       </div>
                     </div>
