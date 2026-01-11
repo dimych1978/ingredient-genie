@@ -493,6 +493,16 @@ export const ShoppingList = ({
     }
   }, [dateFrom, sort, forceLoad]);
 
+  // Обновление планограммы
+  useEffect(() => {
+    console.log('🔄 Планограмма обновлена:', planogram.length);
+
+    if (planogram.length > 0 && forceLoad && !hasLoaded) {
+      console.log('🚀 Планограмма загружена, запускаем loadShoppingList');
+      loadShoppingList();
+    }
+  }, [planogram.length, forceLoad, hasLoaded, loadShoppingList]);
+
   // Debounced загрузка shopping list
   const debouncedLoadShoppingList = useMemo(
     () => debounce(loadShoppingList, 500),
