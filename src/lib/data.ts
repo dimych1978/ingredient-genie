@@ -1598,11 +1598,13 @@ export const getMachineType = (
   });
 
   if (
-    ['krea', 'opera', 'kikko', 'colibri', 'saeco', 'jetinno'].includes(model)
+    ['krea', 'opera', 'kikko', 'colibri', 'saeco', 'jetinno'].some(type =>
+      model.includes(type)
+    )
   ) {
     return 'coffee';
   }
-  if (['snakky', 'tcn', 'fas', 'foodbox'].includes(model)) {
+  if (['snakky', 'tcn', 'fas', 'foodbox'].some(type => model.includes(type))) {
     return 'snack';
   }
   if (['sanden', 'sve'].some(type => model.includes(type))) {

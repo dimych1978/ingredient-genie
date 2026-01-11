@@ -11,7 +11,7 @@ import {
   getLastSaveTime,
 } from '@/app/actions';
 import { useTelemetronApi } from './useTelemetronApi';
-import { allMachines, getMachineType, planogramsHardCode } from '@/lib/data';
+import { allMachines, getMachineType, machineIngredients, planogramsHardCode } from '@/lib/data';
 
 export type PlanogramData = {
   planogram: string[]; // Отсортированные строки планограммы
@@ -32,6 +32,30 @@ export const usePlanogramData = () => {
        const machine = allMachines.find(m => m.id === vmId);
   const machineType = machine ? getMachineType(machine) : 'snack';
   
+//   if (machineType === 'coffee') {
+//   console.log('Кофейный аппарат - используем захардкоженные ингредиенты из data.ts');
+  
+//   // Получаем модель аппарата для поиска ингредиентов
+//   const model = machine?.model?.toLowerCase() || '';
+//   const matchingKey = Object.keys(machineIngredients).find(key => 
+//     model.includes(key.toLowerCase())
+//   );
+  
+//   // Создаем планограмму из ингредиентов кофейного аппарата
+//   const coffeePlanogram = matchingKey 
+//     ? machineIngredients[matchingKey].map(ingredient => ingredient.name)
+//     : [];
+  
+//   return {
+//     planogram: [],
+//     coffeeProductNumbers: [], // Кофейные аппараты не имеют кофейных напитков в планограмме
+//     salesThisPeriod: new Map(),
+//     lastActionDate: null,
+//     isLoading: false,
+//     error: null,
+//   };
+// }
+
   // Для бутылочных аппаратов используем захардкоженную планограмму
   console.log("🚀 ~ usePlanogramData ~ machineType:", machineType)
   if (machineType === 'bottle') {
@@ -230,10 +254,13 @@ function generatePlanogramFromSalesData(
     if (!item.product_number || !item.planogram?.name) return;
 
     // Запоминаем кофейные напитки
-    if (item.planogram.ingredients && item.planogram.ingredients.length > 0) {
-      coffeeProductNumbers.add(item.product_number);
-    }
+ const hasIngredients = item.planogram.ingredients && item.planogram.ingredients.length > 0;
+  console.log(`${item.product_number}. ${item.planogram.name}: ingredients?`, hasIngredients);
 
+   if (hasIngredients) {
+    coffeeProductNumbers.add(item.product_number);
+  }
+  
     const productNumber = item.product_number;
     const originalName = item.planogram.name;
 

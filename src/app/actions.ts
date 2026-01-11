@@ -17,11 +17,30 @@ const PLANOGRAM_KEY_PREFIX = 'planogram:';
 
 // Сохраняем планограмму
 export async function savePlanogram(machineId: string, planogram: Record<string, string>): Promise<{ success: boolean }> {
+   console.log('savePlanogram вызван для', machineId, 'с', Object.keys(planogram).length, 'записей');
+  
+  // Пример первых 3 записей для отладки
+  const sampleEntries = Object.entries(planogram).slice(0, 3);
+  console.log('Пример записей:', sampleEntries);
+
   try {
-    await kv.set(`${PLANOGRAM_KEY_PREFIX}${machineId}`, planogram);
-    return { success: true };
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Таймаут сохранения планограммы (10 секунд)')), 10000);
+    });
+
+ const savePromise = kv.set(`${PLANOGRAM_KEY_PREFIX}${machineId}`, planogram);
+    
+    // Ждем с таймаутом
+    await Promise.race([savePromise, timeoutPromise]);
+    
+    console.log('Планограмма успешно сохранена в Redis');    return { success: true };
   } catch (error) {
     console.error('Ошибка сохранения планограммы:', error);
+       if (error instanceof Error) {
+      console.error('Сообщение ошибки:', error.message);
+      console.error('Стек:', error.stack);
+    }
+    
     return { success: false };
   }
 }

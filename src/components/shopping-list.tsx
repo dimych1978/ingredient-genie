@@ -1,7 +1,6 @@
-// shopping-list.tsx
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef, useReducer } from 'react';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import {
   calculateShoppingList,
@@ -17,7 +16,6 @@ import type {
 } from '@/types/telemetron';
 import {
   getLoadingOverrides,
-  readAllOverrides,
   saveLastSaveTime,
   saveLoadingOverrides,
   savePlanogram,
@@ -57,6 +55,7 @@ import {
 } from '@/components/ui/tooltip';
 import { allMachines, getMachineType, isSpecialMachine } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
+import  debounce  from 'lodash.debounce';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -81,13 +80,131 @@ interface ShoppingListProps {
   markAsServiced: boolean;
 }
 
-export const extractProductName = (planogramName: string | null): string => {
-  if (!planogramName) return '';
-
-  // Извлекаем название из "29. Круассаны Яшкино 45г"
-  const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-  return match ? match[1] : planogramName;
+// Reducer для объединения обновлений состояния
+type ShoppingListState = {
+  loading: boolean;
+  saving: boolean;
+  shoppingList: ShoppingListItemWithStatus[];
+  loadedAmounts: number[];
+  planogram: string[];
+  coffeeProductNumbers: string[];
+  salesThisPeriod: Map<string, number>;
+  savingPlanogram: boolean;
+  showPlanogramDialog: boolean;
+  hasLoaded: boolean;
 };
+
+type ShoppingListAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_SAVING'; payload: boolean }
+  | { type: 'SET_SHOPPING_LIST'; payload: ShoppingListItemWithStatus[] }
+  | { type: 'SET_PLANOGRAM_DATA'; payload: { planogram: string[]; salesThisPeriod: Map<string, number>; coffeeProductNumbers: string[] } }
+  | { type: 'SET_SAVING_PLANOGRAM'; payload: boolean }
+  | { type: 'SET_SHOW_PLANOGRAM_DIALOG'; payload: boolean }
+  | { type: 'SET_HAS_LOADED'; payload: boolean }
+  | { type: 'UPDATE_LOADED_AMOUNTS'; payload: number[] }
+  | { type: 'UPDATE_ITEM_STATUS'; payload: { index: number; status: 'none' | 'partial'; loadedAmount?: number } }
+  | { type: 'UPDATE_ITEM_CHECKBOX'; payload: { index: number; checked: boolean; checkedType?: 'big' | 'small' } }
+  | { type: 'UPDATE_ITEM_SYRUPS'; payload: { index: number; selectedSyrups: string[] } }
+  | { type: 'UPDATE_ITEM_SIZES'; payload: { index: number; selectedSizes: ('big' | 'small')[] } };
+
+const initialState: ShoppingListState = {
+  loading: false,
+  saving: false,
+  shoppingList: [],
+  loadedAmounts: [],
+  planogram: [],
+  coffeeProductNumbers: [],
+  salesThisPeriod: new Map(),
+  savingPlanogram: false,
+  showPlanogramDialog: false,
+  hasLoaded: false,
+};
+
+function shoppingListReducer(state: ShoppingListState, action: ShoppingListAction): ShoppingListState {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_SAVING':
+      return { ...state, saving: action.payload };
+    case 'SET_SHOPPING_LIST': {
+      const loadedAmounts = action.payload.map(item => item.loadedAmount ?? item.amount);
+      return { 
+        ...state, 
+        shoppingList: action.payload,
+        loadedAmounts,
+        loading: false,
+        hasLoaded: true,
+      };
+    }
+    case 'SET_PLANOGRAM_DATA':
+      return {
+        ...state,
+        planogram: action.payload.planogram,
+        salesThisPeriod: action.payload.salesThisPeriod,
+        coffeeProductNumbers: action.payload.coffeeProductNumbers,
+      };
+    case 'SET_SAVING_PLANOGRAM':
+      return { ...state, savingPlanogram: action.payload };
+    case 'SET_SHOW_PLANOGRAM_DIALOG':
+      return { ...state, showPlanogramDialog: action.payload };
+    case 'SET_HAS_LOADED':
+      return { ...state, hasLoaded: action.payload };
+    case 'UPDATE_LOADED_AMOUNTS': {
+      const newShoppingList = state.shoppingList.map((item, i) => ({
+        ...item,
+        loadedAmount: action.payload[i] ?? item.loadedAmount,
+      }));
+      return {
+        ...state,
+        shoppingList: newShoppingList,
+        loadedAmounts: action.payload,
+      };
+    }
+    case 'UPDATE_ITEM_STATUS': {
+      const newShoppingList = [...state.shoppingList];
+      newShoppingList[action.payload.index] = {
+        ...newShoppingList[action.payload.index],
+        status: action.payload.status,
+        loadedAmount: action.payload.loadedAmount,
+      };
+      const newLoadedAmounts = [...state.loadedAmounts];
+      newLoadedAmounts[action.payload.index] = action.payload.loadedAmount ?? state.loadedAmounts[action.payload.index];
+      return {
+        ...state,
+        shoppingList: newShoppingList,
+        loadedAmounts: newLoadedAmounts,
+      };
+    }
+    case 'UPDATE_ITEM_CHECKBOX': {
+      const newShoppingList = [...state.shoppingList];
+      newShoppingList[action.payload.index] = {
+        ...newShoppingList[action.payload.index],
+        checked: action.payload.checked,
+        checkedType: action.payload.checkedType,
+      };
+      return { ...state, shoppingList: newShoppingList };
+    }
+    case 'UPDATE_ITEM_SYRUPS': {
+      const newShoppingList = [...state.shoppingList];
+      newShoppingList[action.payload.index] = {
+        ...newShoppingList[action.payload.index],
+        selectedSyrups: action.payload.selectedSyrups,
+      };
+      return { ...state, shoppingList: newShoppingList };
+    }
+    case 'UPDATE_ITEM_SIZES': {
+      const newShoppingList = [...state.shoppingList];
+      newShoppingList[action.payload.index] = {
+        ...newShoppingList[action.payload.index],
+        selectedSizes: action.payload.selectedSizes,
+      };
+      return { ...state, shoppingList: newShoppingList };
+    }
+    default:
+      return state;
+  }
+}
 
 export const ShoppingList = ({
   machineIds: initialMachineIds,
@@ -102,126 +219,101 @@ export const ShoppingList = ({
   sort = 'grouped',
   markAsServiced,
 }: ShoppingListProps) => {
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [shoppingList, setShoppingList] = useState<
-    ShoppingListItemWithStatus[]
-  >([]);
-  const [savingPlanogram, setSavingPlanogram] = useState(false);
-  const [salesThisPeriod, setSalesThisPeriod] = useState<Map<string, number>>(
-    new Map()
-  );
-  const [showPlanogramDialog, setShowPlanogramDialog] = useState(false);
-  const [loadedAmounts, setLoadedAmounts] = useState<number[]>([]);
+  const [state, dispatch] = useReducer(shoppingListReducer, initialState);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
-  const [planogram, setPlanogram] = useState<string[]>([]);
-  const [coffeeProductNumbers, setCoffeeProductNumbers] = useState<string[]>(
-    []
-  );
+  
+  const {
+    loading,
+    saving,
+    shoppingList,
+    loadedAmounts,
+    planogram,
+    coffeeProductNumbers,
+    salesThisPeriod,
+    savingPlanogram,
+    showPlanogramDialog,
+    hasLoaded,
+  } = state;
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
+  const machineIdsRef = useRef(machineIds);
+  const planogramRef = useRef(planogram);
+  const hasLoadedRef = useRef(hasLoaded);
 
   const { getSalesByProducts } = useTelemetronApi();
   const { loadPlanogramData } = usePlanogramData();
   const { toast } = useToast();
 
-  const handleSavePlanogram = async () => {
-    if (machineIds.length !== 1 || planogram.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description:
-          'Для сохранения планограммы выберите один аппарат и дождитесь загрузки планограммы.',
-      });
-      return;
-    }
+  const planogramCache = useRef<{machineId: string; data: {planogram: string[]; salesThisPeriod: Map<string, number>; coffeeProductNumbers: string[]}; timestamp: number} | null>(null);
+  const CACHE_TTL = 300000; // 5 минут
 
-    setSavingPlanogram(true);
-    setShowPlanogramDialog(true);
-  };
+  // Стабильные функции
+  const stableToast = useRef(toast).current;
+  const stableGetSalesByProducts = useRef(getSalesByProducts).current;
+  const stableLoadPlanogramData = useRef(loadPlanogramData).current;
 
-  // ДОБАВЛЯЕМ функцию подтверждения сохранения планограммы
-  const confirmSavePlanogram = async () => {
+  // Обновляем ref при изменении
+  useEffect(() => {
+    machineIdsRef.current = machineIds;
+    planogramRef.current = planogram;
+    hasLoadedRef.current = hasLoaded;
+  }, [machineIds, planogram, hasLoaded]);
+
+  // Загрузка планограммы - ТОЛЬКО при изменении machineIds
+  useEffect(() => {
+    if (machineIds.length !== 1) return;
+
     const machineId = machineIds[0];
-
-    try {
-      // Преобразуем массив строк в объект product_number -> name
-      const planogramObject: Record<string, string> = {};
-
-      planogram.forEach(item => {
-        const match = item.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-        if (match) {
-          const productNumber = match[1];
-          const name = match[2].trim();
-          planogramObject[productNumber] = name;
-        }
-      });
-
-      const result = await savePlanogram(machineId, planogramObject);
-
-      if (result.success) {
-        toast({
-          title: 'Планограмма сохранена',
-          description: 'Текущая планограмма сохранена как эталонная.',
-        });
-        setShowPlanogramDialog(false);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не удалось сохранить планограмму.',
-        });
-      }
-    } catch (error) {
-      console.error('Ошибка сохранения планограммы:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Произошла ошибка при сохранении планограммы.',
-      });
-    } finally {
-      setSavingPlanogram(false);
-    }
-  };
-
-  useEffect(() => {
-    setMachineIds(initialMachineIds);
-  }, [initialMachineIds]);
-
-  useEffect(() => {
     let isMounted = true;
 
     const loadPlanogram = async () => {
-      if (machineIds.length === 1) {
-        console.log(
-          'Загружаем планограмму через usePlanogramData для',
-          machineIds[0]
-        );
-        try {
-          const result = await loadPlanogramData(machineIds[0]);
-
-          if (isMounted) {
-            setPlanogram(result.planogram);
-            setSalesThisPeriod(result.salesThisPeriod);
-            setCoffeeProductNumbers(result.coffeeProductNumbers);
-            // Теперь у нас есть result.salesThisPeriod для использования в shoppingList
-            console.log(
-              'Планограмма загружена, элементов:',
-              result.planogram.length
-            );
-          }
-        } catch (error) {
-          console.error('Ошибка загрузки планограммы:', error);
-          if (isMounted) {
-            setPlanogram([]);
-            setCoffeeProductNumbers([]);
-          }
-        }
-      } else {
-        console.log('Не загружаем планограмму для нескольких аппаратов');
+      // Проверяем кеш
+      if (planogramCache.current && 
+          planogramCache.current.machineId === machineId &&
+          Date.now() - planogramCache.current.timestamp < CACHE_TTL) {
+        console.log('Используем кешированную планограмму');
+        const cached = planogramCache.current.data;
         if (isMounted) {
-          setPlanogram([]);
+          dispatch({
+            type: 'SET_PLANOGRAM_DATA',
+            payload: {
+              planogram: cached.planogram,
+              salesThisPeriod: cached.salesThisPeriod,
+              coffeeProductNumbers: cached.coffeeProductNumbers,
+            }
+          });
         }
+        return;
+      }
+
+      console.log('Загружаем планограмму из Redis');
+      try {
+        const result = await stableLoadPlanogramData(machineId);
+        
+        if (isMounted) {
+          // Сохраняем в кеш
+          planogramCache.current = {
+            machineId,
+            data: {
+              planogram: result.planogram,
+              salesThisPeriod: result.salesThisPeriod,
+              coffeeProductNumbers: result.coffeeProductNumbers,
+            },
+            timestamp: Date.now(),
+          };
+
+          // Обновляем состояние
+          dispatch({
+            type: 'SET_PLANOGRAM_DATA',
+            payload: {
+              planogram: result.planogram,
+              salesThisPeriod: result.salesThisPeriod,
+              coffeeProductNumbers: result.coffeeProductNumbers,
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки планограммы:', error);
       }
     };
 
@@ -230,43 +322,172 @@ export const ShoppingList = ({
     return () => {
       isMounted = false;
     };
-  }, [machineIds, loadPlanogramData]); // ИЗМЕНИТЬ зависимость
+  }, [machineIds.join('-')]); // Только при изменении machineIds
+
+  // Загрузка shopping list - debounced
+  const loadShoppingList = useCallback(async () => {
+  const machineData = allMachines.find(m => m.id === machineIdsRef.current[0]);
+  const machineType = machineData ? getMachineType(machineData) : 'snack';
+  
+  // Для снековых аппаратов ждем планограмму
+  if (machineType !== 'coffee' && planogramRef.current.length === 0) {
+    console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
+    return;
+  }
+
+  // ТОЛЬКО проверка на machineIds
+  if (machineIdsRef.current.length === 0) {
+    if (forceLoad) {
+      stableToast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Не указаны ID аппаратов.',
+      });
+    }
+    return;
+  }
+
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    try {
+      const allSales: TelemetronSaleItem[] = [];
+      const dateTo = new Date();
+      const machineOverrides: LoadingOverrides =
+        machineIdsRef.current.length === 1 
+          ? await getLoadingOverrides(machineIdsRef.current[0]) 
+          : {};
+      
+      const machineData = allMachines.find(m => m.id === machineIdsRef.current[0]);
+
+      for (const vmId of machineIdsRef.current) {
+        try {
+          const salesData: TelemetronSalesResponse = await stableGetSalesByProducts(
+            vmId,
+            format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
+            format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+          );
+
+          if (salesData?.data) allSales.push(...salesData.data);
+        } catch (e) {
+          console.error(`Ошибка для аппарата ${vmId}:`, e);
+        }
+      }
+
+      const machineType = machineData ? getMachineType(machineData) : 'snack';
+
+      const calculatedList = calculateShoppingList(
+        { data: allSales },
+        sort,
+        machineOverrides,
+        machineIdsRef.current[0],
+        planogramRef.current,
+        machineData?.model,
+        salesThisPeriod,
+        coffeeProductNumbers
+      );
+
+      // Определяем начальное состояние на основе ТЕКУЩИХ данных
+      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
+        item => {
+          const overrideKey = `${machineIdsRef.current[0]}-${item.name}`;
+          const override = machineOverrides[overrideKey];
+
+          const hasCarryOver = (item.previousDeficit || 0) !== 0;
+          const hasCurrentSales = (item.salesAmount || 0) > 0;
+          
+          let initialStatus: 'none' | 'partial' = 'none';
+          let initialLoadedAmount: number = 0;
+
+          if (hasCurrentSales || hasCarryOver) {
+            initialStatus = 'partial';
+            initialLoadedAmount = item.amount;
+          }
+
+          return {
+            ...item,
+            status: override?.status || initialStatus,
+            loadedAmount: override?.loadedAmount ?? initialLoadedAmount,
+            checked: override?.checked ?? false,
+            checkedType: override?.checkedType,
+            selectedSyrups: override?.selectedSyrups || [],
+            selectedSizes: override?.selectedSizes || [],
+          };
+        }
+      );
+
+      dispatch({ type: 'SET_SHOPPING_LIST', payload: listWithStatus });
+
+      if (listWithStatus.length === 0) {
+        stableToast({
+          variant: 'default',
+          title: 'Нет продаж',
+          description: 'За выбранный период продаж не найдено.',
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки shopping list:', error);
+      stableToast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось сформировать список.',
+      });
+    }
+  }, [dateFrom, sort, forceLoad]);
+
+  // Debounced загрузка shopping list
+  const debouncedLoadShoppingList = useMemo(
+    () => debounce(loadShoppingList, 500),
+    [loadShoppingList]
+  );
+
+  // Триггер загрузки shopping list
   useEffect(() => {
-    console.log(
-      '✅ planogram обновился:',
-      planogram.length > 0 ? `есть ${planogram.length} элементов` : 'пустой'
-    );
-    console.log('Пример элемента планограммы:', planogram[0]);
-  }, [planogram]);
+    if (forceLoad && !hasLoadedRef.current) {
+      debouncedLoadShoppingList();
+    }
+
+    return () => {
+      debouncedLoadShoppingList.cancel();
+    };
+  }, [forceLoad, ]);
+
+  // Сброс флага загрузки при смене аппарата
+  useEffect(() => {
+    dispatch({ type: 'SET_HAS_LOADED', payload: false });
+  }, [machineIds.join('-')]);
+
+  // Обновление machineIds
+  useEffect(() => {
+    setMachineIds(initialMachineIds);
+  }, [initialMachineIds.join('-')]);
 
   const handleCheckboxChange = (index: number) => {
-    setShoppingList(prev =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
-        return { ...item, checked: !item.checked };
-      })
-    );
+    dispatch({
+      type: 'UPDATE_ITEM_CHECKBOX',
+      payload: { 
+        index, 
+        checked: !shoppingList[index]?.checked,
+      }
+    });
   };
 
   const handleCupLidChange = (index: number, size: 'big' | 'small') => {
-    setShoppingList(prev =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
-        const currentSizes = item.selectedSizes || [];
-        const newSizes = currentSizes.includes(size)
-          ? currentSizes.filter(s => s !== size)
-          : [...currentSizes, size];
-        return { ...item, selectedSizes: newSizes };
-      })
-    );
+    const currentSizes = shoppingList[index]?.selectedSizes || [];
+    const newSizes = currentSizes.includes(size)
+      ? currentSizes.filter(s => s !== size)
+      : [...currentSizes, size];
+    
+    dispatch({
+      type: 'UPDATE_ITEM_SIZES',
+      payload: { index, selectedSizes: newSizes }
+    });
   };
 
   const handleSyrupChange = (index: number, syrupIds: string[]) => {
-    setShoppingList(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, selectedSyrups: syrupIds } : item
-      )
-    );
+    dispatch({
+      type: 'UPDATE_ITEM_SYRUPS',
+      payload: { index, selectedSyrups: syrupIds }
+    });
   };
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -282,190 +503,23 @@ export const ShoppingList = ({
     setMachineIds(ids);
   };
 
-  const loadShoppingList = useCallback(async () => {
-    console.log('🚀 loadShoppingList вызван');
-    console.log('📋 machineIds:', machineIds);
-    console.log('🗺️  planogram в loadShoppingList:', planogram.length);
-
-    if (machineIds.length === 0) {
-      if (forceLoad) {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не указаны ID аппаратов.',
-        });
-      }
-      return;
-    }
-
-    if (machineIds.length === 1 && planogram.length === 0) {
-      console.log('⏳ Ждем загрузки планограммы...');
-      return;
-    }
-
-    setLoading(true);
-    setShoppingList([]);
-
-    try {
-      const allSales: TelemetronSaleItem[] = [];
-      const dateTo = new Date();
-      const machineOverrides: LoadingOverrides =
-        machineIds.length === 1 ? await getLoadingOverrides(machineIds[0]) : {};
-      console.log('🚀 ~ ShoppingList ~ machineIds.length:', machineIds.length);
-      console.log('Перед getLoadingOverrides для', machineIds[0]);
-      console.log(
-        'После getLoadingOverrides:',
-        Object.keys(machineOverrides).length
-      );
-      console.log(
-        'OVERRIDES для аппарата',
-        machineIds[0],
-        ':',
-        machineOverrides
-      );
-      readAllOverrides();
-      console.log('Ключи overrides:', Object.keys(machineOverrides));
-      const machineData = allMachines.find(m => m.id === machineIds[0]);
-
-      for (const vmId of machineIds) {
-        try {
-          const startDate = dateFrom;
-          const salesData: TelemetronSalesResponse = await getSalesByProducts(
-            vmId,
-            format(startDate, 'yyyy-MM-dd HH:mm:ss'),
-            format(dateTo, 'yyyy-MM-dd HH:mm:ss')
-          );
-
-          if (salesData?.data) allSales.push(...salesData.data);
-        } catch (e) {
-          console.error(`Ошибка для аппарата ${vmId}:`, e);
-        }
-      }
-
-      console.log('📈 Продажи загружены:', allSales.length);
-
-      const machineType = machineData ? getMachineType(machineData) : 'snack';
-
-      const calculatedList = calculateShoppingList(
-        { data: allSales },
-        sort,
-        machineOverrides,
-        machineIds[0],
-        planogram,
-        machineData?.model,
-        salesThisPeriod,
-        coffeeProductNumbers
-      );
-
-      console.log('✅ calculateShoppingList вернула:', calculatedList.length);
-      console.log(
-        'Первые 18 элементов из calculateShoppingList:',
-        calculatedList.slice(0, 18)
-      );
-
-      const listWithStatus: ShoppingListItemWithStatus[] = calculatedList.map(
-        item => {
-          const overrideKey = `${machineIds[0]}-${item.name}`;
-          const override = machineOverrides[overrideKey];
-
-          // ОПРЕДЕЛЯЕМ состояние на основе ТЕКУЩЕЙ потребности:
-          const hasCarryOver = (item.previousDeficit || 0) !== 0; // Есть излишек/недогруз
-          const hasCurrentSales = (item.salesAmount || 0) > 0; // Есть продажи в этом периоде
-
-          let initialStatus: 'none' | 'partial' = 'none';
-          let initialLoadedAmount: number = 0;
-
-          if (hasCurrentSales || hasCarryOver) {
-            // Есть что пополнять - показываем "карандаш" с текущим "Нужно"
-            initialStatus = 'partial';
-            initialLoadedAmount = item.amount; // АКТУАЛЬНАЯ потребность
-          } else {
-            // Нет продаж и нет излишков/недогруза - "крестик"
-            initialStatus = 'none';
-            initialLoadedAmount = 0;
-          }
-
-          return {
-            ...item,
-            status: initialStatus,
-            loadedAmount: initialLoadedAmount,
-            // Чекбоксы/сиропы сохраняем из override (они логичны)
-            checked: override?.checked ?? false,
-            checkedType: override?.checkedType,
-            selectedSyrups: override?.selectedSyrups || [],
-            selectedSizes: override?.selectedSizes || [],
-          };
-        }
-      );
-
-      setShoppingList(listWithStatus);
-      setLoadedAmounts(
-        listWithStatus.map(item => item.loadedAmount ?? item.amount)
-      );
-    } catch (error) {
-      console.error('❌ Ошибка загрузки shopping list:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Не удалось сформировать список.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    machineIds,
-    getSalesByProducts,
-    toast,
-    sort,
-    dateFrom,
-    planogram,
-    forceLoad,
-  ]);
-
-  useEffect(() => {
-    if (forceLoad) {
-      console.log('🔧 forceLoad активирован');
-      if (machineIds.length === 1 && planogram.length === 0) {
-        console.log('⏳ forceLoad: ждем загрузки планограммы');
-      } else {
-        console.log('🚀 forceLoad: запускаем loadShoppingList');
-        loadShoppingList();
-      }
-    }
-  }, [forceLoad, machineIds, planogram, loadShoppingList]);
-
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
-    setShoppingList(prev =>
-      prev.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              status,
-              loadedAmount:
-                status === 'partial'
-                  ? item.loadedAmount || item.amount
-                  : undefined,
-            }
-          : item
-      )
-    );
+    const loadedAmount = status === 'partial' 
+      ? shoppingList[index]?.loadedAmount || shoppingList[index]?.amount 
+      : 0;
+    
+    dispatch({
+      type: 'UPDATE_ITEM_STATUS',
+      payload: { index, status, loadedAmount }
+    });
   };
 
   const handleAmountChange = (index: number, value: string) => {
     const numValue = value === '' ? 0 : parseInt(value) || 0;
-    setLoadedAmounts(prev => {
-      const newAmounts = [...prev];
-      newAmounts[index] = numValue;
-      return newAmounts;
-    });
-    setShoppingList(prev =>
-      prev.map((item, i) =>
-        i === index ? { ...item, loadedAmount: numValue } : item
-      )
-    );
+    const newLoadedAmounts = [...loadedAmounts];
+    newLoadedAmounts[index] = numValue;
+    
+    dispatch({ type: 'UPDATE_LOADED_AMOUNTS', payload: newLoadedAmounts });
   };
 
   const handleSaveOverrides = async () => {
@@ -478,17 +532,15 @@ export const ShoppingList = ({
       return;
     }
 
-    setSaving(true);
+    dispatch({ type: 'SET_SAVING', payload: true });
     const machineId = machineIds[0];
 
     try {
       const overridesToSave: LoadingOverrides = {};
 
       shoppingList.forEach((item, index) => {
-        // ИСПРАВЛЕНО: добавляем productNumber в ключ
         const key = `${machineId}-${item.name}`;
-        const actualLoadedAmount =
-          item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
+        const actualLoadedAmount = item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
 
         const override: LoadingOverride = {
           status: item.status,
@@ -514,31 +566,22 @@ export const ShoppingList = ({
           }
         }
 
-        console.log(`Сохраняем override для ${key}:`, override);
         overridesToSave[key] = override;
       });
 
       const result = await saveLoadingOverrides(overridesToSave);
 
+      // Обновляем дату для специальных аппаратов
       const machine = allMachines.find(m => m.id === machineId);
 
       if (machine && (isSpecialMachine(machine) || markAsServiced)) {
         const now = new Date();
         const newTimestamp = now.toISOString();
+        const dateUpdateResult = await setSpecialMachineDate(machineId, newTimestamp);
 
-        // 1. Обновляем дату в специальных датах
-        const dateUpdateResult = await setSpecialMachineDate(
-          machineId,
-          newTimestamp
-        );
-
-        // 2. Сохраняем время нажатия Telemetron (эмуляция)
         await saveTelemetronPress(machineId, newTimestamp);
-
-        // 3. Сохраняем время последнего сохранения
         await saveLastSaveTime(machineId, newTimestamp);
 
-        // 4. Обновляем UI если нужно
         if (dateUpdateResult.success && onTimestampUpdate) {
           onTimestampUpdate(newTimestamp);
           toast({
@@ -560,8 +603,81 @@ export const ShoppingList = ({
       }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка сохранения',
+        description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
+      });
     } finally {
-      setSaving(false);
+      dispatch({ type: 'SET_SAVING', payload: false });
+    }
+  };
+
+  const handleSavePlanogram = () => {
+    if (machineIds.length !== 1 || planogram.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description:
+          'Для сохранения планограммы выберите один аппарат и дождитесь загрузки планограммы.',
+      });
+      return;
+    }
+
+    dispatch({ type: 'SET_SHOW_PLANOGRAM_DIALOG', payload: true });
+  };
+
+  const confirmSavePlanogram = async () => {
+    const machineId = machineIds[0];
+    
+    dispatch({ type: 'SET_SAVING_PLANOGRAM', payload: true });
+
+    try {
+      const planogramObject: Record<string, string> = {};
+
+      planogram.forEach(item => {
+        const match = item.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+        if (match) {
+          const productNumber = match[1];
+          const name = match[2].trim();
+          planogramObject[productNumber] = name;
+        }
+      });
+
+      const result = await savePlanogram(machineId, planogramObject);
+
+      if (result.success) {
+        toast({
+          title: 'Планограмма сохранена',
+          description: 'Текущая планограмма сохранена как эталонная.',
+        });
+        // Обновляем кеш
+        planogramCache.current = {
+          machineId,
+          data: {
+            planogram,
+            salesThisPeriod,
+            coffeeProductNumbers,
+          },
+          timestamp: Date.now(),
+        };
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось сохранить планограмму.',
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения планограммы:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Произошла ошибка при сохранении планограммы.',
+      });
+    } finally {
+      dispatch({ type: 'SET_SAVING_PLANOGRAM', payload: false });
+      dispatch({ type: 'SET_SHOW_PLANOGRAM_DIALOG', payload: false });
     }
   };
 
@@ -586,9 +702,15 @@ export const ShoppingList = ({
     URL.revokeObjectURL(url);
   };
 
+  const extractProductName = (planogramName: string | null): string => {
+    if (!planogramName) return '';
+    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+    return match ? match[1] : planogramName;
+  };
+
   return (
     <Card className='w-full bg-gray-900 border-gray-700 text-white'>
-      <CardHeader className='border-b border-gray-700 px-4 sm:px-6'>
+      <CardHeader className='border-b border-gray-700'>
         <CardTitle className='flex items-center justify-between'>
           <div className='flex items-center gap-2'>
             <ShoppingCart className='h-5 w-5 text-yellow-400' />
@@ -605,7 +727,7 @@ export const ShoppingList = ({
         )}
       </CardHeader>
 
-      <CardContent className='p-4 sm:p-6 space-y-4'>
+      <CardContent className='p-4 space-y-4'>
         {showControls && (
           <div className='space-y-4'>
             {!forceLoad && (
@@ -648,7 +770,10 @@ export const ShoppingList = ({
                   </div>
                 </div>
                 <Button
-                  onClick={loadShoppingList}
+                  onClick={() => {
+                    dispatch({ type: 'SET_HAS_LOADED', payload: false });
+                    loadShoppingList();
+                  }}
                   disabled={loading}
                   className='w-full bg-yellow-600 hover:bg-yellow-700 text-white'
                 >
@@ -740,7 +865,7 @@ export const ShoppingList = ({
                     <div
                       key={index}
                       className={cn(
-                        'flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 p-3 sm:p-4 border rounded-lg',
+                        'flex justify-between items-center p-3 border rounded-lg',
                         isFullyReplenished
                           ? 'bg-green-900/20 border-green-600 text-green-300'
                           : item.status === 'none'
@@ -748,7 +873,7 @@ export const ShoppingList = ({
                           : 'bg-blue-900/20 border-blue-600 text-blue-300'
                       )}
                     >
-                      <div className='flex-1 space-y-1 min-w-0 w-full'>
+                      <div className='flex-1 space-y-1'>
                         <div className='font-medium capitalize'>
                           <div className='flex items-center gap-2'>
                             {extractProductName(item.planogramName) ||
@@ -766,7 +891,6 @@ export const ShoppingList = ({
                                       В планограмме:{' '}
                                       {extractProductName(item.planogramName)}
                                     </p>
-                                    {/* Показываем номер ячейки только если он есть */}
                                     {item.planogramName.match(
                                       /^\d+[A-Za-z]?\./
                                     ) && (
@@ -833,9 +957,7 @@ export const ShoppingList = ({
                       <div className='flex items-center gap-2'>
                         {isCheckboxItem ? (
                           isCupOrLid ? (
-                            // Стаканчики и крышки с двумя размерами
                             <div className='flex flex-col gap-2'>
-                              {/* Большой размер */}
                               <div className='flex items-center gap-2'>
                                 <span className='text-sm text-yellow-200 mr-2'>
                                   {item.name.toLowerCase().includes('стаканчик')
@@ -865,7 +987,6 @@ export const ShoppingList = ({
                                 </span>
                               </div>
 
-                              {/* Малый размер */}
                               <div className='flex items-center gap-2'>
                                 <span className='text-sm text-yellow-200 mr-2'>
                                   {item.name.toLowerCase().includes('стаканчик')
@@ -896,7 +1017,6 @@ export const ShoppingList = ({
                               </div>
                             </div>
                           ) : (
-                            // Обычные чекбоксы (сахар, размешиватель)
                             <div className='flex items-center gap-2'>
                               <button
                                 onClick={() => handleCheckboxChange(index)}
@@ -918,7 +1038,6 @@ export const ShoppingList = ({
                             </div>
                           )
                         ) : isSyrupItem ? (
-                          // Селектор сиропов
                           <div className='w-48'>
                             <div className='text-sm text-gray-300 mb-1'>
                               Выберите сиропы:
@@ -982,7 +1101,6 @@ export const ShoppingList = ({
                             </div>
                           </div>
                         ) : (
-                          // Обычные товары с кнопками X и Pencil
                           <>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1005,6 +1123,7 @@ export const ShoppingList = ({
                                 <p>Не пополнено</p>
                               </TooltipContent>
                             </Tooltip>
+
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -1026,13 +1145,14 @@ export const ShoppingList = ({
                                 <p>Пополнено частично</p>
                               </TooltipContent>
                             </Tooltip>
+
                             {item.status === 'partial' && (
                               <div className='ml-2'>
                                 <div className='flex items-center gap-1'>
                                   <Button
                                     variant='outline'
                                     size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
+                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
                                     onClick={() => {
                                       const current =
                                         item.loadedAmount || item.amount;
@@ -1044,7 +1164,7 @@ export const ShoppingList = ({
                                   >
                                     -
                                   </Button>
-                                  <div className='min-w-16 sm:min-w-20 max-w-24'>
+                                  <div className='w-20'>
                                     <Input
                                       type='number'
                                       value={(
@@ -1057,7 +1177,7 @@ export const ShoppingList = ({
                                         )
                                       }
                                       placeholder={item.amount?.toString()}
-                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
+                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
                                       inputMode='numeric'
                                       autoComplete='off'
                                     />
@@ -1065,7 +1185,7 @@ export const ShoppingList = ({
                                   <Button
                                     variant='outline'
                                     size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 min-w-8'
+                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
                                     onClick={() => {
                                       const current =
                                         item.loadedAmount || item.amount;
@@ -1079,7 +1199,7 @@ export const ShoppingList = ({
                                   </Button>
                                 </div>
                               </div>
-                            )}{' '}
+                            )}
                           </>
                         )}{' '}
                       </div>
@@ -1091,6 +1211,39 @@ export const ShoppingList = ({
           </div>
         )}
       </CardContent>
+
+      {showPlanogramDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Сохранить планограмму
+            </h3>
+            <p className="text-gray-300 mb-6">
+              Вы уверены, что хотите сохранить текущую планограмму как эталонную?
+              Существующая сохранённая планограмма будет перезаписана.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => dispatch({ type: 'SET_SHOW_PLANOGRAM_DIALOG', payload: false })}
+                className="border-gray-600 text-gray-300"
+              >
+                Отмена
+              </Button>
+              <Button
+                onClick={confirmSavePlanogram}
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={savingPlanogram}
+              >
+                {savingPlanogram ? (
+                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                ) : null}
+                Сохранить
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
