@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef, useReducer } from 'react';
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useReducer,
+} from 'react';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import {
   calculateShoppingList,
@@ -55,7 +62,7 @@ import {
 } from '@/components/ui/tooltip';
 import { allMachines, getMachineType, isSpecialMachine } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
-import  debounce  from 'lodash.debounce';
+import debounce from 'lodash.debounce';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -98,15 +105,42 @@ type ShoppingListAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SAVING'; payload: boolean }
   | { type: 'SET_SHOPPING_LIST'; payload: ShoppingListItemWithStatus[] }
-  | { type: 'SET_PLANOGRAM_DATA'; payload: { planogram: string[]; salesThisPeriod: Map<string, number>; coffeeProductNumbers: string[] } }
+  | {
+      type: 'SET_PLANOGRAM_DATA';
+      payload: {
+        planogram: string[];
+        salesThisPeriod: Map<string, number>;
+        coffeeProductNumbers: string[];
+      };
+    }
   | { type: 'SET_SAVING_PLANOGRAM'; payload: boolean }
   | { type: 'SET_SHOW_PLANOGRAM_DIALOG'; payload: boolean }
   | { type: 'SET_HAS_LOADED'; payload: boolean }
   | { type: 'UPDATE_LOADED_AMOUNTS'; payload: number[] }
-  | { type: 'UPDATE_ITEM_STATUS'; payload: { index: number; status: 'none' | 'partial'; loadedAmount?: number } }
-  | { type: 'UPDATE_ITEM_CHECKBOX'; payload: { index: number; checked: boolean; checkedType?: 'big' | 'small' } }
-  | { type: 'UPDATE_ITEM_SYRUPS'; payload: { index: number; selectedSyrups: string[] } }
-  | { type: 'UPDATE_ITEM_SIZES'; payload: { index: number; selectedSizes: ('big' | 'small')[] } };
+  | {
+      type: 'UPDATE_ITEM_STATUS';
+      payload: {
+        index: number;
+        status: 'none' | 'partial';
+        loadedAmount?: number;
+      };
+    }
+  | {
+      type: 'UPDATE_ITEM_CHECKBOX';
+      payload: {
+        index: number;
+        checked: boolean;
+        checkedType?: 'big' | 'small';
+      };
+    }
+  | {
+      type: 'UPDATE_ITEM_SYRUPS';
+      payload: { index: number; selectedSyrups: string[] };
+    }
+  | {
+      type: 'UPDATE_ITEM_SIZES';
+      payload: { index: number; selectedSizes: ('big' | 'small')[] };
+    };
 
 const initialState: ShoppingListState = {
   loading: false,
@@ -121,16 +155,21 @@ const initialState: ShoppingListState = {
   hasLoaded: false,
 };
 
-function shoppingListReducer(state: ShoppingListState, action: ShoppingListAction): ShoppingListState {
+function shoppingListReducer(
+  state: ShoppingListState,
+  action: ShoppingListAction
+): ShoppingListState {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'SET_SAVING':
       return { ...state, saving: action.payload };
     case 'SET_SHOPPING_LIST': {
-      const loadedAmounts = action.payload.map(item => item.loadedAmount ?? item.amount);
-      return { 
-        ...state, 
+      const loadedAmounts = action.payload.map(
+        item => item.loadedAmount ?? item.amount
+      );
+      return {
+        ...state,
         shoppingList: action.payload,
         loadedAmounts,
         loading: false,
@@ -169,7 +208,9 @@ function shoppingListReducer(state: ShoppingListState, action: ShoppingListActio
         loadedAmount: action.payload.loadedAmount,
       };
       const newLoadedAmounts = [...state.loadedAmounts];
-      newLoadedAmounts[action.payload.index] = action.payload.loadedAmount ?? state.loadedAmounts[action.payload.index];
+      newLoadedAmounts[action.payload.index] =
+        action.payload.loadedAmount ??
+        state.loadedAmounts[action.payload.index];
       return {
         ...state,
         shoppingList: newShoppingList,
@@ -221,7 +262,7 @@ export const ShoppingList = ({
 }: ShoppingListProps) => {
   const [state, dispatch] = useReducer(shoppingListReducer, initialState);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
-  
+
   const {
     loading,
     saving,
@@ -244,7 +285,15 @@ export const ShoppingList = ({
   const { loadPlanogramData } = usePlanogramData();
   const { toast } = useToast();
 
-  const planogramCache = useRef<{machineId: string; data: {planogram: string[]; salesThisPeriod: Map<string, number>; coffeeProductNumbers: string[]}; timestamp: number} | null>(null);
+  const planogramCache = useRef<{
+    machineId: string;
+    data: {
+      planogram: string[];
+      salesThisPeriod: Map<string, number>;
+      coffeeProductNumbers: string[];
+    };
+    timestamp: number;
+  } | null>(null);
   const CACHE_TTL = 300000; // 5 минут
 
   // Стабильные функции
@@ -268,9 +317,11 @@ export const ShoppingList = ({
 
     const loadPlanogram = async () => {
       // Проверяем кеш
-      if (planogramCache.current && 
-          planogramCache.current.machineId === machineId &&
-          Date.now() - planogramCache.current.timestamp < CACHE_TTL) {
+      if (
+        planogramCache.current &&
+        planogramCache.current.machineId === machineId &&
+        Date.now() - planogramCache.current.timestamp < CACHE_TTL
+      ) {
         console.log('Используем кешированную планограмму');
         const cached = planogramCache.current.data;
         if (isMounted) {
@@ -280,7 +331,7 @@ export const ShoppingList = ({
               planogram: cached.planogram,
               salesThisPeriod: cached.salesThisPeriod,
               coffeeProductNumbers: cached.coffeeProductNumbers,
-            }
+            },
           });
         }
         return;
@@ -289,7 +340,7 @@ export const ShoppingList = ({
       console.log('Загружаем планограмму из Redis');
       try {
         const result = await stableLoadPlanogramData(machineId);
-        
+
         if (isMounted) {
           // Сохраняем в кеш
           planogramCache.current = {
@@ -309,7 +360,7 @@ export const ShoppingList = ({
               planogram: result.planogram,
               salesThisPeriod: result.salesThisPeriod,
               coffeeProductNumbers: result.coffeeProductNumbers,
-            }
+            },
           });
         }
       } catch (error) {
@@ -326,26 +377,28 @@ export const ShoppingList = ({
 
   // Загрузка shopping list - debounced
   const loadShoppingList = useCallback(async () => {
-  const machineData = allMachines.find(m => m.id === machineIdsRef.current[0]);
-  const machineType = machineData ? getMachineType(machineData) : 'snack';
-  
-  // Для снековых аппаратов ждем планограмму
-  if (machineType !== 'coffee' && planogramRef.current.length === 0) {
-    console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
-    return;
-  }
+    const machineData = allMachines.find(
+      m => m.id === machineIdsRef.current[0]
+    );
+    const machineType = machineData ? getMachineType(machineData) : 'snack';
 
-  // ТОЛЬКО проверка на machineIds
-  if (machineIdsRef.current.length === 0) {
-    if (forceLoad) {
-      stableToast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Не указаны ID аппаратов.',
-      });
+    // Для снековых аппаратов ждем планограмму
+    if (machineType !== 'coffee' && planogramRef.current.length === 0) {
+      console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
+      return;
     }
-    return;
-  }
+
+    // ТОЛЬКО проверка на machineIds
+    if (machineIdsRef.current.length === 0) {
+      if (forceLoad) {
+        stableToast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не указаны ID аппаратов.',
+        });
+      }
+      return;
+    }
 
     dispatch({ type: 'SET_LOADING', payload: true });
 
@@ -353,19 +406,22 @@ export const ShoppingList = ({
       const allSales: TelemetronSaleItem[] = [];
       const dateTo = new Date();
       const machineOverrides: LoadingOverrides =
-        machineIdsRef.current.length === 1 
-          ? await getLoadingOverrides(machineIdsRef.current[0]) 
+        machineIdsRef.current.length === 1
+          ? await getLoadingOverrides(machineIdsRef.current[0])
           : {};
-      
-      const machineData = allMachines.find(m => m.id === machineIdsRef.current[0]);
+
+      const machineData = allMachines.find(
+        m => m.id === machineIdsRef.current[0]
+      );
 
       for (const vmId of machineIdsRef.current) {
         try {
-          const salesData: TelemetronSalesResponse = await stableGetSalesByProducts(
-            vmId,
-            format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
-            format(dateTo, 'yyyy-MM-dd HH:mm:ss')
-          );
+          const salesData: TelemetronSalesResponse =
+            await stableGetSalesByProducts(
+              vmId,
+              format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
+              format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+            );
 
           if (salesData?.data) allSales.push(...salesData.data);
         } catch (e) {
@@ -394,7 +450,7 @@ export const ShoppingList = ({
 
           const hasCarryOver = (item.previousDeficit || 0) !== 0;
           const hasCurrentSales = (item.salesAmount || 0) > 0;
-          
+
           let initialStatus: 'none' | 'partial' = 'none';
           let initialLoadedAmount: number = 0;
 
@@ -429,7 +485,10 @@ export const ShoppingList = ({
       stableToast({
         variant: 'destructive',
         title: 'Ошибка',
-        description: error instanceof Error ? error.message : 'Не удалось сформировать список.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Не удалось сформировать список.',
       });
     }
   }, [dateFrom, sort, forceLoad]);
@@ -449,7 +508,7 @@ export const ShoppingList = ({
     return () => {
       debouncedLoadShoppingList.cancel();
     };
-  }, [forceLoad, ]);
+  }, [forceLoad]);
 
   // Сброс флага загрузки при смене аппарата
   useEffect(() => {
@@ -464,10 +523,10 @@ export const ShoppingList = ({
   const handleCheckboxChange = (index: number) => {
     dispatch({
       type: 'UPDATE_ITEM_CHECKBOX',
-      payload: { 
-        index, 
+      payload: {
+        index,
         checked: !shoppingList[index]?.checked,
-      }
+      },
     });
   };
 
@@ -476,17 +535,17 @@ export const ShoppingList = ({
     const newSizes = currentSizes.includes(size)
       ? currentSizes.filter(s => s !== size)
       : [...currentSizes, size];
-    
+
     dispatch({
       type: 'UPDATE_ITEM_SIZES',
-      payload: { index, selectedSizes: newSizes }
+      payload: { index, selectedSizes: newSizes },
     });
   };
 
   const handleSyrupChange = (index: number, syrupIds: string[]) => {
     dispatch({
       type: 'UPDATE_ITEM_SYRUPS',
-      payload: { index, selectedSyrups: syrupIds }
+      payload: { index, selectedSyrups: syrupIds },
     });
   };
 
@@ -504,13 +563,14 @@ export const ShoppingList = ({
   };
 
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
-    const loadedAmount = status === 'partial' 
-      ? shoppingList[index]?.loadedAmount || shoppingList[index]?.amount 
-      : 0;
-    
+    const loadedAmount =
+      status === 'partial'
+        ? shoppingList[index]?.loadedAmount || shoppingList[index]?.amount
+        : 0;
+
     dispatch({
       type: 'UPDATE_ITEM_STATUS',
-      payload: { index, status, loadedAmount }
+      payload: { index, status, loadedAmount },
     });
   };
 
@@ -518,7 +578,7 @@ export const ShoppingList = ({
     const numValue = value === '' ? 0 : parseInt(value) || 0;
     const newLoadedAmounts = [...loadedAmounts];
     newLoadedAmounts[index] = numValue;
-    
+
     dispatch({ type: 'UPDATE_LOADED_AMOUNTS', payload: newLoadedAmounts });
   };
 
@@ -540,7 +600,8 @@ export const ShoppingList = ({
 
       shoppingList.forEach((item, index) => {
         const key = `${machineId}-${item.name}`;
-        const actualLoadedAmount = item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
+        const actualLoadedAmount =
+          item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
 
         const override: LoadingOverride = {
           status: item.status,
@@ -577,7 +638,10 @@ export const ShoppingList = ({
       if (machine && (isSpecialMachine(machine) || markAsServiced)) {
         const now = new Date();
         const newTimestamp = now.toISOString();
-        const dateUpdateResult = await setSpecialMachineDate(machineId, newTimestamp);
+        const dateUpdateResult = await setSpecialMachineDate(
+          machineId,
+          newTimestamp
+        );
 
         await saveTelemetronPress(machineId, newTimestamp);
         await saveLastSaveTime(machineId, newTimestamp);
@@ -606,7 +670,8 @@ export const ShoppingList = ({
       toast({
         variant: 'destructive',
         title: 'Ошибка сохранения',
-        description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
+        description:
+          error instanceof Error ? error.message : 'Неизвестная ошибка.',
       });
     } finally {
       dispatch({ type: 'SET_SAVING', payload: false });
@@ -629,7 +694,7 @@ export const ShoppingList = ({
 
   const confirmSavePlanogram = async () => {
     const machineId = machineIds[0];
-    
+
     dispatch({ type: 'SET_SAVING_PLANOGRAM', payload: true });
 
     try {
@@ -865,7 +930,7 @@ export const ShoppingList = ({
                     <div
                       key={index}
                       className={cn(
-                        'flex justify-between items-center p-3 border rounded-lg',
+                        'flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 border rounded-lg gap-3',
                         isFullyReplenished
                           ? 'bg-green-900/20 border-green-600 text-green-300'
                           : item.status === 'none'
@@ -873,9 +938,10 @@ export const ShoppingList = ({
                           : 'bg-blue-900/20 border-blue-600 text-blue-300'
                       )}
                     >
-                      <div className='flex-1 space-y-1'>
+                      {/* Левый блок - информация о товаре */}
+                      <div className='flex-1 min-w-0 space-y-1'>
                         <div className='font-medium capitalize'>
-                          <div className='flex items-center gap-2'>
+                          <div className='flex items-center gap-2 flex-wrap'>
                             {extractProductName(item.planogramName) ||
                               item.name}
                             {item.planogramName &&
@@ -883,7 +949,7 @@ export const ShoppingList = ({
                                 item.name && (
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <AlertTriangle className='h-4 w-4 text-yellow-500' />
+                                    <AlertTriangle className='h-4 w-4 text-yellow-500 flex-shrink-0' />
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>В аппарате: {item.name}</p>
@@ -905,18 +971,19 @@ export const ShoppingList = ({
                                     )}
                                   </TooltipContent>
                                 </Tooltip>
-                              )}{' '}
+                              )}
                           </div>
                           {item.planogramName &&
                             extractProductName(item.planogramName) !==
                               item.name && (
-                              <div className='text-sm text-gray-400 mt-1'>
+                              <div className='text-sm text-gray-400 mt-1 break-words'>
                                 Фактически: {item.name}
                               </div>
                             )}
                         </div>
+
                         {isCheckboxItem || isSyrupItem ? (
-                          <div className='text-sm text-gray-400'>
+                          <div className='text-sm text-gray-400 break-words'>
                             {hasSales
                               ? `Продажи: ${item.salesAmount} ${item.unit}`
                               : 'Расходные материалы'}
@@ -924,7 +991,7 @@ export const ShoppingList = ({
                         ) : (
                           <>
                             {(hasSales || hasDeficit || hasSurplus) && (
-                              <div className='text-sm text-gray-400'>
+                              <div className='text-sm text-gray-400 break-words'>
                                 {hasSales &&
                                   `Продажи: ${item.salesAmount} ${item.unit}`}
                                 {hasSales &&
@@ -938,7 +1005,7 @@ export const ShoppingList = ({
                             )}
                             <div
                               className={cn(
-                                'text-base font-bold',
+                                'text-base font-bold break-words',
                                 isFullyReplenished
                                   ? 'text-green-400'
                                   : 'text-white'
@@ -954,12 +1021,13 @@ export const ShoppingList = ({
                         )}
                       </div>
 
-                      <div className='flex items-center gap-2'>
+                      {/* Правый блок - кнопки управления */}
+                      <div className='flex items-center gap-2 self-end sm:self-center flex-wrap justify-end'>
                         {isCheckboxItem ? (
                           isCupOrLid ? (
                             <div className='flex flex-col gap-2'>
                               <div className='flex items-center gap-2'>
-                                <span className='text-sm text-yellow-200 mr-2'>
+                                <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
                                   {item.name.toLowerCase().includes('стаканчик')
                                     ? 'Большой'
                                     : 'Большая'}
@@ -968,14 +1036,14 @@ export const ShoppingList = ({
                                   onClick={() =>
                                     handleCupLidChange(index, 'big')
                                   }
-                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
                                 >
                                   {item.selectedSizes?.includes('big') && (
                                     <CircleCheckBig className='h-4 w-4 text-green-500' />
                                   )}
                                 </button>
                                 <span
-                                  className={`text-sm ${
+                                  className={`text-sm whitespace-nowrap ${
                                     item.selectedSizes?.includes('big')
                                       ? 'text-green-500'
                                       : 'text-yellow-200'
@@ -988,7 +1056,7 @@ export const ShoppingList = ({
                               </div>
 
                               <div className='flex items-center gap-2'>
-                                <span className='text-sm text-yellow-200 mr-2'>
+                                <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
                                   {item.name.toLowerCase().includes('стаканчик')
                                     ? 'Малый'
                                     : 'Малая'}
@@ -997,14 +1065,14 @@ export const ShoppingList = ({
                                   onClick={() =>
                                     handleCupLidChange(index, 'small')
                                   }
-                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
                                 >
                                   {item.selectedSizes?.includes('small') && (
                                     <CircleCheckBig className='h-4 w-4 text-green-500' />
                                   )}
                                 </button>
                                 <span
-                                  className={`text-sm ${
+                                  className={`text-sm whitespace-nowrap ${
                                     item.selectedSizes?.includes('small')
                                       ? 'text-green-500'
                                       : 'text-yellow-200'
@@ -1020,14 +1088,14 @@ export const ShoppingList = ({
                             <div className='flex items-center gap-2'>
                               <button
                                 onClick={() => handleCheckboxChange(index)}
-                                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500'
+                                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
                               >
                                 {item.checked && (
                                   <CircleCheckBig className='h-4 w-4 text-green-500' />
                                 )}
                               </button>
                               <span
-                                className={`text-sm ${
+                                className={`text-sm whitespace-nowrap ${
                                   item.checked
                                     ? 'text-green-500'
                                     : 'text-yellow-200'
@@ -1038,7 +1106,7 @@ export const ShoppingList = ({
                             </div>
                           )
                         ) : isSyrupItem ? (
-                          <div className='w-48'>
+                          <div className='w-full sm:w-48'>
                             <div className='text-sm text-gray-300 mb-1'>
                               Выберите сиропы:
                             </div>
@@ -1062,10 +1130,10 @@ export const ShoppingList = ({
                                       handleSyrupChange(index, newSelected);
                                     }}
                                   >
-                                    <div className='flex items-center gap-2'>
+                                    <div className='flex items-center gap-2 min-w-0'>
                                       <div
                                         className={cn(
-                                          'flex items-center justify-center h-5 w-5 rounded-full border-2',
+                                          'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
                                           isSelected
                                             ? 'border-green-500 bg-green-500/10'
                                             : 'border-gray-400 hover:border-gray-300'
@@ -1077,7 +1145,7 @@ export const ShoppingList = ({
                                       </div>
                                       <span
                                         className={cn(
-                                          'text-sm',
+                                          'text-sm truncate',
                                           isSelected
                                             ? 'text-green-300'
                                             : 'text-gray-300'
@@ -1087,7 +1155,7 @@ export const ShoppingList = ({
                                       </span>
                                     </div>
                                     <span
-                                      className={`text-sm ${
+                                      className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${
                                         isSelected
                                           ? 'text-green-500'
                                           : 'text-yellow-200'
@@ -1102,106 +1170,108 @@ export const ShoppingList = ({
                           </div>
                         ) : (
                           <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  className={cn(
-                                    'rounded-full',
-                                    item.status === 'none' &&
-                                      'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                  )}
-                                  onClick={() =>
-                                    handleStatusChange(index, 'none')
-                                  }
-                                >
-                                  <X className='h-5 w-5' />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Не пополнено</p>
-                              </TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  className={cn(
-                                    'rounded-full',
-                                    item.status === 'partial' &&
-                                      'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                                  )}
-                                  onClick={() =>
-                                    handleStatusChange(index, 'partial')
-                                  }
-                                >
-                                  <Pencil className='h-5 w-5' />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Пополнено частично</p>
-                              </TooltipContent>
-                            </Tooltip>
-
-                            {item.status === 'partial' && (
-                              <div className='ml-2'>
-                                <div className='flex items-center gap-1'>
+                            <div className='flex items-center gap-2 flex-wrap'>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
                                   <Button
-                                    variant='outline'
+                                    variant='ghost'
                                     size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                    onClick={() => {
-                                      const current =
-                                        item.loadedAmount || item.amount;
-                                      handleAmountChange(
-                                        index,
-                                        (current - 1).toString()
-                                      );
-                                    }}
+                                    className={cn(
+                                      'rounded-full flex-shrink-0',
+                                      item.status === 'none' &&
+                                        'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                    )}
+                                    onClick={() =>
+                                      handleStatusChange(index, 'none')
+                                    }
                                   >
-                                    -
+                                    <X className='h-5 w-5' />
                                   </Button>
-                                  <div className='w-20'>
-                                    <Input
-                                      type='number'
-                                      value={(
-                                        item.loadedAmount ?? item.amount
-                                      )?.toString()}
-                                      onChange={e =>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Не пополнено</p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className={cn(
+                                      'rounded-full flex-shrink-0',
+                                      item.status === 'partial' &&
+                                        'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                    )}
+                                    onClick={() =>
+                                      handleStatusChange(index, 'partial')
+                                    }
+                                  >
+                                    <Pencil className='h-5 w-5' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Пополнено частично</p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              {item.status === 'partial' && (
+                                <div className='ml-2'>
+                                  <div className='flex items-center gap-1 flex-wrap'>
+                                    <Button
+                                      variant='outline'
+                                      size='icon'
+                                      className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                      onClick={() => {
+                                        const current =
+                                          item.loadedAmount || item.amount;
                                         handleAmountChange(
                                           index,
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder={item.amount?.toString()}
-                                      className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg'
-                                      inputMode='numeric'
-                                      autoComplete='off'
-                                    />
+                                          (current - 1).toString()
+                                        );
+                                      }}
+                                    >
+                                      -
+                                    </Button>
+                                    <div className='w-20 min-w-20'>
+                                      <Input
+                                        type='number'
+                                        value={(
+                                          item.loadedAmount ?? item.amount
+                                        )?.toString()}
+                                        onChange={e =>
+                                          handleAmountChange(
+                                            index,
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder={item.amount?.toString()}
+                                        className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
+                                        inputMode='numeric'
+                                        autoComplete='off'
+                                      />
+                                    </div>
+                                    <Button
+                                      variant='outline'
+                                      size='icon'
+                                      className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                      onClick={() => {
+                                        const current =
+                                          item.loadedAmount || item.amount;
+                                        handleAmountChange(
+                                          index,
+                                          (current + 1).toString()
+                                        );
+                                      }}
+                                    >
+                                      +
+                                    </Button>
                                   </div>
-                                  <Button
-                                    variant='outline'
-                                    size='icon'
-                                    className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700'
-                                    onClick={() => {
-                                      const current =
-                                        item.loadedAmount || item.amount;
-                                      handleAmountChange(
-                                        index,
-                                        (current + 1).toString()
-                                      );
-                                    }}
-                                  >
-                                    +
-                                  </Button>
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </>
-                        )}{' '}
+                        )}
                       </div>
                     </div>
                   );
@@ -1213,30 +1283,36 @@ export const ShoppingList = ({
       </CardContent>
 
       {showPlanogramDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-white mb-4">
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+          <div className='bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4'>
+            <h3 className='text-lg font-semibold text-white mb-4'>
               Сохранить планограмму
             </h3>
-            <p className="text-gray-300 mb-6">
-              Вы уверены, что хотите сохранить текущую планограмму как эталонную?
-              Существующая сохранённая планограмма будет перезаписана.
+            <p className='text-gray-300 mb-6'>
+              Вы уверены, что хотите сохранить текущую планограмму как
+              эталонную? Существующая сохранённая планограмма будет
+              перезаписана.
             </p>
-            <div className="flex justify-end gap-3">
+            <div className='flex justify-end gap-3'>
               <Button
-                variant="outline"
-                onClick={() => dispatch({ type: 'SET_SHOW_PLANOGRAM_DIALOG', payload: false })}
-                className="border-gray-600 text-gray-300"
+                variant='outline'
+                onClick={() =>
+                  dispatch({
+                    type: 'SET_SHOW_PLANOGRAM_DIALOG',
+                    payload: false,
+                  })
+                }
+                className='border-gray-600 text-gray-300'
               >
                 Отмена
               </Button>
               <Button
                 onClick={confirmSavePlanogram}
-                className="bg-purple-600 hover:bg-purple-700"
+                className='bg-purple-600 hover:bg-purple-700'
                 disabled={savingPlanogram}
               >
                 {savingPlanogram ? (
-                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                  <Loader2 className='animate-spin mr-2 h-4 w-4' />
                 ) : null}
                 Сохранить
               </Button>
