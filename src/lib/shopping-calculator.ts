@@ -34,18 +34,23 @@ const findPlanogramEntry = (
   console.log('Ищем:', itemName);
   console.log('В планограмме из Redis (первые 5):', planogram.slice(0, 5));
 
-    const problematicItems = [
+  const problematicItems = [
     'Печенье Школьн. шпарг. 50гр./Посольское 44гр.',
     'Лимонад "Добрый" 0,5 в ассорт.',
     'Добрый/Черноголовка вода+сок в ассорт.',
     'Шоколад Беби фокс/ВАфли 40гр.',
     'Лимонад Черноголовка ж/б 0.33 в ассорт.',
-    'Мал. лимон - Актив Малаховская 0.5л.'
+    'Мал. лимон - Актив Малаховская 0.5л.',
   ];
-  
-  if (problematicItems.some(problem => itemName.includes(problem.slice(0, 10)))) {
+
+  if (
+    problematicItems.some(problem => itemName.includes(problem.slice(0, 10)))
+  ) {
     console.log('🔍 findPlanogramEntry для:', itemName);
-    console.log('Планограмма[29] (пример):', planogram.find(p => p.includes('29.')));
+    console.log(
+      'Планограмма[29] (пример):',
+      planogram.find(p => p.includes('29.'))
+    );
   }
 
   for (const planogramEntry of planogram) {
@@ -71,8 +76,8 @@ const findPlanogramEntry = (
     const planogramName = match[1]; // "Круассаны Яшкино 45г"
     const normalizedVariant = normalizeForPlanogramComparison(planogramName);
 
-     console.log(`Сравниваем: "${normalizedItem}" с "${normalizedVariant}"`);
-     
+    console.log(`Сравниваем: "${normalizedItem}" с "${normalizedVariant}"`);
+
     if (
       normalizedItem.includes(normalizedVariant) ||
       normalizedVariant.includes(normalizedItem)
@@ -113,7 +118,8 @@ export const calculateShoppingList = (
   planogram?: string[],
   machineModel?: string,
   salesThisPeriod?: Map<string, number>,
-  coffeeProductNumbers?: string[]
+  coffeeProductNumbers?: string[],
+  isSavedPlanogram: boolean = false
 ): ShoppingListItem[] => {
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';
@@ -270,7 +276,7 @@ export const calculateShoppingList = (
       planogramName: data.planogramName,
       amount: Math.ceil(Math.max(0, displayAmount)),
       unit: displayUnit,
-      status: overrides[`${machineId}-${key}`]?.status || 'none', 
+      status: overrides[`${machineId}-${key}`]?.status || 'none',
       salesAmount: Math.ceil(salesDisplayAmount),
       previousDeficit: Math.ceil(deficitDisplayAmount),
       isCore:
@@ -283,41 +289,80 @@ export const calculateShoppingList = (
   });
 
   // 4. СОРТИРОВКА (ЛОГИКА ИЗ PLANOGRAM, АДАПТИРОВАННАЯ)
-  allItems.sort((a, b) => {
-    const aIsCore = a.isCore;
-    const bIsCore = b.isCore;
+  if (!isSavedPlanogram) {
+    allItems.sort((a, b) => {
+      const aIsCore = a.isCore;
+      const bIsCore = b.isCore;
 
-    // Кофейные ингредиенты всегда первые, в порядке из data.ts
-    if (aIsCore && !bIsCore) return -1;
-    if (!aIsCore && bIsCore) return 1;
-    if (aIsCore && bIsCore) {
-      const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
-      const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
-      return indexA - indexB;
-    }
+      // Кофейные ингредиенты всегда первые, в порядке из data.ts
+      if (aIsCore && !bIsCore) return -1;
+      if (!aIsCore && bIsCore) return 1;
+      if (aIsCore && bIsCore) {
+        const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
+        const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
+        return indexA - indexB;
+      }
 
-    // Для снеков: сортировка по планограмме
-    if (
-      planogram &&
-      planogram.length > 0 &&
-      a.productNumber &&
-      b.productNumber
-    ) {
-      const getOrder = (productNumber: string) => {
-        for (let i = 0; i < planogram.length; i++) {
-          if (planogram[i].startsWith(`${productNumber}.`)) {
-            return i;
+      // Для снеков: сортировка по планограмме
+      if (
+        planogram &&
+        planogram.length > 0 &&
+        a.productNumber &&
+        b.productNumber
+      ) {
+        const getOrder = (productNumber: string) => {
+          for (let i = 0; i < planogram.length; i++) {
+            if (planogram[i].startsWith(`${productNumber}.`)) {
+              return i;
+            }
+          }
+          return planogram.length; // Если не найден - в конец
+        };
+        const orderA = getOrder(a.productNumber);
+        const orderB = getOrder(b.productNumber);
+        return orderA - orderB;
+      }
+
+      return a.name.localeCompare(b.name, 'ru');
+    });
+  } else {
+    // ДЛЯ СОХРАНЕННОЙ ПЛАНОГРАММЫ: просто расставляем по порядку
+    // Создаем карту productNumber → ShoppingListItem
+    const itemsByProductNumber = new Map<string, ShoppingListItem>();
+
+    allItems.forEach(item => {
+      if (item.productNumber) {
+        itemsByProductNumber.set(item.productNumber, item);
+      }
+    });
+
+    // Проходим по планограмме и создаем новый упорядоченный список
+    const orderedItems: ShoppingListItem[] = [];
+
+    if (planogram && planogram.length > 0) {
+      for (const planogramEntry of planogram) {
+        // Извлекаем productNumber из записи планограммы
+        const match = planogramEntry.match(/^(\d+[A-Za-z]?)\./);
+        if (match) {
+          const productNumber = match[1];
+          const item = itemsByProductNumber.get(productNumber);
+          if (item) {
+            orderedItems.push(item);
+            itemsByProductNumber.delete(productNumber);
           }
         }
-        return planogram.length; // Если не найден - в конец
-      };
-      const orderA = getOrder(a.productNumber);
-      const orderB = getOrder(b.productNumber);
-      return orderA - orderB;
+      }
     }
 
-    return a.name.localeCompare(b.name, 'ru');
-  });
+    // Добавляем оставшиеся товары (кофейные ингредиенты и пр.)
+    allItems.forEach(item => {
+      if (!item.productNumber || itemsByProductNumber.has(item.productNumber)) {
+        orderedItems.push(item);
+      }
+    });
+
+    return orderedItems;
+  }
 
   return allItems;
 };

@@ -25,6 +25,7 @@ export type PlanogramData = {
   isLoading: boolean;
   error: string | null;
   coffeeProductNumbers: string[];
+  isSavedPlanogram: boolean;
 };
 
 export const usePlanogramData = () => {
@@ -77,6 +78,7 @@ export const usePlanogramData = () => {
           lastActionDate: null,
           isLoading: false,
           error: null,
+          isSavedPlanogram: false,
         };
       }
       // 1. Получаем сохраненную планограмму
@@ -98,6 +100,7 @@ export const usePlanogramData = () => {
           lastActionDate: null,
           isLoading: false,
           error: null,
+          isSavedPlanogram: true,
         };
       }
 
@@ -154,6 +157,7 @@ export const usePlanogramData = () => {
           lastActionDate,
           isLoading: false,
           error: 'Ошибка загрузки данных продаж',
+          isSavedPlanogram: false,
         };
       }
 
@@ -165,6 +169,7 @@ export const usePlanogramData = () => {
           lastActionDate,
           isLoading: false,
           error: null,
+          isSavedPlanogram: false,
         };
       }
 
@@ -179,6 +184,7 @@ export const usePlanogramData = () => {
         lastActionDate,
         isLoading: false,
         error: null,
+        isSavedPlanogram: false,
       };
     },
     [getSalesByProducts]
