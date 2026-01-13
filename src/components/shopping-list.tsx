@@ -451,17 +451,17 @@ export const ShoppingList = ({
           const hasCarryOver = (item.previousDeficit || 0) !== 0;
           const hasCurrentSales = (item.salesAmount || 0) > 0;
 
-          let initialStatus: 'none' | 'partial' = 'none';
+          // let initialStatus: 'none' | 'partial' = 'none';
           let initialLoadedAmount: number = 0;
 
-          if (hasCurrentSales || hasCarryOver) {
-            initialStatus = 'partial';
-            initialLoadedAmount = item.amount;
-          }
+          // if (hasCurrentSales || hasCarryOver) {
+          //   initialStatus = 'partial';
+          //   initialLoadedAmount = item.amount;
+          // }
 
           return {
             ...item,
-            status: override?.status || initialStatus,
+            status: 'none',
             loadedAmount: override?.loadedAmount ?? initialLoadedAmount,
             checked: override?.checked ?? false,
             checkedType: override?.checkedType,
