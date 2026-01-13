@@ -35,12 +35,12 @@ const findPlanogramEntry = (
     // Извлекаем название из записи планограммы
     // Формат: "29. Круассаны Яшкино 45г" или "29A. Название товара"
     const match = planogramEntry.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-    
+
     if (!match) {
       // Если нет номера ячейки, используем всю строку
       const planogramName = planogramEntry;
       const normalizedVariant = normalizeForPlanogramComparison(planogramName);
-      
+
       if (
         normalizedItem.includes(normalizedVariant) ||
         normalizedVariant.includes(normalizedItem)
@@ -49,7 +49,7 @@ const findPlanogramEntry = (
       }
       continue;
     }
-    
+
     // Есть номер ячейки
     const planogramName = match[1]; // "Круассаны Яшкино 45г"
     const normalizedVariant = normalizeForPlanogramComparison(planogramName);
@@ -140,8 +140,9 @@ export const calculateShoppingList = (
 
     const quantity = sale.number;
     const productNumber = sale.product_number;
-   const hasIngredients = sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
-if (hasIngredients) {
+    const hasIngredients =
+      sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
+    if (hasIngredients) {
       // Кофейный напиток -> ингредиенты
       sale.planogram.ingredients?.forEach(apiIngredient => {
         const config = getIngredientConfig(apiIngredient.name, machine?.model);
@@ -178,7 +179,10 @@ if (hasIngredients) {
           sales: 0,
           carryOver: 0,
           productNumber: productNumber,
-          planogramName: findPlanogramEntry(sale.planogram.name, planogram || []),
+          planogramName: findPlanogramEntry(
+            sale.planogram.name,
+            planogram || []
+          ),
         };
       }
       totals[key].amount += quantity;
@@ -247,13 +251,15 @@ if (hasIngredients) {
       planogramName: data.planogramName,
       amount: Math.ceil(Math.max(0, displayAmount)),
       unit: displayUnit,
-      status: overrides[`${machineId}-${key}`]?.status || 'none', // Старый формат ключа
+      status: overrides[`${machineId}-${key}`]?.status || 'none', 
       salesAmount: Math.ceil(salesDisplayAmount),
       previousDeficit: Math.ceil(deficitDisplayAmount),
-      isCore: !!modelKey && coreIngredientConfigs.some(c => c.name === data.config.name),
+      isCore:
+        !!modelKey &&
+        coreIngredientConfigs.some(c => c.name === data.config.name),
       type: data.config.type || 'auto',
       syrupOptions: data.config.syrupOptions,
-      checked: false,
+      checked: overrides[`${machineId}-${key}`]?.checked || false,
     });
   });
 
@@ -272,7 +278,12 @@ if (hasIngredients) {
     }
 
     // Для снеков: сортировка по планограмме
-    if (planogram && planogram.length > 0 && a.productNumber && b.productNumber) {
+    if (
+      planogram &&
+      planogram.length > 0 &&
+      a.productNumber &&
+      b.productNumber
+    ) {
       const getOrder = (productNumber: string) => {
         for (let i = 0; i < planogram.length; i++) {
           if (planogram[i].startsWith(`${productNumber}.`)) {
@@ -360,8 +371,8 @@ function normalizeBottleName(apiName: string): string | null {
       .toLowerCase();
 
     const hardcodedWords = cleanHardcoded.split(' ');
-    const matches = hardcodedWords.filter(word =>
-      word.length > 2 && cleanApiName.includes(word)
+    const matches = hardcodedWords.filter(
+      word => word.length > 2 && cleanApiName.includes(word)
     );
 
     if (matches.length >= Math.max(1, hardcodedWords.length / 2)) {
