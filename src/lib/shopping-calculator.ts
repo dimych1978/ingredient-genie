@@ -117,7 +117,7 @@ export const calculateShoppingList = (
   machineModel?: string,
   salesThisPeriod?: Map<string, number>,
   coffeeProductNumbers?: string[],
-  isSavedPlanogram: boolean = false
+  isSavedPlanogram?: boolean,
 ): ShoppingListItem[] => {
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';

@@ -99,6 +99,7 @@ type ShoppingListState = {
   savingPlanogram: boolean;
   showPlanogramDialog: boolean;
   hasLoaded: boolean;
+  isSavedPlanogram: boolean;
 };
 
 type ShoppingListAction =
@@ -111,6 +112,7 @@ type ShoppingListAction =
         planogram: string[];
         salesThisPeriod: Map<string, number>;
         coffeeProductNumbers: string[];
+        isSavedPlanogram: boolean;
       };
     }
   | { type: 'SET_SAVING_PLANOGRAM'; payload: boolean }
@@ -153,6 +155,7 @@ const initialState: ShoppingListState = {
   savingPlanogram: false,
   showPlanogramDialog: false,
   hasLoaded: false,
+  isSavedPlanogram: false,
 };
 
 function shoppingListReducer(
@@ -182,6 +185,7 @@ function shoppingListReducer(
         planogram: action.payload.planogram,
         salesThisPeriod: action.payload.salesThisPeriod,
         coffeeProductNumbers: action.payload.coffeeProductNumbers,
+        isSavedPlanogram: action.payload.isSavedPlanogram,
       };
     case 'SET_SAVING_PLANOGRAM':
       return { ...state, savingPlanogram: action.payload };
@@ -274,6 +278,7 @@ export const ShoppingList = ({
     savingPlanogram,
     showPlanogramDialog,
     hasLoaded,
+    isSavedPlanogram,
   } = state;
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
@@ -291,6 +296,7 @@ export const ShoppingList = ({
       planogram: string[];
       salesThisPeriod: Map<string, number>;
       coffeeProductNumbers: string[];
+      isSavedPlanogram: boolean;
     };
     timestamp: number;
   } | null>(null);
@@ -331,6 +337,7 @@ export const ShoppingList = ({
               planogram: cached.planogram,
               salesThisPeriod: cached.salesThisPeriod,
               coffeeProductNumbers: cached.coffeeProductNumbers,
+              isSavedPlanogram: cached.isSavedPlanogram,
             },
           });
         }
@@ -349,6 +356,7 @@ export const ShoppingList = ({
               planogram: result.planogram,
               salesThisPeriod: result.salesThisPeriod,
               coffeeProductNumbers: result.coffeeProductNumbers,
+              isSavedPlanogram: result.isSavedPlanogram
             },
             timestamp: Date.now(),
           };
@@ -360,6 +368,7 @@ export const ShoppingList = ({
               planogram: result.planogram,
               salesThisPeriod: result.salesThisPeriod,
               coffeeProductNumbers: result.coffeeProductNumbers,
+              isSavedPlanogram: result.isSavedPlanogram,
             },
           });
         }
@@ -439,7 +448,8 @@ export const ShoppingList = ({
         planogramRef.current,
         machineData?.model,
         salesThisPeriod,
-        coffeeProductNumbers
+        coffeeProductNumbers,
+        isSavedPlanogram,
       );
 
       // Определяем начальное состояние на основе ТЕКУЩИХ данных
@@ -735,6 +745,7 @@ export const ShoppingList = ({
             planogram,
             salesThisPeriod,
             coffeeProductNumbers,
+            isSavedPlanogram,
           },
           timestamp: Date.now(),
         };
