@@ -11,7 +11,12 @@ import {
   getLastSaveTime,
 } from '@/app/actions';
 import { useTelemetronApi } from './useTelemetronApi';
-import { allMachines, getMachineType, machineIngredients, planogramsHardCode } from '@/lib/data';
+import {
+  allMachines,
+  getMachineType,
+  machineIngredients,
+  planogramsHardCode,
+} from '@/lib/data';
 
 export type PlanogramData = {
   planogram: string[]; // Отсортированные строки планограммы
@@ -29,47 +34,51 @@ export const usePlanogramData = () => {
     async (vmId: string): Promise<PlanogramData> => {
       console.log('=== usePlanogramData.loadPlanogramData для аппарата', vmId);
 
-       const machine = allMachines.find(m => m.id === vmId);
-  const machineType = machine ? getMachineType(machine) : 'snack';
-  
-//   if (machineType === 'coffee') {
-//   console.log('Кофейный аппарат - используем захардкоженные ингредиенты из data.ts');
-  
-//   // Получаем модель аппарата для поиска ингредиентов
-//   const model = machine?.model?.toLowerCase() || '';
-//   const matchingKey = Object.keys(machineIngredients).find(key => 
-//     model.includes(key.toLowerCase())
-//   );
-  
-//   // Создаем планограмму из ингредиентов кофейного аппарата
-//   const coffeePlanogram = matchingKey 
-//     ? machineIngredients[matchingKey].map(ingredient => ingredient.name)
-//     : [];
-  
-//   return {
-//     planogram: [],
-//     coffeeProductNumbers: [], // Кофейные аппараты не имеют кофейных напитков в планограмме
-//     salesThisPeriod: new Map(),
-//     lastActionDate: null,
-//     isLoading: false,
-//     error: null,
-//   };
-// }
+      const machine = allMachines.find(m => m.id === vmId);
+      const machineType = machine ? getMachineType(machine) : 'snack';
 
-  // Для бутылочных аппаратов используем захардкоженную планограмму
-  console.log("🚀 ~ usePlanogramData ~ machineType:", machineType)
-  if (machineType === 'bottle') {
-     console.log('Используем захардкоженную планограмму для бутылочного аппарата');
+      //   if (machineType === 'coffee') {
+      //   console.log('Кофейный аппарат - используем захардкоженные ингредиенты из data.ts');
 
-    return {
-      planogram: planogramsHardCode.bottle.map((item, index) => `${index + 1}. ${item}`),
-      coffeeProductNumbers: [], // Бутылочные аппараты не имеют кофейных напитков
-      salesThisPeriod: new Map(),
-      lastActionDate: null,
-      isLoading: false,
-      error: null,
-    };
-  }
+      //   // Получаем модель аппарата для поиска ингредиентов
+      //   const model = machine?.model?.toLowerCase() || '';
+      //   const matchingKey = Object.keys(machineIngredients).find(key =>
+      //     model.includes(key.toLowerCase())
+      //   );
+
+      //   // Создаем планограмму из ингредиентов кофейного аппарата
+      //   const coffeePlanogram = matchingKey
+      //     ? machineIngredients[matchingKey].map(ingredient => ingredient.name)
+      //     : [];
+
+      //   return {
+      //     planogram: [],
+      //     coffeeProductNumbers: [], // Кофейные аппараты не имеют кофейных напитков в планограмме
+      //     salesThisPeriod: new Map(),
+      //     lastActionDate: null,
+      //     isLoading: false,
+      //     error: null,
+      //   };
+      // }
+
+      // Для бутылочных аппаратов используем захардкоженную планограмму
+      console.log('🚀 ~ usePlanogramData ~ machineType:', machineType);
+      if (machineType === 'bottle') {
+        console.log(
+          'Используем захардкоженную планограмму для бутылочного аппарата'
+        );
+
+        return {
+          planogram: planogramsHardCode.bottle.map(
+            (item, index) => `${index + 1}. ${item}`
+          ),
+          coffeeProductNumbers: [], // Бутылочные аппараты не имеют кофейных напитков
+          salesThisPeriod: new Map(),
+          lastActionDate: null,
+          isLoading: false,
+          error: null,
+        };
+      }
       // 1. Получаем сохраненную планограмму
       const savedPlanogram = await getSavedPlanogram(vmId);
       if (savedPlanogram && Object.keys(savedPlanogram).length > 0) {
@@ -79,10 +88,10 @@ export const usePlanogramData = () => {
           ([productNumber, name]) => `${productNumber}. ${name}`
         );
 
-        const sorted = sortPlanogram(planogramArray);
+        // const sorted = sortPlanogram(planogramArray);
 
         return {
-          planogram: sorted,
+          planogram: planogramArray,
           coffeeProductNumbers: [],
           salesThisPeriod: new Map(),
           lastActionDate: null,
@@ -159,10 +168,8 @@ export const usePlanogramData = () => {
       }
 
       // 5. Генерируем планограмму с учетом продаж за "этот период"
-      const {planogram, coffeeProductNumbers} = generatePlanogramFromSalesData(
-        salesData,
-        salesThisPeriod
-      );
+      const { planogram, coffeeProductNumbers } =
+        generatePlanogramFromSalesData(salesData, salesThisPeriod);
 
       return {
         planogram,
@@ -223,17 +230,22 @@ function generatePlanogramFromSalesData(
   console.log('=== generatePlanogramFromSalesData ===');
 
   const coffeeProductNumbers = new Set<string>();
-  console.log("🚀 ~ generatePlanogramFromSalesData ~ coffeeProductNumbers:", coffeeProductNumbers)
+  console.log(
+    '🚀 ~ generatePlanogramFromSalesData ~ coffeeProductNumbers:',
+    coffeeProductNumbers
+  );
 
-   const allAA = salesData.data.every(item => item.product_number === 'AA');
-  
+  const allAA = salesData.data.every(item => item.product_number === 'AA');
+
   if (allAA) {
     console.log('Аппарат с ручной планограммой (все product_number = "AA")');
-    
+
     // Берём первое уникальное название (или самое популярное)
-    const names = new Set(salesData.data.map(item => item.planogram?.name).filter(Boolean));
+    const names = new Set(
+      salesData.data.map(item => item.planogram?.name).filter(Boolean)
+    );
     const firstName = names.values().next().value || 'Товар';
-    
+
     // Возвращаем простую планограмму с одной записью
     return {
       planogram: [`${firstName}`],
@@ -254,13 +266,17 @@ function generatePlanogramFromSalesData(
     if (!item.product_number || !item.planogram?.name) return;
 
     // Запоминаем кофейные напитки
- const hasIngredients = item.planogram.ingredients && item.planogram.ingredients.length > 0;
-  console.log(`${item.product_number}. ${item.planogram.name}: ingredients?`, hasIngredients);
+    const hasIngredients =
+      item.planogram.ingredients && item.planogram.ingredients.length > 0;
+    console.log(
+      `${item.product_number}. ${item.planogram.name}: ingredients?`,
+      hasIngredients
+    );
 
-   if (hasIngredients) {
-    coffeeProductNumbers.add(item.product_number);
-  }
-  
+    if (hasIngredients) {
+      coffeeProductNumbers.add(item.product_number);
+    }
+
     const productNumber = item.product_number;
     const originalName = item.planogram.name;
 
@@ -341,8 +357,11 @@ function generatePlanogramFromSalesData(
 
   // 4. Сортируем
   const sorted = sortPlanogram(fullPlanogram);
-console.log('Итоговая планограмма:', sorted.length, 'элементов');
+  console.log('Итоговая планограмма:', sorted.length, 'элементов');
   console.log('Кофейные productNumbers:', Array.from(coffeeProductNumbers));
-  
-  return {planogram: sorted, coffeeProductNumbers: Array.from(coffeeProductNumbers)};
+
+  return {
+    planogram: sorted,
+    coffeeProductNumbers: Array.from(coffeeProductNumbers),
+  };
 }
