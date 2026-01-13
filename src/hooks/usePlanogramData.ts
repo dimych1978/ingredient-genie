@@ -87,6 +87,7 @@ export const usePlanogramData = () => {
         const planogramArray = Object.entries(savedPlanogram).map(
           ([productNumber, name]) => `${productNumber}. ${name}`
         );
+        console.log("🚀 ~ usePlanogramData ~ planogramArray:", planogramArray)
 
         // const sorted = sortPlanogram(planogramArray);
 
