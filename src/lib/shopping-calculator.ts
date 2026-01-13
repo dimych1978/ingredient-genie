@@ -71,6 +71,8 @@ const findPlanogramEntry = (
     const planogramName = match[1]; // "Круассаны Яшкино 45г"
     const normalizedVariant = normalizeForPlanogramComparison(planogramName);
 
+     console.log(`Сравниваем: "${normalizedItem}" с "${normalizedVariant}"`);
+     
     if (
       normalizedItem.includes(normalizedVariant) ||
       normalizedVariant.includes(normalizedItem)
