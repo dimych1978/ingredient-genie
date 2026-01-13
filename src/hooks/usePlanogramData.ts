@@ -38,31 +38,6 @@ export const usePlanogramData = () => {
       const machine = allMachines.find(m => m.id === vmId);
       const machineType = machine ? getMachineType(machine) : 'snack';
 
-      //   if (machineType === 'coffee') {
-      //   console.log('Кофейный аппарат - используем захардкоженные ингредиенты из data.ts');
-
-      //   // Получаем модель аппарата для поиска ингредиентов
-      //   const model = machine?.model?.toLowerCase() || '';
-      //   const matchingKey = Object.keys(machineIngredients).find(key =>
-      //     model.includes(key.toLowerCase())
-      //   );
-
-      //   // Создаем планограмму из ингредиентов кофейного аппарата
-      //   const coffeePlanogram = matchingKey
-      //     ? machineIngredients[matchingKey].map(ingredient => ingredient.name)
-      //     : [];
-
-      //   return {
-      //     planogram: [],
-      //     coffeeProductNumbers: [], // Кофейные аппараты не имеют кофейных напитков в планограмме
-      //     salesThisPeriod: new Map(),
-      //     lastActionDate: null,
-      //     isLoading: false,
-      //     error: null,
-      //   };
-      // }
-
-      // Для бутылочных аппаратов используем захардкоженную планограмму
       console.log('🚀 ~ usePlanogramData ~ machineType:', machineType);
       if (machineType === 'bottle') {
         console.log(
@@ -81,6 +56,7 @@ export const usePlanogramData = () => {
           isSavedPlanogram: false,
         };
       }
+      
       // 1. Получаем сохраненную планограмму
       const savedPlanogram = await getSavedPlanogram(vmId);
       if (savedPlanogram && Object.keys(savedPlanogram).length > 0) {

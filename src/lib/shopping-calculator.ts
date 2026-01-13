@@ -76,8 +76,6 @@ const findPlanogramEntry = (
     const planogramName = match[1]; // "Круассаны Яшкино 45г"
     const normalizedVariant = normalizeForPlanogramComparison(planogramName);
 
-    console.log(`Сравниваем: "${normalizedItem}" с "${normalizedVariant}"`);
-
     if (
       normalizedItem.includes(normalizedVariant) ||
       normalizedVariant.includes(normalizedItem)
@@ -123,7 +121,7 @@ export const calculateShoppingList = (
 ): ShoppingListItem[] => {
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';
-
+console.log('isSavedPlanogram', isSavedPlanogram)
   // 1. ОБРАБОТКА БУТМАТОВ - используем захардкоженную планограмму
   if (machineType === 'bottle') {
     return calculateBottleShoppingList(salesData, overrides, machineId);
