@@ -1598,7 +1598,7 @@ export const getMachineType = (
   });
 
   if (
-    ['krea', 'opera', 'kikko', 'colibri', 'saeco', 'jetinno'].some(type =>
+    ['krea', 'opera', 'kikko', 'koro', 'colibri', 'saeco', 'jetinno'].some(type =>
       model.includes(type)
     )
   ) {
