@@ -782,15 +782,8 @@ export const ShoppingList = ({
   const extractProductName = (planogramName: string | null): string => {
     if (!planogramName) return '';
     const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
- const name = match ? match[1] : planogramName;
-  
-  // Нормализуем для сравнения (как в shopping-calculator.ts)
-  return name
-    .replace(/["«»"']/g, '')
-    .replace(/[.,]$/g, '')
-    .replace(/\s*в ассорт(именте)?\.?/gi, ' в ассорт')
-    .replace(/\s+/g, ' ')
-    .trim();  };
+    return match ? match[1] : planogramName;
+  };
 
   return (
     <Card className='w-full bg-gray-900 border-gray-700 text-white'>

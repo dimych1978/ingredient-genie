@@ -30,6 +30,23 @@ const findPlanogramEntry = (
   planogram: string[]
 ): string | null => {
   const normalizedItem = normalizeForPlanogramComparison(itemName);
+  console.log('=== findPlanogramEntry ===');
+  console.log('Ищем:', itemName);
+  console.log('В планограмме из Redis (первые 5):', planogram.slice(0, 5));
+
+    const problematicItems = [
+    'Печенье Школьн. шпарг. 50гр./Посольское 44гр.',
+    'Лимонад "Добрый" 0,5 в ассорт.',
+    'Добрый/Черноголовка вода+сок в ассорт.',
+    'Шоколад Беби фокс/ВАфли 40гр.',
+    'Лимонад Черноголовка ж/б 0.33 в ассорт.',
+    'Мал. лимон - Актив Малаховская 0.5л.'
+  ];
+  
+  if (problematicItems.some(problem => itemName.includes(problem.slice(0, 10)))) {
+    console.log('🔍 findPlanogramEntry для:', itemName);
+    console.log('Планограмма[29] (пример):', planogram.find(p => p.includes('29.')));
+  }
 
   for (const planogramEntry of planogram) {
     // Извлекаем название из записи планограммы
