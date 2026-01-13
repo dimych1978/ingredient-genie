@@ -623,6 +623,8 @@ export const ShoppingList = ({
         if (item.type === 'checkbox' || item.type === 'manual') {
           override.checked = item.checked;
           override.checkedType = item.checkedType;
+          override.selectedSizes = item.selectedSizes || [];
+
         }
 
         if (item.type === 'select') {
