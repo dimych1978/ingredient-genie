@@ -11,6 +11,7 @@ import {
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import {
   calculateShoppingList,
+  normalizeForPlanogramComparison,
   type SortType,
 } from '@/lib/shopping-calculator';
 import type {
@@ -60,7 +61,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { allMachines, getMachineType, isSpecialMachine } from '@/lib/data';
+import { allMachines, alternativeDisplayNames, getMachineType, isSpecialMachine } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
 import debounce from 'lodash.debounce';
 
@@ -501,7 +502,7 @@ export const ShoppingList = ({
             : 'Не удалось сформировать список.',
       });
     }
-  }, [dateFrom, sort, forceLoad]);
+  }, [dateFrom, sort, forceLoad, isSavedPlanogram]);
 
   // Обновление планограммы
   useEffect(() => {
@@ -790,11 +791,29 @@ export const ShoppingList = ({
     URL.revokeObjectURL(url);
   };
 
-  const extractProductName = (planogramName: string | null): string => {
-    if (!planogramName) return '';
-    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-    return match ? match[1] : planogramName;
-  };
+const extractProductName = (planogramName: string | null, itemName: string): string => {
+  if (!planogramName) return itemName;
+  
+  // Извлекаем чистое название без номера ячейки
+  const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+  const cleanPlanogramName = match ? match[1] : planogramName;
+  
+  // Проверяем, есть ли альтернативное отображение
+  const displayName = alternativeDisplayNames[cleanPlanogramName];
+  
+  if (displayName) {
+    // Показываем альтернативу, но если в API другое название - добавляем "Фактически:"
+    const normalizedClean = normalizeForPlanogramComparison(cleanPlanogramName);
+    const normalizedItem = normalizeForPlanogramComparison(itemName);
+    
+    if (normalizedClean !== normalizedItem) {
+      return `${displayName} (Фактически: ${itemName})`;
+    }
+    return displayName;
+  }
+  
+  return cleanPlanogramName || itemName;
+};
 
   return (
     <Card className='w-full bg-gray-900 border-gray-700 text-white'>
@@ -965,10 +984,10 @@ export const ShoppingList = ({
                       <div className='flex-1 min-w-0 space-y-1'>
                         <div className='font-medium capitalize'>
                           <div className='flex items-center gap-2 flex-wrap'>
-                            {extractProductName(item.planogramName) ||
-                              item.name}
+                            {extractProductName(item.planogramName,
+                              item.name)}
                             {item.planogramName &&
-                              extractProductName(item.planogramName) !==
+                              extractProductName(item.planogramName, item.name) !==
                                 item.name && (
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -978,7 +997,7 @@ export const ShoppingList = ({
                                     <p>В аппарате: {item.name}</p>
                                     <p>
                                       В планограмме:{' '}
-                                      {extractProductName(item.planogramName)}
+                                      {extractProductName(item.planogramName, item.name)}
                                     </p>
                                     {item.planogramName.match(
                                       /^\d+[A-Za-z]?\./
@@ -997,7 +1016,7 @@ export const ShoppingList = ({
                               )}
                           </div>
                           {item.planogramName &&
-                            extractProductName(item.planogramName) !==
+                            extractProductName(item.planogramName, item.name) !==
                               item.name && (
                               <div className='text-sm text-gray-400 mt-1 break-words'>
                                 Фактически: {item.name}

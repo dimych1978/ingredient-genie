@@ -56,7 +56,7 @@ export const usePlanogramData = () => {
           isSavedPlanogram: false,
         };
       }
-      
+
       // 1. Получаем сохраненную планограмму
       const savedPlanogram = await getSavedPlanogram(vmId);
       if (savedPlanogram && Object.keys(savedPlanogram).length > 0) {
@@ -65,7 +65,7 @@ export const usePlanogramData = () => {
         const planogramArray = Object.entries(savedPlanogram).map(
           ([productNumber, name]) => `${productNumber}. ${name}`
         );
-        console.log("🚀 ~ usePlanogramData ~ planogramArray:", planogramArray)
+        console.log('🚀 ~ usePlanogramData ~ planogramArray:', planogramArray);
 
         // const sorted = sortPlanogram(planogramArray);
 
@@ -172,8 +172,10 @@ export const usePlanogramData = () => {
 // Функции сортировки и генерации
 function sortPlanogram(planogram: string[]): string[] {
   return planogram.sort((a, b) => {
-    const aMatch = a.match(/^(\d+)([A-Za-z]*?)\./);
-    const bMatch = b.match(/^(\d+)([A-Za-z]*?)\./);
+    // const aMatch = a.match(/^(\d+)([A-Za-z]*?)\./);
+    // const bMatch = b.match(/^(\d+)([A-Za-z]*?)\./);
+    const aMatch = a.match(/^(\d+)([A-Za-z]*?)/);
+    const bMatch = b.match(/^(\d+)([A-Za-z]*?)/);
     const aNum = aMatch ? aMatch[0] : '';
     const bNum = bMatch ? bMatch[0] : '';
     return naturalProductNumberSort(
@@ -187,9 +189,10 @@ function naturalProductNumberSort(
   a: { product_number: string },
   b: { product_number: string }
 ) {
+  // const aMatch = a.product_number.match(/^(\d+)([A-Za-z]*)$/);
+  // const bMatch = b.product_number.match(/^(\d+)([A-Za-z]*)$/);
   const aMatch = a.product_number.match(/^(\d+)([A-Za-z]*)$/);
   const bMatch = b.product_number.match(/^(\d+)([A-Za-z]*)$/);
-
   const aNum = parseInt(aMatch?.[1] || '0');
   const bNum = parseInt(bMatch?.[1] || '0');
 

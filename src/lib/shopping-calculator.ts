@@ -1,3 +1,4 @@
+
 import type {
   TelemetronSaleItem,
   LoadingOverrides,
@@ -15,85 +16,11 @@ import {
 
 export type SortType = 'grouped' | 'alphabetical';
 
-const normalizeForPlanogramComparison = (name: string): string => {
-  return name
-    .replace(/["«»"']/g, '')
-    .replace(/[.,]$/g, '')
-    .replace(/\s*в ассорт(именте)?\.?/gi, ' в ассорт')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-};
 
-const findPlanogramEntry = (
-  itemName: string,
-  planogram: string[]
-): string | null => {
-  const normalizedItem = normalizeForPlanogramComparison(itemName);
-  console.log('=== findPlanogramEntry ===');
-  console.log('Ищем:', itemName);
-  console.log('В планограмме из Redis (первые 5):', planogram.slice(0, 5));
-
-  const problematicItems = [
-    'Печенье Школьн. шпарг. 50гр./Посольское 44гр.',
-    'Лимонад "Добрый" 0,5 в ассорт.',
-    'Добрый/Черноголовка вода+сок в ассорт.',
-    'Шоколад Беби фокс/ВАфли 40гр.',
-    'Лимонад Черноголовка ж/б 0.33 в ассорт.',
-    'Мал. лимон - Актив Малаховская 0.5л.',
-  ];
-
-  if (
-    problematicItems.some(problem => itemName.includes(problem.slice(0, 10)))
-  ) {
-    console.log('🔍 findPlanogramEntry для:', itemName);
-    console.log(
-      'Планограмма[29] (пример):',
-      planogram.find(p => p.includes('29.'))
-    );
-  }
-
-  for (const planogramEntry of planogram) {
-    // Извлекаем название из записи планограммы
-    // Формат: "29. Круассаны Яшкино 45г" или "29A. Название товара"
-    const match = planogramEntry.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-
-    if (!match) {
-      // Если нет номера ячейки, используем всю строку
-      const planogramName = planogramEntry;
-      const normalizedVariant = normalizeForPlanogramComparison(planogramName);
-
-      if (
-        normalizedItem.includes(normalizedVariant) ||
-        normalizedVariant.includes(normalizedItem)
-      ) {
-        return planogramEntry; // Возвращаем полную запись (с номером ячейки)
-      }
-      continue;
-    }
-
-    // Есть номер ячейки
-    const planogramName = match[1]; // "Круассаны Яшкино 45г"
-    const normalizedVariant = normalizeForPlanogramComparison(planogramName);
-
-    if (
-      normalizedItem.includes(normalizedVariant) ||
-      normalizedVariant.includes(normalizedItem)
-    ) {
-      return planogramEntry; // Возвращаем полную запись "29. Круассаны Яшкино 45г"
-    }
-  }
-
-  return null;
-};
-
-const findPlanogramIndex = (itemName: string, planogram: string[]): number => {
-  const entry = findPlanogramEntry(itemName, planogram);
-  if (entry) {
-    return planogram.indexOf(entry);
-  }
-  return -1;
-};
+export function normalizeForPlanogramComparison(name: string): string {
+  if (!name) return '';
+  return name.toLowerCase().replace(/\s+/g, ' ').trim();
+}
 
 const getDisplayUnit = (
   apiAmount: number,
@@ -121,13 +48,13 @@ export const calculateShoppingList = (
 ): ShoppingListItem[] => {
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';
-console.log('isSavedPlanogram', isSavedPlanogram)
-  // 1. ОБРАБОТКА БУТМАТОВ - используем захардкоженную планограмму
+  console.log('isSavedPlanogram в калькуляторе:', isSavedPlanogram);
+
+  // 1. ОБРАБОТКА БУТМАТОВ - отдельная простая логика
   if (machineType === 'bottle') {
     return calculateBottleShoppingList(salesData, overrides, machineId);
   }
 
-  // 2. ОСНОВНАЯ ЛОГИКА (для кофе и снеков)
   const lowerMachineModel = machine?.model?.toLowerCase();
   const matchingKeys = lowerMachineModel
     ? Object.keys(machineIngredients).filter(key =>
@@ -137,235 +64,191 @@ console.log('isSavedPlanogram', isSavedPlanogram)
   matchingKeys.sort((a, b) => b.length - a.length);
   const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
   const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
-  const coffeeProductNumbersSet = new Set(coffeeProductNumbers || []);
 
-  const totals: Record<
-    string,
-    {
-      amount: number;
-      config: Ingredient;
-      sales: number;
-      carryOver: number;
-      productNumber?: string;
-      planogramName: string | null;
-    }
-  > = {};
 
-  // 2.1. Обработка продаж из API (ЛОГИКА ИЗ MASTER)
-  salesData.data.forEach(sale => {
-    if (
-      !sale.planogram ||
-      !sale.planogram.name ||
-      sale.planogram.name.toLowerCase() === 'item'
-    ) {
-      return;
-    }
+  // 2. Логика для сохраненной планограммы - самая простая и быстрая
+  if (isSavedPlanogram && planogram && planogram.length > 0) {
+      const itemsMap = new Map<string, ShoppingListItem>();
 
-    const quantity = sale.number;
-    const productNumber = sale.product_number;
-    const hasIngredients =
-      sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
-    if (hasIngredients) {
-      // Кофейный напиток -> ингредиенты
-      sale.planogram.ingredients?.forEach(apiIngredient => {
-        const config = getIngredientConfig(apiIngredient.name, machine?.model);
-        if (config) {
-          const key = config.name; // ВАЖНО: ключ остается по имени, как в master
-          const amount = apiIngredient.volume * quantity;
-
-          if (!totals[key]) {
-            totals[key] = {
-              amount: 0,
-              config,
-              sales: 0,
-              carryOver: 0,
-              planogramName: null,
-            };
-          }
-          totals[key].amount += amount;
-          totals[key].sales += amount;
+      // 2.1 Создаем "карту аппарата" из сохраненной планограммы
+      planogram.forEach(entry => {
+        const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+        if (match) {
+          const productNumber = match[1];
+          const name = match[2];
+          itemsMap.set(productNumber, {
+            name: name,
+            productNumber: productNumber,
+            planogramName: entry,
+            amount: 0,
+            unit: 'шт',
+            salesAmount: 0,
+            previousDeficit: 0,
+            isCore: false,
+            type: 'auto',
+            status: 'none',
+          });
         }
       });
-    } else {
-      // Снек или не-кофейный товар
-      const config = getIngredientConfig(sale.planogram.name, machine?.model);
-      const key = config ? config.name : sale.planogram.name;
-      if (!totals[key]) {
-        totals[key] = {
-          amount: 0,
-          config: config || {
-            name: key,
-            unit: 'шт',
-            type: 'auto',
-            apiNames: [key],
-          },
-          sales: 0,
-          carryOver: 0,
-          productNumber: productNumber,
-          planogramName: findPlanogramEntry(
-            sale.planogram.name,
-            planogram || []
-          ),
-        };
+      
+      // 2.2 Накладываем продажи
+      salesData.data.forEach(sale => {
+          if (sale.product_number && itemsMap.has(sale.product_number)) {
+              const item = itemsMap.get(sale.product_number)!;
+              item.salesAmount = (item.salesAmount || 0) + sale.number;
+          }
+      });
+
+      // 2.3 Накладываем остатки
+      Object.entries(overrides).forEach(([key, override]) => {
+          const itemName = key.replace(`${machineId}-`, '');
+          // Ищем товар по имени, так как в Redis ключ без productNumber
+          for (const item of itemsMap.values()) {
+              if (item.name === itemName) {
+                  item.previousDeficit = override.carryOver || 0;
+                  break; 
+              }
+          }
+      });
+
+      // 2.4 Финальный расчет и возврат
+      const result: ShoppingListItem[] = [];
+      itemsMap.forEach(item => {
+        item.amount = Math.ceil(Math.max(0, (item.salesAmount || 0) + (item.previousDeficit || 0)));
+        result.push(item);
+      });
+      
+      return result;
+  }
+  
+  // 3. Логика, если НЕТ сохраненной планограммы (isSavedPlanogram: false)
+  const itemMap = new Map<string, ShoppingListItem>();
+
+  // 3.1. Создаем "карту" из 365-дневной планограммы, если она есть
+  if (planogram && planogram.length > 0) {
+    planogram.forEach(entry => {
+      const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+      if (match) {
+        const productNumber = match[1];
+        const name = match[2];
+        
+        const config = getIngredientConfig(name, machineModel);
+
+        if (!itemMap.has(productNumber)) {
+          itemMap.set(productNumber, {
+            name: name,
+            productNumber: productNumber,
+            planogramName: entry,
+            amount: 0,
+            unit: config?.unit || 'шт',
+            salesAmount: 0,
+            previousDeficit: 0,
+            isCore: coreIngredientConfigs.some(c => c.name === name),
+            type: config?.type || 'auto',
+            syrupOptions: config?.syrupOptions,
+            status: 'none'
+          });
+        }
       }
-      totals[key].amount += quantity;
-      totals[key].sales += quantity;
-      // Сохраняем productNumber для снеков
-      if (!totals[key].productNumber) {
-        totals[key].productNumber = productNumber;
-      }
-    }
-  });
-
-  // 2.2. Обработка переносов (overrides) - ЛОГИКА ИЗ MASTER (ключ ${machineId}-${name})
-  Object.keys(overrides).forEach(overrideKey => {
-    if (!overrideKey.startsWith(`${machineId}-`)) return;
-
-    const itemNameFromOverride = overrideKey.replace(`${machineId}-`, '');
-    if (itemNameFromOverride.toLowerCase() === 'item') return;
-
-    const override = overrides[overrideKey];
-
-    if (override.carryOver !== undefined && override.carryOver !== null) {
-      const config = getIngredientConfig(itemNameFromOverride, machine?.model);
-      const key = config ? config.name : itemNameFromOverride;
-
-      if (!totals[key]) {
-        totals[key] = {
-          amount: 0,
-          config: config || {
-            name: key,
-            unit: 'шт',
-            type: 'auto',
-            apiNames: [key],
-          },
-          sales: 0,
-          carryOver: 0,
-          planogramName: findPlanogramEntry(key, planogram || []),
-        };
-      }
-      // ВАЖНО: ПРАВИЛЬНО суммируем carryOver с продажами
-      totals[key].amount += override.carryOver;
-      totals[key].carryOver = override.carryOver;
-    }
-  });
-
-  const allItems: ShoppingListItem[] = [];
-
-  // 3. Формируем финальный список
-  Object.keys(totals).forEach(key => {
-    const data = totals[key];
-    const { unit: displayUnit, displayAmount } = getDisplayUnit(
-      data.amount,
-      data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
-    );
-    const { displayAmount: salesDisplayAmount } = getDisplayUnit(
-      data.sales,
-      data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
-    );
-    const { displayAmount: deficitDisplayAmount } = getDisplayUnit(
-      data.carryOver,
-      data.config.unit as 'г' | 'кг' | 'мл' | 'л' | 'шт'
-    );
-
-    allItems.push({
-      name: data.config.name,
-      productNumber: data.productNumber, // Для снеков
-      planogramName: data.planogramName,
-      amount: Math.ceil(Math.max(0, displayAmount)),
-      unit: displayUnit,
-      status: overrides[`${machineId}-${key}`]?.status || 'none',
-      salesAmount: Math.ceil(salesDisplayAmount),
-      previousDeficit: Math.ceil(deficitDisplayAmount),
-      isCore:
-        !!modelKey &&
-        coreIngredientConfigs.some(c => c.name === data.config.name),
-      type: data.config.type || 'auto',
-      syrupOptions: data.config.syrupOptions,
-      checked: overrides[`${machineId}-${key}`]?.checked || false,
     });
+  }
+  
+  // 3.2. Добавляем в карту кофейные ингредиенты, которых там может не быть
+  coreIngredientConfigs.forEach(config => {
+      // Ключ для кофейных - их имя
+      const key = config.name;
+      if (!Array.from(itemMap.values()).some(item => item.name === key)) {
+          itemMap.set(key, {
+              name: config.name,
+              planogramName: config.name,
+              amount: 0,
+              unit: config.unit,
+              salesAmount: 0,
+              previousDeficit: 0,
+              isCore: true,
+              type: config.type,
+              syrupOptions: config.syrupOptions,
+              status: 'none'
+          });
+      }
   });
-
-  // 4. СОРТИРОВКА (ЛОГИКА ИЗ PLANOGRAM, АДАПТИРОВАННАЯ)
-  if (!isSavedPlanogram) {
-    allItems.sort((a, b) => {
-      const aIsCore = a.isCore;
-      const bIsCore = b.isCore;
-
-      // Кофейные ингредиенты всегда первые, в порядке из data.ts
-      if (aIsCore && !bIsCore) return -1;
-      if (!aIsCore && bIsCore) return 1;
-      if (aIsCore && bIsCore) {
+  
+  // 3.3. Накладываем продажи
+  salesData.data.forEach(sale => {
+    if (!sale.planogram?.name) return;
+    
+    // Кофейные напитки
+    if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
+      sale.planogram.ingredients.forEach(apiIngredient => {
+        const config = getIngredientConfig(apiIngredient.name, machineModel);
+        if (config) {
+          const item = Array.from(itemMap.values()).find(i => i.name === config.name);
+          if (item) {
+            item.salesAmount = (item.salesAmount || 0) + (apiIngredient.volume * sale.number);
+          }
+        }
+      });
+    } 
+    // Снеки
+    else if (sale.product_number && itemMap.has(sale.product_number)) {
+      const item = itemMap.get(sale.product_number)!;
+      item.salesAmount = (item.salesAmount || 0) + sale.number;
+    }
+  });
+  
+  // 3.4. Накладываем остатки из Redis
+  Object.entries(overrides).forEach(([key, override]) => {
+      const itemName = key.replace(`${machineId}-`, '');
+      for (const item of itemMap.values()) {
+        if (item.name === itemName) {
+          item.previousDeficit = override.carryOver || 0;
+          break;
+        }
+      }
+  });
+  
+  // 3.5. Финальный расчет и сортировка
+  const result: ShoppingListItem[] = [];
+  itemMap.forEach(item => {
+    item.amount = Math.ceil(Math.max(0, (item.salesAmount || 0) + (item.previousDeficit || 0)));
+    result.push(item);
+  });
+  
+  // Сортировка: сначала core, потом по productNumber
+  result.sort((a, b) => {
+      if (a.isCore && !b.isCore) return -1;
+      if (!a.isCore && b.isCore) return 1;
+      if (a.isCore && b.isCore) {
         const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
         const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
         return indexA - indexB;
       }
+      
+      // Исправленная "естественная" сортировка по productNumber
+      const aPN = a.productNumber || '';
+      const bPN = b.productNumber || '';
 
-      // Для снеков: сортировка по планограмме
-      if (
-        planogram &&
-        planogram.length > 0 &&
-        a.productNumber &&
-        b.productNumber
-      ) {
-        const getOrder = (productNumber: string) => {
-          for (let i = 0; i < planogram.length; i++) {
-            if (planogram[i].startsWith(`${productNumber}.`)) {
-              return i;
-            }
-          }
-          return planogram.length; // Если не найден - в конец
-        };
-        const orderA = getOrder(a.productNumber);
-        const orderB = getOrder(b.productNumber);
-        return orderA - orderB;
+      // 1. Сравниваем по номеру полки (первая цифра)
+      const aShelf = parseInt(aPN.substring(0, 1), 10) || Infinity;
+      const bShelf = parseInt(bPN.substring(0, 1), 10) || Infinity;
+      if (aShelf !== bShelf) {
+        return aShelf - bShelf;
       }
+      
+      // 2. Внутри одной полки, числовые ячейки идут перед буквенными
+      const isANumeric = /^\d+$/.test(aPN);
+      const isBNumeric = /^\d+$/.test(bPN);
+      if (isANumeric && !isBNumeric) return -1;
+      if (!isANumeric && isBNumeric) return 1;
 
-      return a.name.localeCompare(b.name, 'ru');
-    });
-  } else {
-    // ДЛЯ СОХРАНЕННОЙ ПЛАНОГРАММЫ: просто расставляем по порядку
-    // Создаем карту productNumber → ShoppingListItem
-    const itemsByProductNumber = new Map<string, ShoppingListItem>();
+      // 3. Если оба числовые или оба буквенные, сравниваем как строки
+      return aPN.localeCompare(bPN);
+  });
 
-    allItems.forEach(item => {
-      if (item.productNumber) {
-        itemsByProductNumber.set(item.productNumber, item);
-      }
-    });
-
-    // Проходим по планограмме и создаем новый упорядоченный список
-    const orderedItems: ShoppingListItem[] = [];
-
-    if (planogram && planogram.length > 0) {
-      for (const planogramEntry of planogram) {
-        // Извлекаем productNumber из записи планограммы
-        const match = planogramEntry.match(/^(\d+[A-Za-z]?)\./);
-        if (match) {
-          const productNumber = match[1];
-          const item = itemsByProductNumber.get(productNumber);
-          if (item) {
-            orderedItems.push(item);
-            itemsByProductNumber.delete(productNumber);
-          }
-        }
-      }
-    }
-
-    // Добавляем оставшиеся товары (кофейные ингредиенты и пр.)
-    allItems.forEach(item => {
-      if (!item.productNumber || itemsByProductNumber.has(item.productNumber)) {
-        orderedItems.push(item);
-      }
-    });
-
-    return orderedItems;
-  }
-
-  return allItems;
+  return result;
 };
 
-// Функция для бутматов (взята из planogram, но исправлена)
+// Функция для бутматов
 function calculateBottleShoppingList(
   salesData: { data: TelemetronSaleItem[] },
   overrides: LoadingOverrides,
@@ -384,7 +267,7 @@ function calculateBottleShoppingList(
     }
   });
 
-  // Переносы (ищем по старому формату ключа)
+  // Переносы
   Object.entries(overrides).forEach(([overrideKey, override]) => {
     if (!overrideKey.startsWith(`${machineId}-`)) return;
     const itemNameFromOverride = overrideKey.replace(`${machineId}-`, '');
@@ -400,7 +283,7 @@ function calculateBottleShoppingList(
   planogramsHardCode.bottle.forEach(itemName => {
     const sales = salesByName.get(itemName) || 0;
     const carryOver = carryOverByName.get(itemName) || 0;
-    const totalNeeded = Math.max(0, sales + carryOver); // Правильное суммирование
+    const totalNeeded = Math.max(0, sales + carryOver);
 
     result.push({
       name: itemName,

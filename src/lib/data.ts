@@ -1586,6 +1586,27 @@ export const planogramsHardCode: Record<string, string[]> = {
   ],
 };
 
+export const productReplacements: Record<string, string[]> = {
+  // Формат: "Основной товар из планограммы || Альтернатива": ["Вариант 1 из API", "Вариант 2 из API"]
+  "Батончик Смарт Формула, 40гр || Протеин": [
+    "Батончик Смарт Формула, 40гр", 
+    "Батончик Смарт Формула/Протеин",
+    "Протеин"
+  ],
+  "Пирожное basker wheels панкейк 36гр || Орион Чоко-пай/Тонди": [
+    "Пирожное basker wheels панкейк 36гр",
+    "Орион Чоко-пай/Тонди"
+  ],
+  "Добрый/Черноголовка вода+сок в ассорт.": [
+    "Добрый/Черноголовка вода+сок в ассорт."
+  ]
+};
+
+export const alternativeDisplayNames: Record<string, string> = {
+  "Батончик Смарт Формула, 40гр": "Батончик Смарт Формула, 40гр || Протеин",
+  "Пирожное basker wheels панкейк 36гр": "Пирожное basker wheels || Орион Чоко-пай"
+};
+
 export const getMachineType = (
   machine: Machine
 ): 'coffee' | 'snack' | 'bottle' => {
