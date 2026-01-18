@@ -11,6 +11,7 @@ import {
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import {
   calculateShoppingList,
+  normalizeForPlanogramComparison,
   type SortType,
 } from '@/lib/shopping-calculator';
 import type {
@@ -60,7 +61,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { allMachines, getMachineType, isSpecialMachine } from '@/lib/data';
+import { allMachines, alternativeDisplayNames, getMachineType, isSpecialMachine } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
 import debounce from 'lodash.debounce';
 
@@ -99,6 +100,7 @@ type ShoppingListState = {
   savingPlanogram: boolean;
   showPlanogramDialog: boolean;
   hasLoaded: boolean;
+  isSavedPlanogram: boolean;
 };
 
 type ShoppingListAction =
@@ -111,6 +113,7 @@ type ShoppingListAction =
         planogram: string[];
         salesThisPeriod: Map<string, number>;
         coffeeProductNumbers: string[];
+        isSavedPlanogram: boolean;
       };
     }
   | { type: 'SET_SAVING_PLANOGRAM'; payload: boolean }
@@ -153,6 +156,7 @@ const initialState: ShoppingListState = {
   savingPlanogram: false,
   showPlanogramDialog: false,
   hasLoaded: false,
+  isSavedPlanogram: false,
 };
 
 function shoppingListReducer(
@@ -182,6 +186,7 @@ function shoppingListReducer(
         planogram: action.payload.planogram,
         salesThisPeriod: action.payload.salesThisPeriod,
         coffeeProductNumbers: action.payload.coffeeProductNumbers,
+        isSavedPlanogram: action.payload.isSavedPlanogram,
       };
     case 'SET_SAVING_PLANOGRAM':
       return { ...state, savingPlanogram: action.payload };
@@ -274,6 +279,7 @@ export const ShoppingList = ({
     savingPlanogram,
     showPlanogramDialog,
     hasLoaded,
+    isSavedPlanogram,
   } = state;
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
@@ -291,6 +297,7 @@ export const ShoppingList = ({
       planogram: string[];
       salesThisPeriod: Map<string, number>;
       coffeeProductNumbers: string[];
+      isSavedPlanogram: boolean;
     };
     timestamp: number;
   } | null>(null);
@@ -331,6 +338,7 @@ export const ShoppingList = ({
               planogram: cached.planogram,
               salesThisPeriod: cached.salesThisPeriod,
               coffeeProductNumbers: cached.coffeeProductNumbers,
+              isSavedPlanogram: cached.isSavedPlanogram,
             },
           });
         }
@@ -349,6 +357,7 @@ export const ShoppingList = ({
               planogram: result.planogram,
               salesThisPeriod: result.salesThisPeriod,
               coffeeProductNumbers: result.coffeeProductNumbers,
+              isSavedPlanogram: result.isSavedPlanogram
             },
             timestamp: Date.now(),
           };
@@ -360,6 +369,7 @@ export const ShoppingList = ({
               planogram: result.planogram,
               salesThisPeriod: result.salesThisPeriod,
               coffeeProductNumbers: result.coffeeProductNumbers,
+              isSavedPlanogram: result.isSavedPlanogram,
             },
           });
         }
@@ -439,7 +449,8 @@ export const ShoppingList = ({
         planogramRef.current,
         machineData?.model,
         salesThisPeriod,
-        coffeeProductNumbers
+        coffeeProductNumbers,
+        isSavedPlanogram,
       );
 
       // Определяем начальное состояние на основе ТЕКУЩИХ данных
@@ -491,7 +502,7 @@ export const ShoppingList = ({
             : 'Не удалось сформировать список.',
       });
     }
-  }, [dateFrom, sort, forceLoad]);
+  }, [dateFrom, sort, forceLoad, isSavedPlanogram]);
 
   // Обновление планограммы
   useEffect(() => {
@@ -735,6 +746,7 @@ export const ShoppingList = ({
             planogram,
             salesThisPeriod,
             coffeeProductNumbers,
+            isSavedPlanogram,
           },
           timestamp: Date.now(),
         };
@@ -779,11 +791,29 @@ export const ShoppingList = ({
     URL.revokeObjectURL(url);
   };
 
-  const extractProductName = (planogramName: string | null): string => {
-    if (!planogramName) return '';
-    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-    return match ? match[1] : planogramName;
-  };
+const extractProductName = (planogramName: string | null, itemName: string): string => {
+  if (!planogramName) return itemName;
+  
+  // Извлекаем чистое название без номера ячейки
+  const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+  const cleanPlanogramName = match ? match[1] : planogramName;
+  
+  // Проверяем, есть ли альтернативное отображение
+  const displayName = alternativeDisplayNames[cleanPlanogramName];
+  
+  if (displayName) {
+    // Показываем альтернативу, но если в API другое название - добавляем "Фактически:"
+    const normalizedClean = normalizeForPlanogramComparison(cleanPlanogramName);
+    const normalizedItem = normalizeForPlanogramComparison(itemName);
+    
+    if (normalizedClean !== normalizedItem) {
+      return `${displayName} (Фактически: ${itemName})`;
+    }
+    return displayName;
+  }
+  
+  return cleanPlanogramName || itemName;
+};
 
   return (
     <Card className='w-full bg-gray-900 border-gray-700 text-white'>
@@ -954,10 +984,10 @@ export const ShoppingList = ({
                       <div className='flex-1 min-w-0 space-y-1'>
                         <div className='font-medium capitalize'>
                           <div className='flex items-center gap-2 flex-wrap'>
-                            {extractProductName(item.planogramName) ||
-                              item.name}
+                            {extractProductName(item.planogramName,
+                              item.name)}
                             {item.planogramName &&
-                              extractProductName(item.planogramName) !==
+                              extractProductName(item.planogramName, item.name) !==
                                 item.name && (
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -967,7 +997,7 @@ export const ShoppingList = ({
                                     <p>В аппарате: {item.name}</p>
                                     <p>
                                       В планограмме:{' '}
-                                      {extractProductName(item.planogramName)}
+                                      {extractProductName(item.planogramName, item.name)}
                                     </p>
                                     {item.planogramName.match(
                                       /^\d+[A-Za-z]?\./
@@ -986,7 +1016,7 @@ export const ShoppingList = ({
                               )}
                           </div>
                           {item.planogramName &&
-                            extractProductName(item.planogramName) !==
+                            extractProductName(item.planogramName, item.name) !==
                               item.name && (
                               <div className='text-sm text-gray-400 mt-1 break-words'>
                                 Фактически: {item.name}
