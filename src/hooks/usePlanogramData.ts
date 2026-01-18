@@ -223,22 +223,43 @@ function generatePlanogramFromSalesData(
 
   const allAA = salesData.data.every(item => item.product_number === 'AA');
 
-  if (allAA) {
-    console.log('Аппарат с ручной планограммой (все product_number = "AA")');
-
-    // Берём первое уникальное название (или самое популярное)
-    const names = new Set(
-      salesData.data.map(item => item.planogram?.name).filter(Boolean)
-    );
-    const firstName = names.values().next().value || 'Товар';
-
-    // Возвращаем простую планограмму с одной записью
-    return {
-      planogram: [`${firstName}`],
-      coffeeProductNumbers: [],
-    };
+if (allAA) {
+  // 1. Ищем запись с максимальным id (самая свежая)
+  let bestName = 'Товар';
+  let maxId = -1;
+  
+  salesData.data.forEach(item => {
+    const id = item.planogram?.id;
+    if (id && id > maxId) {
+      maxId = id;
+      bestName = item.planogram.name;
+    }
+  });
+  
+  // 2. Если все id = null, берем самое продаваемое название
+  if (maxId === -1) {
+    const salesByName = new Map<string, number>();
+    salesData.data.forEach(item => {
+      const name = item.planogram?.name;
+      if (name) {
+        salesByName.set(name, (salesByName.get(name) || 0) + item.number);
+      }
+    });
+    
+    let maxSales = 0;
+    salesByName.forEach((sales, name) => {
+      if (sales > maxSales) {
+        maxSales = sales;
+        bestName = name;
+      }
+    });
   }
-
+  
+  return {
+    planogram: [`AA. ${bestName}`],
+    coffeeProductNumbers: [],
+  };
+}
   // 1. Собираем все записи
   const itemsByProductNumber = new Map<
     string,
