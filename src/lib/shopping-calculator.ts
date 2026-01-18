@@ -99,10 +99,20 @@ export const calculateShoppingList = (
     // 2.3 Накладываем остатки
     Object.entries(overrides).forEach(([key, override]) => {
       const itemName = key.replace(`${machineId}-`, '');
+      console.log(`Остатки для ${itemName}:`, {
+        carryOver: override.carryOver,
+        status: override.status,
+        loadedAmount: override.loadedAmount,
+        requiredAmount: override.requiredAmount,
+      });
+
       // Ищем товар по имени, так как в Redis ключ без productNumber
       for (const item of itemsMap.values()) {
         if (item.name === itemName) {
           item.previousDeficit = override.carryOver || 0;
+          console.log(
+            `Для ${itemName}: carryOver=${override.carryOver}, previousDeficit=${item.previousDeficit}`
+          );
           break;
         }
       }
@@ -207,41 +217,41 @@ export const calculateShoppingList = (
   });
 
   // 3.3. Накладываем продажи
-    // Для аппаратов без планограммы
-    if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
-      // 1. Название из API
-      const apiName = salesData.data[0]?.planogram?.name || 'Товар';
+  // Для аппаратов без планограммы
+  if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
+    // 1. Название из API
+    const apiName = salesData.data[0]?.planogram?.name || 'Товар';
 
-      // 2. Сумма всех продаж
-      let totalSales = 0;
-      salesData.data.forEach(sale => {
-        totalSales += sale.number;
-      });
+    // 2. Сумма всех продаж
+    let totalSales = 0;
+    salesData.data.forEach(sale => {
+      totalSales += sale.number;
+    });
 
-      // 3. Остатки из overrides
-      let carryOver = 0;
-      Object.entries(overrides).forEach(([key, override]) => {
-        if (key.includes(apiName) || key.includes(machineId)) {
-          carryOver = override.carryOver || 0;
-        }
-      });
+    // 3. Остатки из overrides
+    let carryOver = 0;
+    Object.entries(overrides).forEach(([key, override]) => {
+      if (key.includes(apiName) || key.includes(machineId)) {
+        carryOver = override.carryOver || 0;
+      }
+    });
 
-      // 4. Возвращаем ОДИН товар
-      return [
-        {
-          name: apiName, // ← "Шок.бат. Сникерс 55 гр."
-          productNumber: 'AA',
-          planogramName: planogram[0],
-          amount: Math.ceil(Math.max(0, totalSales + carryOver)),
-          unit: 'шт',
-          salesAmount: totalSales,
-          previousDeficit: carryOver,
-          isCore: false,
-          type: 'auto',
-          status: 'none',
-        },
-      ];
-    }
+    // 4. Возвращаем ОДИН товар
+    return [
+      {
+        name: apiName, // ← "Шок.бат. Сникерс 55 гр."
+        productNumber: 'AA',
+        planogramName: planogram[0],
+        amount: Math.ceil(Math.max(0, totalSales + carryOver)),
+        unit: 'шт',
+        salesAmount: totalSales,
+        previousDeficit: carryOver,
+        isCore: false,
+        type: 'auto',
+        status: 'none',
+      },
+    ];
+  }
 
   salesData.data.forEach(sale => {
     if (!sale.planogram?.name) return;
