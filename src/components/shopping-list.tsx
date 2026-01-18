@@ -272,6 +272,7 @@ export const ShoppingList = ({
 }: ShoppingListProps) => {
   const [state, dispatch] = useReducer(shoppingListReducer, initialState);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const {
     loading,
@@ -389,6 +390,16 @@ export const ShoppingList = ({
       isMounted = false;
     };
   }, [machineIds.join('-')]); // Только при изменении machineIds
+
+  // Кнопка для поднятия наверх 
+  useEffect(() => {
+  const handleScroll = () => {
+    setShowScrollTop(window.scrollY > 300);
+  };
+  
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
 
   // Загрузка shopping list - debounced
   const loadShoppingList = useCallback(async () => {
@@ -619,86 +630,84 @@ export const ShoppingList = ({
     dispatch({ type: 'UPDATE_LOADED_AMOUNTS', payload: newLoadedAmounts });
   };
 
-  const handleSaveOverrides = async () => {
-    if (machineIds.length > 1) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Сохранение статусов доступно только для одного аппарата.',
-      });
-      return;
-    }
+const handleSaveOverrides = async () => {
+  if (machineIds.length > 1) {
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка',
+      description: 'Сохранение статусов доступно только для одного аппарата.',
+    });
+    return;
+  }
 
-    dispatch({ type: 'SET_SAVING', payload: true });
-    const machineId = machineIds[0];
+  dispatch({ type: 'SET_SAVING', payload: true });
+  const machineId = machineIds[0];
 
-    try {
-      const overridesToSave: LoadingOverrides = {};
+  try {
+    const overridesToSave: LoadingOverrides = {};
 
-      shoppingList.forEach((item, index) => {
-        const key = `${machineId}-${item.name}`;
-        const actualLoadedAmount = loadedAmounts[index] ?? 0;
+    shoppingList.forEach((item, index) => {
+      const key = `${machineId}-${item.name}`;
+      const actualLoadedAmount = loadedAmounts[index] ?? 0;
 
-        const override: LoadingOverride = {
-          status: item.status,
-          requiredAmount: item.amount,
-          loadedAmount: actualLoadedAmount,
-          timestamp: new Date().toISOString(),
-        };
+      const override: LoadingOverride = {
+        status: item.status,
+        requiredAmount: item.amount,
+        loadedAmount: actualLoadedAmount,
+        timestamp: new Date().toISOString(),
+      };
 
-        if (item.type === 'checkbox' || item.type === 'manual') {
-          override.checked = item.checked;
-          override.checkedType = item.checkedType;
-          override.selectedSizes = item.selectedSizes || [];
-        }
-
-        if (item.type === 'select') {
-          override.selectedSyrups = item.selectedSyrups || [];
-        }
-
-        if (item.type === 'auto') {
-          // ВСЕГДА сохраняем разницу между требуемым и загруженным
-          override.carryOver = item.amount - actualLoadedAmount;
-        }
-
-        overridesToSave[key] = override;
-      });
-
-      const result = await saveLoadingOverrides(overridesToSave);
-
-      const machine = allMachines.find(m => m.id === machineId);
-      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-        const now = new Date();
-        const newTimestamp = now.toISOString();
-        await setSpecialMachineDate(machineId, newTimestamp);
-        await saveTelemetronPress(machineId, newTimestamp);
-        await saveLastSaveTime(machineId, newTimestamp);
-
-        if (onTimestampUpdate) {
-          onTimestampUpdate(newTimestamp);
-        }
+      if (item.type === 'checkbox' || item.type === 'manual') {
+        override.checked = item.checked;
+        override.checkedType = item.checkedType;
+        override.selectedSizes = item.selectedSizes || [];
       }
 
-      if (result.success) {
-        toast({
-          title: 'Сохранено',
-          description: 'Состояние всех позиций сохранено.',
-        });
-        loadShoppingList();
+      if (item.type === 'select') {
+        override.selectedSyrups = item.selectedSyrups || [];
       }
-    } catch (error) {
-      console.error('Ошибка сохранения:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка сохранения',
-        description:
-          error instanceof Error ? error.message : 'Неизвестная ошибка.',
-      });
-    } finally {
-      dispatch({ type: 'SET_SAVING', payload: false });
+
+      if (item.type === 'auto') {
+        // ВСЕГДА сохраняем разницу между требуемым и загруженным
+        override.carryOver = item.amount - actualLoadedAmount;
+      }
+
+      overridesToSave[key] = override;
+    });
+
+    const result = await saveLoadingOverrides(overridesToSave);
+
+    const machine = allMachines.find(m => m.id === machineId);
+    if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+      const now = new Date();
+      const newTimestamp = now.toISOString();
+      await setSpecialMachineDate(machineId, newTimestamp);
+      await saveTelemetronPress(machineId, newTimestamp);
+      await saveLastSaveTime(machineId, newTimestamp);
+      
+      if (onTimestampUpdate) {
+        onTimestampUpdate(newTimestamp);
+      }
     }
-  };
-  const handleSavePlanogram = () => {
+
+    if (result.success) {
+      toast({
+        title: 'Сохранено',
+        description: 'Состояние всех позиций сохранено.',
+      });
+      loadShoppingList();
+    }
+  } catch (error) {
+    console.error('Ошибка сохранения:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка сохранения',
+      description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
+    });
+  } finally {
+    dispatch({ type: 'SET_SAVING', payload: false });
+  }
+};  const handleSavePlanogram = () => {
     if (machineIds.length !== 1 || planogram.length === 0) {
       toast({
         variant: 'destructive',
@@ -941,28 +950,13 @@ export const ShoppingList = ({
                 </Button>
               )}
               <Button
-                onClick={() =>
-                  document
-                    .querySelector('.shopping-list-container')
-                    ?.scrollTo({ top: 0, behavior: 'smooth' })
-                }
+                onClick={downloadList}
                 variant='outline'
-                className='border-blue-600 text-blue-300 hover:bg-blue-900/50 flex-1 md:hidden'
+                className='border-gray-600 text-gray-300 hover:bg-gray-800 flex-1'
               >
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='16'
-                  height='16'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  stroke='currentColor'
-                  strokeWidth='2'
-                  className='mr-2'
-                >
-                  <path d='M12 19V5M5 12l7-7 7 7' />
-                </svg>
-                Наверх
-              </Button>{' '}
+                <Download className='mr-2 h-4 w-4' />
+                Скачать список
+              </Button>
             </div>
 
             <div className='grid gap-2'>
@@ -1384,6 +1378,29 @@ export const ShoppingList = ({
           </div>
         </div>
       )}
+      {showScrollTop && (
+  <button
+    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    className={cn(
+      'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
+      'flex items-center justify-center z-50',
+      'md:hidden' // Только на мобильных
+    )}
+    aria-label="Наверх"
+  >
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width="24" 
+      height="24" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2"
+    >
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
+)}
     </Card>
   );
 };
