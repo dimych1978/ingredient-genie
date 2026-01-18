@@ -619,84 +619,86 @@ export const ShoppingList = ({
     dispatch({ type: 'UPDATE_LOADED_AMOUNTS', payload: newLoadedAmounts });
   };
 
-const handleSaveOverrides = async () => {
-  if (machineIds.length > 1) {
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка',
-      description: 'Сохранение статусов доступно только для одного аппарата.',
-    });
-    return;
-  }
-
-  dispatch({ type: 'SET_SAVING', payload: true });
-  const machineId = machineIds[0];
-
-  try {
-    const overridesToSave: LoadingOverrides = {};
-
-    shoppingList.forEach((item, index) => {
-      const key = `${machineId}-${item.name}`;
-      const actualLoadedAmount = loadedAmounts[index] ?? 0;
-
-      const override: LoadingOverride = {
-        status: item.status,
-        requiredAmount: item.amount,
-        loadedAmount: actualLoadedAmount,
-        timestamp: new Date().toISOString(),
-      };
-
-      if (item.type === 'checkbox' || item.type === 'manual') {
-        override.checked = item.checked;
-        override.checkedType = item.checkedType;
-        override.selectedSizes = item.selectedSizes || [];
-      }
-
-      if (item.type === 'select') {
-        override.selectedSyrups = item.selectedSyrups || [];
-      }
-
-      if (item.type === 'auto') {
-        // ВСЕГДА сохраняем разницу между требуемым и загруженным
-        override.carryOver = item.amount - actualLoadedAmount;
-      }
-
-      overridesToSave[key] = override;
-    });
-
-    const result = await saveLoadingOverrides(overridesToSave);
-
-    const machine = allMachines.find(m => m.id === machineId);
-    if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-      const now = new Date();
-      const newTimestamp = now.toISOString();
-      await setSpecialMachineDate(machineId, newTimestamp);
-      await saveTelemetronPress(machineId, newTimestamp);
-      await saveLastSaveTime(machineId, newTimestamp);
-      
-      if (onTimestampUpdate) {
-        onTimestampUpdate(newTimestamp);
-      }
-    }
-
-    if (result.success) {
+  const handleSaveOverrides = async () => {
+    if (machineIds.length > 1) {
       toast({
-        title: 'Сохранено',
-        description: 'Состояние всех позиций сохранено.',
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Сохранение статусов доступно только для одного аппарата.',
       });
-      loadShoppingList();
+      return;
     }
-  } catch (error) {
-    console.error('Ошибка сохранения:', error);
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка сохранения',
-      description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
-    });
-  } finally {
-    dispatch({ type: 'SET_SAVING', payload: false });
-  }
-};  const handleSavePlanogram = () => {
+
+    dispatch({ type: 'SET_SAVING', payload: true });
+    const machineId = machineIds[0];
+
+    try {
+      const overridesToSave: LoadingOverrides = {};
+
+      shoppingList.forEach((item, index) => {
+        const key = `${machineId}-${item.name}`;
+        const actualLoadedAmount = loadedAmounts[index] ?? 0;
+
+        const override: LoadingOverride = {
+          status: item.status,
+          requiredAmount: item.amount,
+          loadedAmount: actualLoadedAmount,
+          timestamp: new Date().toISOString(),
+        };
+
+        if (item.type === 'checkbox' || item.type === 'manual') {
+          override.checked = item.checked;
+          override.checkedType = item.checkedType;
+          override.selectedSizes = item.selectedSizes || [];
+        }
+
+        if (item.type === 'select') {
+          override.selectedSyrups = item.selectedSyrups || [];
+        }
+
+        if (item.type === 'auto') {
+          // ВСЕГДА сохраняем разницу между требуемым и загруженным
+          override.carryOver = item.amount - actualLoadedAmount;
+        }
+
+        overridesToSave[key] = override;
+      });
+
+      const result = await saveLoadingOverrides(overridesToSave);
+
+      const machine = allMachines.find(m => m.id === machineId);
+      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+        const now = new Date();
+        const newTimestamp = now.toISOString();
+        await setSpecialMachineDate(machineId, newTimestamp);
+        await saveTelemetronPress(machineId, newTimestamp);
+        await saveLastSaveTime(machineId, newTimestamp);
+
+        if (onTimestampUpdate) {
+          onTimestampUpdate(newTimestamp);
+        }
+      }
+
+      if (result.success) {
+        toast({
+          title: 'Сохранено',
+          description: 'Состояние всех позиций сохранено.',
+        });
+        loadShoppingList();
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка сохранения',
+        description:
+          error instanceof Error ? error.message : 'Неизвестная ошибка.',
+      });
+    } finally {
+      dispatch({ type: 'SET_SAVING', payload: false });
+    }
+  };
+  const handleSavePlanogram = () => {
     if (machineIds.length !== 1 || planogram.length === 0) {
       toast({
         variant: 'destructive',
@@ -939,13 +941,28 @@ const handleSaveOverrides = async () => {
                 </Button>
               )}
               <Button
-                onClick={downloadList}
+                onClick={() =>
+                  document
+                    .querySelector('.shopping-list-container')
+                    ?.scrollTo({ top: 0, behavior: 'smooth' })
+                }
                 variant='outline'
-                className='border-gray-600 text-gray-300 hover:bg-gray-800 flex-1'
+                className='border-blue-600 text-blue-300 hover:bg-blue-900/50 flex-1 md:hidden'
               >
-                <Download className='mr-2 h-4 w-4' />
-                Скачать список
-              </Button>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  className='mr-2'
+                >
+                  <path d='M12 19V5M5 12l7-7 7 7' />
+                </svg>
+                Наверх
+              </Button>{' '}
             </div>
 
             <div className='grid gap-2'>
