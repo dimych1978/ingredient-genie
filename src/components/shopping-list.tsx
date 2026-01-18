@@ -61,7 +61,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { allMachines, alternativeDisplayNames, getMachineType, isSpecialMachine } from '@/lib/data';
+import {
+  allMachines,
+  alternativeDisplayNames,
+  getMachineType,
+  isSpecialMachine,
+} from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
 import debounce from 'lodash.debounce';
 
@@ -357,7 +362,7 @@ export const ShoppingList = ({
               planogram: result.planogram,
               salesThisPeriod: result.salesThisPeriod,
               coffeeProductNumbers: result.coffeeProductNumbers,
-              isSavedPlanogram: result.isSavedPlanogram
+              isSavedPlanogram: result.isSavedPlanogram,
             },
             timestamp: Date.now(),
           };
@@ -450,7 +455,7 @@ export const ShoppingList = ({
         machineData?.model,
         salesThisPeriod,
         coffeeProductNumbers,
-        isSavedPlanogram,
+        isSavedPlanogram
       );
 
       // Определяем начальное состояние на основе ТЕКУЩИХ данных
@@ -541,6 +546,18 @@ export const ShoppingList = ({
     setMachineIds(initialMachineIds);
   }, [initialMachineIds.join('-')]);
 
+  // Синхронизируем loadedAmount в shoppingList с loadedAmounts
+  useEffect(() => {
+    const newShoppingList = shoppingList.map((item, index) => ({
+      ...item,
+      loadedAmount: loadedAmounts[index] ?? item.loadedAmount,
+    }));
+
+    if (JSON.stringify(newShoppingList) !== JSON.stringify(shoppingList)) {
+      dispatch({ type: 'SET_SHOPPING_LIST', payload: newShoppingList });
+    }
+  }, [loadedAmounts]);
+
   const handleCheckboxChange = (index: number) => {
     dispatch({
       type: 'UPDATE_ITEM_CHECKBOX',
@@ -586,9 +603,8 @@ export const ShoppingList = ({
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
     const loadedAmount =
       status === 'partial'
-        ? shoppingList[index]?.loadedAmount || shoppingList[index]?.amount
+        ? loadedAmounts?.[index] ?? shoppingList[index]?.amount ?? 0
         : 0;
-
     dispatch({
       type: 'UPDATE_ITEM_STATUS',
       payload: { index, status, loadedAmount },
@@ -603,105 +619,84 @@ export const ShoppingList = ({
     dispatch({ type: 'UPDATE_LOADED_AMOUNTS', payload: newLoadedAmounts });
   };
 
-  const handleSaveOverrides = async () => {
-    if (machineIds.length > 1) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Сохранение статусов доступно только для одного аппарата.',
-      });
-      return;
-    }
+const handleSaveOverrides = async () => {
+  if (machineIds.length > 1) {
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка',
+      description: 'Сохранение статусов доступно только для одного аппарата.',
+    });
+    return;
+  }
 
-    dispatch({ type: 'SET_SAVING', payload: true });
-    const machineId = machineIds[0];
+  dispatch({ type: 'SET_SAVING', payload: true });
+  const machineId = machineIds[0];
 
-    try {
-      const overridesToSave: LoadingOverrides = {};
+  try {
+    const overridesToSave: LoadingOverrides = {};
 
-      shoppingList.forEach((item, index) => {
-        const key = `${machineId}-${item.name}`;
-        const actualLoadedAmount =
-          item.status === 'none' ? 0 : loadedAmounts[index] || item.amount;
+    shoppingList.forEach((item, index) => {
+      const key = `${machineId}-${item.name}`;
+      const actualLoadedAmount = loadedAmounts[index] ?? 0;
 
-        const override: LoadingOverride = {
-          status: item.status,
-          requiredAmount: item.amount,
-          loadedAmount: actualLoadedAmount,
-          timestamp: new Date().toISOString(),
-        };
+      const override: LoadingOverride = {
+        status: item.status,
+        requiredAmount: item.amount,
+        loadedAmount: actualLoadedAmount,
+        timestamp: new Date().toISOString(),
+      };
 
-        if (item.type === 'checkbox' || item.type === 'manual') {
-          override.checked = item.checked;
-          override.checkedType = item.checkedType;
-          override.selectedSizes = item.selectedSizes || [];
-
-        }
-
-        if (item.type === 'select') {
-          override.selectedSyrups = item.selectedSyrups || [];
-        }
-
-        if (item.type === 'auto') {
-          if (item.status === 'none') {
-            override.carryOver = item.amount;
-          } else if (item.status === 'partial') {
-            override.carryOver = item.amount - actualLoadedAmount;
-          }
-        }
-
-        overridesToSave[key] = override;
-      });
-
-      const result = await saveLoadingOverrides(overridesToSave);
-
-      // Обновляем дату для специальных аппаратов
-      const machine = allMachines.find(m => m.id === machineId);
-
-      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-        const now = new Date();
-        const newTimestamp = now.toISOString();
-        const dateUpdateResult = await setSpecialMachineDate(
-          machineId,
-          newTimestamp
-        );
-
-        await saveTelemetronPress(machineId, newTimestamp);
-        await saveLastSaveTime(machineId, newTimestamp);
-
-        if (dateUpdateResult.success && onTimestampUpdate) {
-          onTimestampUpdate(newTimestamp);
-          toast({
-            title: 'Дата инкассации обновлена',
-            description: `Теперь продажи будут считаться с ${format(
-              new Date(newTimestamp),
-              'dd.MM.yyyy HH:mm'
-            )}`,
-          });
-        }
+      if (item.type === 'checkbox' || item.type === 'manual') {
+        override.checked = item.checked;
+        override.checkedType = item.checkedType;
+        override.selectedSizes = item.selectedSizes || [];
       }
 
-      if (result.success) {
-        toast({
-          title: 'Сохранено',
-          description: 'Состояние всех позиций сохранено.',
-        });
-        loadShoppingList();
+      if (item.type === 'select') {
+        override.selectedSyrups = item.selectedSyrups || [];
       }
-    } catch (error) {
-      console.error('Ошибка сохранения:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка сохранения',
-        description:
-          error instanceof Error ? error.message : 'Неизвестная ошибка.',
-      });
-    } finally {
-      dispatch({ type: 'SET_SAVING', payload: false });
-    }
-  };
 
-  const handleSavePlanogram = () => {
+      if (item.type === 'auto') {
+        // ВСЕГДА сохраняем разницу между требуемым и загруженным
+        override.carryOver = item.amount - actualLoadedAmount;
+      }
+
+      overridesToSave[key] = override;
+    });
+
+    const result = await saveLoadingOverrides(overridesToSave);
+
+    const machine = allMachines.find(m => m.id === machineId);
+    if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+      const now = new Date();
+      const newTimestamp = now.toISOString();
+      await setSpecialMachineDate(machineId, newTimestamp);
+      await saveTelemetronPress(machineId, newTimestamp);
+      await saveLastSaveTime(machineId, newTimestamp);
+      
+      if (onTimestampUpdate) {
+        onTimestampUpdate(newTimestamp);
+      }
+    }
+
+    if (result.success) {
+      toast({
+        title: 'Сохранено',
+        description: 'Состояние всех позиций сохранено.',
+      });
+      loadShoppingList();
+    }
+  } catch (error) {
+    console.error('Ошибка сохранения:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Ошибка сохранения',
+      description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
+    });
+  } finally {
+    dispatch({ type: 'SET_SAVING', payload: false });
+  }
+};  const handleSavePlanogram = () => {
     if (machineIds.length !== 1 || planogram.length === 0) {
       toast({
         variant: 'destructive',
@@ -791,29 +786,33 @@ export const ShoppingList = ({
     URL.revokeObjectURL(url);
   };
 
-const extractProductName = (planogramName: string | null, itemName: string): string => {
-  if (!planogramName) return itemName;
-  
-  // Извлекаем чистое название без номера ячейки
-  const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
-  const cleanPlanogramName = match ? match[1] : planogramName;
-  
-  // Проверяем, есть ли альтернативное отображение
-  const displayName = alternativeDisplayNames[cleanPlanogramName];
-  
-  if (displayName) {
-    // Показываем альтернативу, но если в API другое название - добавляем "Фактически:"
-    const normalizedClean = normalizeForPlanogramComparison(cleanPlanogramName);
-    const normalizedItem = normalizeForPlanogramComparison(itemName);
-    
-    if (normalizedClean !== normalizedItem) {
-      return `${displayName} (Фактически: ${itemName})`;
+  const extractProductName = (
+    planogramName: string | null,
+    itemName: string
+  ): string => {
+    if (!planogramName) return itemName;
+
+    // Извлекаем чистое название без номера ячейки
+    const match = planogramName.match(/^\d+[A-Za-z]?\.\s*(.+)$/);
+    const cleanPlanogramName = match ? match[1] : planogramName;
+
+    // Проверяем, есть ли альтернативное отображение
+    const displayName = alternativeDisplayNames[cleanPlanogramName];
+
+    if (displayName) {
+      // Показываем альтернативу, но если в API другое название - добавляем "Фактически:"
+      const normalizedClean =
+        normalizeForPlanogramComparison(cleanPlanogramName);
+      const normalizedItem = normalizeForPlanogramComparison(itemName);
+
+      if (normalizedClean !== normalizedItem) {
+        return `${displayName} (Фактически: ${itemName})`;
+      }
+      return displayName;
     }
-    return displayName;
-  }
-  
-  return cleanPlanogramName || itemName;
-};
+
+    return cleanPlanogramName || itemName;
+  };
 
   return (
     <Card className='w-full bg-gray-900 border-gray-700 text-white'>
@@ -984,11 +983,12 @@ const extractProductName = (planogramName: string | null, itemName: string): str
                       <div className='flex-1 min-w-0 space-y-1'>
                         <div className='font-medium capitalize'>
                           <div className='flex items-center gap-2 flex-wrap'>
-                            {extractProductName(item.planogramName,
-                              item.name)}
+                            {extractProductName(item.planogramName, item.name)}
                             {item.planogramName &&
-                              extractProductName(item.planogramName, item.name) !==
-                                item.name && (
+                              extractProductName(
+                                item.planogramName,
+                                item.name
+                              ) !== item.name && (
                                 <Tooltip>
                                   <TooltipTrigger>
                                     <AlertTriangle className='h-4 w-4 text-yellow-500 flex-shrink-0' />
@@ -997,7 +997,10 @@ const extractProductName = (planogramName: string | null, itemName: string): str
                                     <p>В аппарате: {item.name}</p>
                                     <p>
                                       В планограмме:{' '}
-                                      {extractProductName(item.planogramName, item.name)}
+                                      {extractProductName(
+                                        item.planogramName,
+                                        item.name
+                                      )}
                                     </p>
                                     {item.planogramName.match(
                                       /^\d+[A-Za-z]?\./
@@ -1016,8 +1019,10 @@ const extractProductName = (planogramName: string | null, itemName: string): str
                               )}
                           </div>
                           {item.planogramName &&
-                            extractProductName(item.planogramName, item.name) !==
-                              item.name && (
+                            extractProductName(
+                              item.planogramName,
+                              item.name
+                            ) !== item.name && (
                               <div className='text-sm text-gray-400 mt-1 break-words'>
                                 Фактически: {item.name}
                               </div>
