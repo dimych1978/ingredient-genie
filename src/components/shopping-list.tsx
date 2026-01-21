@@ -391,15 +391,15 @@ export const ShoppingList = ({
     };
   }, [machineIds.join('-')]); // Только при изменении machineIds
 
-  // Кнопка для поднятия наверх 
+  // Кнопка для поднятия наверх
   useEffect(() => {
-  const handleScroll = () => {
-    setShowScrollTop(window.scrollY > 300);
-  };
-  
-  window.addEventListener('scroll', handleScroll);
-  return () => window.removeEventListener('scroll', handleScroll);
-}, []);
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Загрузка shopping list - debounced
   const loadShoppingList = useCallback(async () => {
@@ -445,7 +445,12 @@ export const ShoppingList = ({
           const salesData: TelemetronSalesResponse =
             await stableGetSalesByProducts(
               vmId,
-              format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
+              format(
+                dateFrom instanceof Date && !isNaN(dateFrom.getTime())
+                  ? dateFrom
+                  : new Date(0),
+                'yyyy-MM-dd HH:mm:ss'
+              ),
               format(dateTo, 'yyyy-MM-dd HH:mm:ss')
             );
 
@@ -475,21 +480,16 @@ export const ShoppingList = ({
           const overrideKey = `${machineIdsRef.current[0]}-${item.name}`;
           const override = machineOverrides[overrideKey];
 
-          const hasCarryOver = (item.previousDeficit || 0) !== 0;
-          const hasCurrentSales = (item.salesAmount || 0) > 0;
+          // ВСЕГДА начинаем с крестика (status: 'none')
+          const status: 'none' | 'partial' = 'none';
 
-          // let initialStatus: 'none' | 'partial' = 'none';
-          let initialLoadedAmount: number = 0;
-
-          // if (hasCurrentSales || hasCarryOver) {
-          //   initialStatus = 'partial';
-          //   initialLoadedAmount = item.amount;
-          // }
+          // ВСЕГДА начинаем с 0
+          const loadedAmount = 0;
 
           return {
             ...item,
-            status: 'none',
-            loadedAmount: override?.loadedAmount ?? initialLoadedAmount,
+            status,
+            loadedAmount,
             checked: override?.checked ?? false,
             checkedType: override?.checkedType,
             selectedSyrups: override?.selectedSyrups || [],
@@ -612,10 +612,12 @@ export const ShoppingList = ({
   };
 
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
+    // При переходе на карандаш (status: 'partial')
+    // loadedAmount = item.amount (продажи + недогруз/излишек)
+    // При переходе на крестик (status: 'none') loadedAmount = 0
     const loadedAmount =
-      status === 'partial'
-        ? loadedAmounts?.[index] ?? shoppingList[index]?.amount ?? 0
-        : 0;
+      status === 'partial' ? shoppingList[index]?.amount ?? 0 : 0;
+
     dispatch({
       type: 'UPDATE_ITEM_STATUS',
       payload: { index, status, loadedAmount },
@@ -623,6 +625,7 @@ export const ShoppingList = ({
   };
 
   const handleAmountChange = (index: number, value: string) => {
+    // Разрешаем отрицательные числа
     const numValue = value === '' ? 0 : parseInt(value) || 0;
     const newLoadedAmounts = [...loadedAmounts];
     newLoadedAmounts[index] = numValue;
@@ -630,84 +633,84 @@ export const ShoppingList = ({
     dispatch({ type: 'UPDATE_LOADED_AMOUNTS', payload: newLoadedAmounts });
   };
 
-const handleSaveOverrides = async () => {
-  if (machineIds.length > 1) {
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка',
-      description: 'Сохранение статусов доступно только для одного аппарата.',
-    });
-    return;
-  }
-
-  dispatch({ type: 'SET_SAVING', payload: true });
-  const machineId = machineIds[0];
-
-  try {
-    const overridesToSave: LoadingOverrides = {};
-
-    shoppingList.forEach((item, index) => {
-      const key = `${machineId}-${item.name}`;
-      const actualLoadedAmount = loadedAmounts[index] ?? 0;
-
-      const override: LoadingOverride = {
-        status: item.status,
-        requiredAmount: item.amount,
-        loadedAmount: actualLoadedAmount,
-        timestamp: new Date().toISOString(),
-      };
-
-      if (item.type === 'checkbox' || item.type === 'manual') {
-        override.checked = item.checked;
-        override.checkedType = item.checkedType;
-        override.selectedSizes = item.selectedSizes || [];
-      }
-
-      if (item.type === 'select') {
-        override.selectedSyrups = item.selectedSyrups || [];
-      }
-
-      if (item.type === 'auto') {
-        // ВСЕГДА сохраняем разницу между требуемым и загруженным
-        override.carryOver = item.amount - actualLoadedAmount;
-      }
-
-      overridesToSave[key] = override;
-    });
-
-    const result = await saveLoadingOverrides(overridesToSave);
-
-    const machine = allMachines.find(m => m.id === machineId);
-    if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-      const now = new Date();
-      const newTimestamp = now.toISOString();
-      await setSpecialMachineDate(machineId, newTimestamp);
-      await saveTelemetronPress(machineId, newTimestamp);
-      await saveLastSaveTime(machineId, newTimestamp);
-      
-      if (onTimestampUpdate) {
-        onTimestampUpdate(newTimestamp);
-      }
-    }
-
-    if (result.success) {
+  const handleSaveOverrides = async () => {
+    if (machineIds.length > 1) {
       toast({
-        title: 'Сохранено',
-        description: 'Состояние всех позиций сохранено.',
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Сохранение статусов доступно только для одного аппарата.',
       });
-      loadShoppingList();
+      return;
     }
-  } catch (error) {
-    console.error('Ошибка сохранения:', error);
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка сохранения',
-      description: error instanceof Error ? error.message : 'Неизвестная ошибка.',
-    });
-  } finally {
-    dispatch({ type: 'SET_SAVING', payload: false });
-  }
-};  const handleSavePlanogram = () => {
+
+    dispatch({ type: 'SET_SAVING', payload: true });
+    const machineId = machineIds[0];
+
+    try {
+      const overridesToSave: LoadingOverrides = {};
+
+      shoppingList.forEach((item, index) => {
+        const key = `${machineId}-${item.name}`;
+
+        // ВСЕГДА берем из loadedAmounts
+        const actualLoadedAmount = loadedAmounts[index] ?? 0;
+
+        const override: LoadingOverride = {
+          status: item.status,
+          requiredAmount: item.amount,
+          loadedAmount: actualLoadedAmount,
+          timestamp: new Date().toISOString(),
+        };
+
+        if (item.type === 'auto') {
+          if (item.status === 'none') {
+            // Крестик: не загрузил ничего → вся сумма переносится
+            override.carryOver = item.amount;
+          } else if (item.status === 'partial') {
+            // Карандаш: загрузил частично → разница
+            override.carryOver = item.amount - actualLoadedAmount;
+          }
+        }
+
+        overridesToSave[key] = override;
+      });
+
+      const result = await saveLoadingOverrides(overridesToSave);
+
+      const machine = allMachines.find(m => m.id === machineId);
+      if (machine && (isSpecialMachine(machine) || markAsServiced)) {
+        const now = new Date();
+        const newTimestamp = now.toISOString();
+        await setSpecialMachineDate(machineId, newTimestamp);
+        await saveTelemetronPress(machineId, newTimestamp);
+        await saveLastSaveTime(machineId, newTimestamp);
+
+        if (onTimestampUpdate) {
+          onTimestampUpdate(newTimestamp);
+        }
+      }
+
+      if (result.success) {
+        toast({
+          title: 'Сохранено',
+          description: 'Состояние всех позиций сохранено.',
+        });
+        loadShoppingList();
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка сохранения',
+        description:
+          error instanceof Error ? error.message : 'Неизвестная ошибка.',
+      });
+    } finally {
+      dispatch({ type: 'SET_SAVING', payload: false });
+    }
+  };
+
+  const handleSavePlanogram = () => {
     if (machineIds.length !== 1 || planogram.length === 0) {
       toast({
         variant: 'destructive',
@@ -974,7 +977,7 @@ const handleSaveOverrides = async () => {
                     item.type === 'checkbox' || item.type === 'manual';
                   const isSyrupItem = item.type === 'select';
 
-                  const isCupOrLid = ['стаканчик', 'крышка'].some(name =>
+                  const isCupOrLid = ['стакан', 'крышк'].some(name =>
                     item.name.toLowerCase().includes(name)
                   );
 
@@ -1086,7 +1089,7 @@ const handleSaveOverrides = async () => {
                             <div className='flex flex-col gap-2'>
                               <div className='flex items-center gap-2'>
                                 <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
-                                  {item.name.toLowerCase().includes('стаканчик')
+                                  {item.name.toLowerCase().includes('стаканы')
                                     ? 'Большой'
                                     : 'Большая'}
                                 </span>
@@ -1115,7 +1118,7 @@ const handleSaveOverrides = async () => {
 
                               <div className='flex items-center gap-2'>
                                 <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
-                                  {item.name.toLowerCase().includes('стаканчик')
+                                  {item.name.toLowerCase().includes('стаканы')
                                     ? 'Малый'
                                     : 'Малая'}
                                 </span>
@@ -1282,7 +1285,7 @@ const handleSaveOverrides = async () => {
                                       className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
                                       onClick={() => {
                                         const current =
-                                          item.loadedAmount || item.amount;
+                                          loadedAmounts[index] ?? 0;
                                         handleAmountChange(
                                           index,
                                           (current - 1).toString()
@@ -1294,9 +1297,10 @@ const handleSaveOverrides = async () => {
                                     <div className='w-20 min-w-20'>
                                       <Input
                                         type='number'
-                                        value={(
-                                          item.loadedAmount ?? item.amount
-                                        )?.toString()}
+                                        value={
+                                          loadedAmounts[index]?.toString() ??
+                                          '0'
+                                        }
                                         onChange={e =>
                                           handleAmountChange(
                                             index,
@@ -1315,7 +1319,7 @@ const handleSaveOverrides = async () => {
                                       className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
                                       onClick={() => {
                                         const current =
-                                          item.loadedAmount || item.amount;
+                                          loadedAmounts[index] ?? 0;
                                         handleAmountChange(
                                           index,
                                           (current + 1).toString()
@@ -1379,28 +1383,28 @@ const handleSaveOverrides = async () => {
         </div>
       )}
       {showScrollTop && (
-  <button
-    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-    className={cn(
-      'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
-      'flex items-center justify-center z-50',
-      'md:hidden' // Только на мобильных
-    )}
-    aria-label="Наверх"
-  >
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2"
-    >
-      <path d="M12 19V5M5 12l7-7 7 7"/>
-    </svg>
-  </button>
-)}
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={cn(
+            'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
+            'flex items-center justify-center z-50',
+            'md:hidden' // Только на мобильных
+          )}
+          aria-label='Наверх'
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+          >
+            <path d='M12 19V5M5 12l7-7 7 7' />
+          </svg>
+        </button>
+      )}
     </Card>
   );
 };
