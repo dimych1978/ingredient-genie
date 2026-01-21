@@ -1,20 +1,22 @@
 //grouped-shopping-lists.tsx
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { allMachines, GroupedShoppingListsProps, getMachineType } from '@/lib/data';
 import { ShoppingList } from './shopping-list';
 import { Coffee, Box, GlassWater } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getLastTelemetronPress } from '@/app/actions';
 
 
 export const GroupedShoppingLists = ({ 
   machineIds, 
-  specialMachineDates, 
-  onSaveChanges 
+  specialMachineDates,
+  onSaveChanges,
 }: GroupedShoppingListsProps) => {
   const [showLists, setShowLists] = useState(false);
+  // const [actualDates, setActualDates] = useState(specialMachineDates);
 
   const groupedMachines = useMemo(() => {
     const groups: Record<string, string[]> = {
@@ -49,6 +51,18 @@ export const GroupedShoppingLists = ({
     setShowLists(prev => !prev);
   }, [machineIds.length, onSaveChanges]);
 
+// useEffect(() => {
+//     const loadDates = async () => {
+//       const dates: Record<string, string> = {};
+//       for (const id of machineIds) {
+//         const date = await getLastTelemetronPress(id);
+//         if (date) dates[id] = date;
+//       }
+//       setActualDates(dates);
+//     };
+//     if (machineIds.length > 0) loadDates();
+//   }, [machineIds]);
+
   return (
     <div className="space-y-6">
         <Card className="bg-muted/20">
@@ -82,9 +96,9 @@ export const GroupedShoppingLists = ({
               description={`На основе продаж для ${ids.length} апп.`}
               showControls={false}
               forceLoad
-              specialMachineDates={specialMachineDates}
+              specialMachineDates={specialMachineDates} 
               sort="alphabetical"
-              markAsServiced
+              markAsServiced={false}
             />
           );
         }

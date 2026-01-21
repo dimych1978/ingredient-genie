@@ -125,6 +125,8 @@ export const TomorrowsMachines = () => {
     loadScheduleForDate(selectedDate);
   }, [selectedDate, loadScheduleForDate]);
 
+  
+
 const handleSaveChanges = useCallback(async () => {
   const dateString = format(selectedDate, 'yyyy-MM-dd');
   const result = await saveDailySchedule(dateString, machineIdsForDay);

@@ -1717,29 +1717,29 @@ export const machineIngredients: MachineIngredients = {
     },
     // Чекбоксы
     {
-      name: 'стаканчик большой',
+      name: 'стаканы',
       apiNames: ['Стаканчик'],
       unit: 'шт',
       type: 'checkbox',
     },
+    // {
+    //   name: 'стаканчик малый',
+    //   apiNames: ['Стаканчик'],
+    //   unit: 'шт',
+    //   type: 'checkbox',
+    // },
     {
-      name: 'стаканчик малый',
-      apiNames: ['Стаканчик'],
-      unit: 'шт',
-      type: 'checkbox',
-    },
-    {
-      name: 'крышка большая',
+      name: 'крышки',
       apiNames: ['Крышка'],
       unit: 'шт',
       type: 'checkbox',
     },
-    {
-      name: 'крышка малая',
-      apiNames: ['Крышка'],
-      unit: 'шт',
-      type: 'checkbox',
-    },
+    // {
+    //   name: 'крышка малая',
+    //   apiNames: ['Крышка'],
+    //   unit: 'шт',
+    //   type: 'checkbox',
+    // },
     {
       name: 'размешиватель',
       apiNames: ['Размешиватель'],
