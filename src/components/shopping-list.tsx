@@ -678,7 +678,7 @@ if (item.type === 'select') {
         if (item.type === 'auto') {
           if (item.status === 'none') {
             // Крестик: не загрузил ничего → вся сумма переносится
-            override.carryOver = item.amount;
+            override.carryOver = item.amount - actualLoadedAmount;
           } else if (item.status === 'partial') {
             // Карандаш: загрузил частично → разница
             override.carryOver = item.amount - actualLoadedAmount;
@@ -980,7 +980,7 @@ if (item.type === 'select') {
                 {shoppingList.map((item, index) => {
                   if (item.name.toLowerCase() === 'item') return null;
 
-                  const isFullyReplenished = item.amount === 0;
+                  const isFullyReplenished = item.amount <= 0;
                   const hasSales = item.salesAmount && item.salesAmount > 0;
                   const deficit = item.previousDeficit || 0;
                   const hasDeficit = deficit > 0;

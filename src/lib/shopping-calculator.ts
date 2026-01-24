@@ -122,7 +122,7 @@ export const calculateShoppingList = (
     const result: ShoppingListItem[] = [];
     itemsMap.forEach(item => {
       item.amount = Math.ceil(
-        Math.max(0, (item.salesAmount || 0) + (item.previousDeficit || 0))
+        Math.max((item.salesAmount || 0) + (item.previousDeficit || 0))
       );
       result.push(item);
     });
@@ -278,6 +278,7 @@ export const calculateShoppingList = (
       item.salesAmount = (item.salesAmount || 0) + sale.number;
     }
   });
+    console.log("🚀 ~ calculateShoppingList ~ overrides:", overrides)
 
   // 3.4. Накладываем остатки из Redis
   Object.entries(overrides).forEach(([key, override]) => {
@@ -294,7 +295,7 @@ export const calculateShoppingList = (
   const result: ShoppingListItem[] = [];
   itemMap.forEach(item => {
     item.amount = Math.ceil(
-      Math.max(0, (item.salesAmount || 0) + (item.previousDeficit || 0))
+      Math.max((item.salesAmount || 0) + (item.previousDeficit || 0))
     );
     result.push(item);
   });
