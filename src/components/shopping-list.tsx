@@ -660,6 +660,9 @@ export const ShoppingList = ({
           requiredAmount: item.amount,
           loadedAmount: actualLoadedAmount,
           timestamp: new Date().toISOString(),
+           checked: item.checked,
+          selectedSizes: item.selectedSizes,
+          selectedSyrups: item.selectedSyrups,
         };
 
         if (item.type === 'auto') {
