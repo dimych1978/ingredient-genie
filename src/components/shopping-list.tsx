@@ -665,6 +665,16 @@ export const ShoppingList = ({
           selectedSyrups: item.selectedSyrups,
         };
 
+        if (item.type === 'checkbox' || item.type === 'manual') {
+  override.checked = item.checked ?? false;
+  override.checkedType = item.checkedType;
+  override.selectedSizes = item.selectedSizes || [];
+}
+
+if (item.type === 'select') {
+  override.selectedSyrups = item.selectedSyrups || [];
+}
+
         if (item.type === 'auto') {
           if (item.status === 'none') {
             // Крестик: не загрузил ничего → вся сумма переносится
