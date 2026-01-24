@@ -159,7 +159,7 @@ type LoadingOverrides = Record<string, LoadingOverride>;
 export async function readAllOverrides(): Promise<LoadingOverrides> {
   try {
     console.log('object');
-    const overrides = await kv.hgetall<LoadingOverrides>(OVERRIDES_KEY);
+    const overrides = await kv.get<LoadingOverrides>(OVERRIDES_KEY);
     console.log("🚀 ~ readAllOverrides ~ overrides:", overrides);
     return overrides || {};
   } catch (error) {
@@ -210,7 +210,7 @@ export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): P
       };
     });
     
-    await kv.hset(OVERRIDES_KEY, updatedOverrides);
+    await kv.set(OVERRIDES_KEY, updatedOverrides);
     return { success: true };
   } catch (error) {
     console.error('Ошибка сохранения overrides:', error);
