@@ -665,7 +665,7 @@ export const ShoppingList = ({
           selectedSyrups: item.selectedSyrups,
         };
 
-        if (item.type === 'checkbox' || item.type === 'manual') {
+        if (item.type === 'checkbox') {
   override.checked = item.checked ?? false;
   override.checkedType = item.checkedType;
   override.selectedSizes = item.selectedSizes || [];
@@ -987,11 +987,11 @@ if (item.type === 'select') {
                   const hasSurplus = deficit < 0;
 
                   const isCheckboxItem =
-                    item.type === 'checkbox' || item.type === 'manual';
+                    item.type === 'checkbox';
                   const isSyrupItem = item.type === 'select';
 
                   const isCupOrLid = ['стакан', 'крышк'].some(name =>
-                    item.name.toLowerCase().includes(name)
+                    item.name.toLowerCase().includes(name) && !item.name.includes("80")
                   );
 
                   return (

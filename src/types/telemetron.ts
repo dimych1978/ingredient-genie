@@ -1,4 +1,4 @@
-export type IngredientType = 'auto' | 'manual' | 'checkbox' | 'select';
+export type IngredientType = 'auto' | 'checkbox' | 'select';
 
 export interface SyrupOption {
   id: string;
