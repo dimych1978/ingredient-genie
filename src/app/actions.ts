@@ -16,39 +16,55 @@ const LAST_SAVE_KEY_PREFIX = 'last-save:';
 const PLANOGRAM_KEY_PREFIX = 'planogram:';
 
 // Сохраняем планограмму
-export async function savePlanogram(machineId: string, planogram: Record<string, string>): Promise<{ success: boolean }> {
-   console.log('savePlanogram вызван для', machineId, 'с', Object.keys(planogram).length, 'записей');
-  
-  // Пример первых 3 записей для отладки
-  const sampleEntries = Object.entries(planogram).slice(0, 3);
-  console.log('Пример записей:', sampleEntries);
+export async function savePlanogram(
+  machineId: string,
+  planogram: Record<string, string>
+): Promise<{ success: boolean }> {
+  console.log(
+    'savePlanogram вызван для',
+    machineId,
+    'с',
+    Object.keys(planogram).length,
+    'записей'
+  );
 
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Таймаут сохранения планограммы (10 секунд)')), 10000);
+      setTimeout(
+        () => reject(new Error('Таймаут сохранения планограммы (10 секунд)')),
+        10000
+      );
     });
 
- const savePromise = kv.set(`${PLANOGRAM_KEY_PREFIX}${machineId}`, planogram);
-    
+    const savePromise = kv.set(
+      `${PLANOGRAM_KEY_PREFIX}${machineId}`,
+      planogram
+    );
+
     // Ждем с таймаутом
     await Promise.race([savePromise, timeoutPromise]);
-    
-    console.log('Планограмма успешно сохранена в Redis');    return { success: true };
+
+    console.log('Планограмма успешно сохранена в Redis');
+    return { success: true };
   } catch (error) {
     console.error('Ошибка сохранения планограммы:', error);
-       if (error instanceof Error) {
+    if (error instanceof Error) {
       console.error('Сообщение ошибки:', error.message);
       console.error('Стек:', error.stack);
     }
-    
+
     return { success: false };
   }
 }
 
 // Получаем сохраненную планограмму
-export async function getSavedPlanogram(machineId: string): Promise<Record<string, string> | null> {
+export async function getSavedPlanogram(
+  machineId: string
+): Promise<Record<string, string> | null> {
   try {
-    return await kv.get<Record<string, string>>(`${PLANOGRAM_KEY_PREFIX}${machineId}`);
+    return await kv.get<Record<string, string>>(
+      `${PLANOGRAM_KEY_PREFIX}${machineId}`
+    );
   } catch (error) {
     console.error('Ошибка чтения планограммы:', error);
     return null;
@@ -56,7 +72,9 @@ export async function getSavedPlanogram(machineId: string): Promise<Record<strin
 }
 
 // Удаляем сохраненную планограмму
-export async function deleteSavedPlanogram(machineId: string): Promise<{ success: boolean }> {
+export async function deleteSavedPlanogram(
+  machineId: string
+): Promise<{ success: boolean }> {
   try {
     await kv.del(`${PLANOGRAM_KEY_PREFIX}${machineId}`);
     return { success: true };
@@ -67,7 +85,10 @@ export async function deleteSavedPlanogram(machineId: string): Promise<{ success
 }
 
 // Сохраняем время нажатия Telemetron
-export async function saveTelemetronPress(machineId: string, timestamp: string): Promise<void> {
+export async function saveTelemetronPress(
+  machineId: string,
+  timestamp: string
+): Promise<void> {
   try {
     await kv.set(`${TELEMETRON_PRESS_KEY_PREFIX}${machineId}`, timestamp);
   } catch (error) {
@@ -76,7 +97,9 @@ export async function saveTelemetronPress(machineId: string, timestamp: string):
 }
 
 // Получаем последнее нажатие Telemetron
-export async function getLastTelemetronPress(machineId: string): Promise<string | null> {
+export async function getLastTelemetronPress(
+  machineId: string
+): Promise<string | null> {
   try {
     return await kv.get<string>(`${TELEMETRON_PRESS_KEY_PREFIX}${machineId}`);
   } catch (error) {
@@ -86,7 +109,10 @@ export async function getLastTelemetronPress(machineId: string): Promise<string 
 }
 
 // Сохраняем время последнего сохранения состояния
-export async function saveLastSaveTime(machineId: string, timestamp: string): Promise<void> {
+export async function saveLastSaveTime(
+  machineId: string,
+  timestamp: string
+): Promise<void> {
   try {
     await kv.set(`${LAST_SAVE_KEY_PREFIX}${machineId}`, timestamp);
   } catch (error) {
@@ -95,7 +121,9 @@ export async function saveLastSaveTime(machineId: string, timestamp: string): Pr
 }
 
 // Получаем время последнего сохранения состояния
-export async function getLastSaveTime(machineId: string): Promise<string | null> {
+export async function getLastSaveTime(
+  machineId: string
+): Promise<string | null> {
   try {
     return await kv.get<string>(`${LAST_SAVE_KEY_PREFIX}${machineId}`);
   } catch (error) {
@@ -104,7 +132,9 @@ export async function getLastSaveTime(machineId: string): Promise<string | null>
   }
 }
 
-export async function getSpecialMachineDates(): Promise<Record<string, string>> {
+export async function getSpecialMachineDates(): Promise<
+  Record<string, string>
+> {
   try {
     const dates = await kv.get<Record<string, string>>(DATES_KEY);
     return dates || {};
@@ -114,7 +144,10 @@ export async function getSpecialMachineDates(): Promise<Record<string, string>> 
   }
 }
 
-export async function setSpecialMachineDate(id: string, date: string): Promise<{ success: boolean }> {
+export async function setSpecialMachineDate(
+  id: string,
+  date: string
+): Promise<{ success: boolean }> {
   try {
     const dates = await getSpecialMachineDates();
     dates[id] = date;
@@ -140,7 +173,10 @@ export async function getDailySchedule(date: string): Promise<string[] | null> {
   }
 }
 
-export async function saveDailySchedule(date: string, machineIds: string[]): Promise<{ success: boolean }> {
+export async function saveDailySchedule(
+  date: string,
+  machineIds: string[]
+): Promise<{ success: boolean }> {
   try {
     await kv.set(`${SCHEDULES_KEY_PREFIX}${date}`, machineIds);
     return { success: true };
@@ -160,9 +196,18 @@ export async function readAllOverrides(): Promise<LoadingOverrides> {
   try {
     console.log('object');
     const overrides = await kv.get<LoadingOverrides>(OVERRIDES_KEY);
-    console.log("🚀 ~ readAllOverrides ~ overrides:", overrides);
+    if (overrides && typeof window !== 'undefined') {
+      localStorage.setItem('redis-backup', JSON.stringify(overrides));
+    }
     return overrides || {};
   } catch (error) {
+    if (typeof window !== 'undefined') {
+      const backup = localStorage.getItem('redis-backup');
+      if (backup) {
+        console.warn('⚠️ Используем backup из localStorage');
+        return JSON.parse(backup);
+      }
+    }
     console.error('Ошибка чтения состояний загрузки из KV:', error);
     // Возвращаем пустой объект при ошибке соединения
     return {};
@@ -177,7 +222,9 @@ async function writeAllOverrides(overrides: LoadingOverrides): Promise<void> {
   }
 }
 
-export async function getLoadingOverrides(machineId: string): Promise<LoadingOverrides> {
+export async function getLoadingOverrides(
+  machineId: string
+): Promise<LoadingOverrides> {
   const allOverrides = await readAllOverrides();
   const machineOverrides: LoadingOverrides = {};
   for (const key in allOverrides) {
@@ -188,28 +235,45 @@ export async function getLoadingOverrides(machineId: string): Promise<LoadingOve
   return machineOverrides;
 }
 
-export async function saveLoadingOverrides(overridesToSave: LoadingOverrides): Promise<{ success: boolean }> {
+export async function saveLoadingOverrides(
+  overridesToSave: LoadingOverrides
+): Promise<{ success: boolean }> {
   try {
     const allOverrides = await readAllOverrides();
+
+    // ЕСЛИ Redis вернул пустой объект, НЕ продолжаем сохранение
+    if (
+      Object.keys(allOverrides).length === 0 &&
+      Object.keys(overridesToSave).length < 10
+    ) {
+      console.error(
+        '❌ ОПАСНО: Redis вернул пустой объект, отменяем сохранение!'
+      );
+      return {
+        success: false,
+      };
+    }
+
     const updatedOverrides = { ...allOverrides };
-    
+
     // Обновляем или добавляем override'ы
     Object.keys(overridesToSave).forEach(key => {
       const override = overridesToSave[key];
-      
+
       // Используем переданный carryOver или рассчитываем
       let carryOver = override.carryOver;
       if (carryOver === undefined || carryOver === null) {
-        carryOver = (override.requiredAmount || 0) - (override.loadedAmount || 0);
+        carryOver =
+          (override.requiredAmount || 0) - (override.loadedAmount || 0);
       }
-      
+
       updatedOverrides[key] = {
         ...override,
         carryOver,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     });
-    
+
     await kv.set(OVERRIDES_KEY, updatedOverrides);
     return { success: true };
   } catch (error) {
