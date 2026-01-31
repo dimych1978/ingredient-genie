@@ -432,16 +432,17 @@ export const ShoppingList = ({
     const machineType = machineData ? getMachineType(machineData) : 'snack';
 
     // Для снековых аппаратов ждем планограмму
-    if (machineType !== 'coffee' ) {
-      const isAAApparatus = planogramRef.current.length === 1 && 
-                         planogramRef.current[0]?.startsWith('AA');
-      console.log("🚀 ~ ShoppingList ~ isAAApparatus:", isAAApparatus)
-    
-    // Если НЕ AA аппарат и планограмма пустая - ждем
-    if (!isAAApparatus && planogramRef.current.length === 0) {
-      console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
-      return;
-    }
+    if (machineType !== 'coffee') {
+      const isAAApparatus =
+        planogramRef.current.length === 1 &&
+        planogramRef.current[0]?.startsWith('AA');
+      console.log('🚀 ~ ShoppingList ~ isAAApparatus:', isAAApparatus);
+
+      // Если НЕ AA аппарат и планограмма пустая - ждем
+      if (!isAAApparatus && planogramRef.current.length === 0) {
+        console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
+        return;
+      }
       // console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
       // return;
     }
@@ -948,598 +949,590 @@ export const ShoppingList = ({
   };
 
   return (
-    <Card className='w-full bg-gray-900 border-gray-700 text-white'>
-      <CardHeader className='border-b border-gray-700'>
-        <CardTitle className='flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
-            <ShoppingCart className='h-5 w-5 text-yellow-400' />
-            {title}
-          </div>
-          {shoppingList.length > 0 && (
-            <div className='text-sm font-normal text-gray-300'>
-              {shoppingList.length} позиций
+    <>
+      <Card className='w-full bg-gray-900 border-gray-700 text-white'>
+        <CardHeader className='border-b border-gray-700'>
+          <CardTitle className='flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <ShoppingCart className='h-5 w-5 text-yellow-400' />
+              {title}
             </div>
+            {shoppingList.length > 0 && (
+              <div className='text-sm font-normal text-gray-300'>
+                {shoppingList.length} позиций
+              </div>
+            )}
+          </CardTitle>
+          {description && (
+            <p className='text-gray-400 text-sm pt-2'>{description}</p>
           )}
-        </CardTitle>
-        {description && (
-          <p className='text-gray-400 text-sm pt-2'>{description}</p>
-        )}
-      </CardHeader>
-      <CardContent className='p-4 space-y-4'>
-        {showControls && (
-          <div className='space-y-4'>
-            {!forceLoad && (
-              <>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800 rounded-lg'>
-                  {machineIds.length > 1 && (
+        </CardHeader>
+        <CardContent className='p-4 space-y-4'>
+          {showControls && (
+            <div className='space-y-4'>
+              {!forceLoad && (
+                <>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800 rounded-lg'>
+                    {machineIds.length > 1 && (
+                      <div className='md:col-span-2'>
+                        <Label
+                          htmlFor='vmIds'
+                          className='block text-sm text-gray-400 mb-1'
+                        >
+                          ID аппаратов (через запятую)
+                        </Label>
+                        <Input
+                          id='vmIds'
+                          value={machineIdsString}
+                          onChange={handleMachineIdsChange}
+                          className='w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white'
+                          placeholder='58690, 40680'
+                        />
+                      </div>
+                    )}
                     <div className='md:col-span-2'>
                       <Label
-                        htmlFor='vmIds'
+                        htmlFor='dateFrom'
                         className='block text-sm text-gray-400 mb-1'
                       >
-                        ID аппаратов (через запятую)
+                        Дата начала периода
                       </Label>
-                      <Input
-                        id='vmIds'
-                        value={machineIdsString}
-                        onChange={handleMachineIdsChange}
-                        className='w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white'
-                        placeholder='58690, 40680'
-                      />
-                    </div>
-                  )}
-                  <div className='md:col-span-2'>
-                    <Label
-                      htmlFor='dateFrom'
-                      className='block text-sm text-gray-400 mb-1'
-                    >
-                      Дата начала периода
-                    </Label>
-                    <div className='flex items-center gap-2'>
-                      <Calendar className='h-4 w-4 text-gray-400' />
-                      <Input
-                        id='dateFrom'
-                        type='date'
-                        value={format(dateFrom, 'yyyy-MM-dd')}
-                        onChange={handleDateInputChange}
-                        className='w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white'
-                      />
+                      <div className='flex items-center gap-2'>
+                        <Calendar className='h-4 w-4 text-gray-400' />
+                        <Input
+                          id='dateFrom'
+                          type='date'
+                          value={format(dateFrom, 'yyyy-MM-dd')}
+                          onChange={handleDateInputChange}
+                          className='w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white'
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <Button
-                  onClick={() => {
-                    dispatch({ type: 'SET_HAS_LOADED', payload: false });
-                    loadShoppingList();
-                  }}
-                  disabled={loading}
-                  className='w-full bg-yellow-600 hover:bg-yellow-700 text-white'
-                >
-                  {loading ? (
-                    <Loader2 className='animate-spin mr-2' />
-                  ) : (
-                    <ShoppingCart className='mr-2 h-4 w-4' />
-                  )}
-                  {loading ? 'Загружаем...' : 'Создать Shopping List'}
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        {machineIds.length === 1 && planogram.length > 0 && (
-          <div className='flex justify-between'>
-            <Button
-              onClick={handleSavePlanogram}
-              variant='outline'
-              className='border-purple-600 text-purple-300 hover:bg-purple-900/50'
-              disabled={savingPlanogram}
-            >
-              {savingPlanogram ? (
-                <Loader2 className='animate-spin mr-2 h-4 w-4' />
-              ) : (
-                <Bookmark className='mr-2 h-4 w-4' />
+                  <Button
+                    onClick={() => {
+                      dispatch({ type: 'SET_HAS_LOADED', payload: false });
+                      loadShoppingList();
+                    }}
+                    disabled={loading}
+                    className='w-full bg-yellow-600 hover:bg-yellow-700 text-white'
+                  >
+                    {loading ? (
+                      <Loader2 className='animate-spin mr-2' />
+                    ) : (
+                      <ShoppingCart className='mr-2 h-4 w-4' />
+                    )}
+                    {loading ? 'Загружаем...' : 'Создать Shopping List'}
+                  </Button>
+                </>
               )}
-              Сохранить планограмму
-            </Button>
-            <Button
-              onClick={handleDeletePlanogram}
-              variant='outline'
-              className='border-red-600 text-red-300 hover:bg-red-900/50'
-              disabled={savingPlanogram}
-            >
-              {savingPlanogram ? (
-                <Loader2 className='animate-spin mr-2 h-4 w-4' />
-              ) : (
-                <Bookmark className='mr-2 h-4 w-4' />
-              )}
-              Удалить планограмму
-            </Button>
-          </div>
-        )}
-
-        {loading && (
-          <div className='text-center py-8'>
-            <Loader2 className='animate-spin h-8 w-8 text-yellow-400 mx-auto mb-3' />
-            <div className='text-gray-400'>
-              Загружаем данные и формируем список...
             </div>
-          </div>
-        )}
+          )}
 
-        {shoppingList.length > 0 && (
-          <div className='space-y-3'>
-            <div className='flex gap-3 flex-col'>
-              {machineIds.length === 1 && (
-                <Button
-                  onClick={handleSaveOverrides}
-                  variant='outline'
-                  className='border-green-600 text-green-300 hover:bg-green-900/50 flex-1'
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <Loader2 className='animate-spin mr-2 h-4 w-4' />
-                  ) : (
-                    <Save className='mr-2 h-4 w-4' />
-                  )}
-                  Сохранить пополненные позиции
-                </Button>
-              )}
-               <Button
-                onClick={() =>
-                  document
-                    .querySelector('.shopping-list-container')
-                    ?.scrollTo({ top: 0, behavior: 'smooth' })
-                }
+          {machineIds.length === 1 && planogram.length > 0 && (
+            <div className='flex justify-between'>
+              <Button
+                onClick={handleSavePlanogram}
                 variant='outline'
-                className='border-blue-600 text-blue-300 hover:bg-blue-900/50 flex-1 md:hidden'
+                className='border-purple-600 text-purple-300 hover:bg-purple-900/50'
+                disabled={savingPlanogram}
               >
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='16'
-                  height='16'
-                  viewBox='0 0 24 24'
-                  fill='none'
-                  stroke='currentColor'
-                  strokeWidth='2'
-                  className='mr-2'
-                >
-                  <path d='M12 19V5M5 12l7-7 7 7' />
-                </svg>
-                Наверх
-              </Button>{' '}
+                {savingPlanogram ? (
+                  <Loader2 className='animate-spin mr-2 h-4 w-4' />
+                ) : (
+                  <Bookmark className='mr-2 h-4 w-4' />
+                )}
+                Сохранить планограмму
+              </Button>
+              <Button
+                onClick={handleDeletePlanogram}
+                variant='outline'
+                className='border-red-600 text-red-300 hover:bg-red-900/50'
+                disabled={savingPlanogram}
+              >
+                {savingPlanogram ? (
+                  <Loader2 className='animate-spin mr-2 h-4 w-4' />
+                ) : (
+                  <Bookmark className='mr-2 h-4 w-4' />
+                )}
+                Удалить планограмму
+              </Button>
             </div>
+          )}
 
-            <div className='grid gap-2'>
-              <TooltipProvider>
-                {shoppingList.map((item, index) => {
-                  if (item.name.toLowerCase() === 'item') return null;
+          {loading && (
+            <div className='text-center py-8'>
+              <Loader2 className='animate-spin h-8 w-8 text-yellow-400 mx-auto mb-3' />
+              <div className='text-gray-400'>
+                Загружаем данные и формируем список...
+              </div>
+            </div>
+          )}
 
-                  const isFullyReplenished = item.amount <= 0;
-                  const hasSales = item.salesAmount && item.salesAmount > 0;
-                  const deficit = item.previousDeficit || 0;
-                  const hasDeficit = deficit > 0;
-                  const hasSurplus = deficit < 0;
+          {shoppingList.length > 0 && (
+            <div className='space-y-3'>
+              <div className='flex gap-3 flex-col'>
+                {machineIds.length === 1 && (
+                  <Button
+                    onClick={handleSaveOverrides}
+                    variant='outline'
+                    className='border-green-600 text-green-300 hover:bg-green-900/50 flex-1'
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <Loader2 className='animate-spin mr-2 h-4 w-4' />
+                    ) : (
+                      <Save className='mr-2 h-4 w-4' />
+                    )}
+                    Сохранить пополненные позиции
+                  </Button>
+                )}
+                <Button
+                  onClick={downloadList}
+                  variant='outline'
+                  className='border-gray-600 text-gray-300 hover:bg-gray-800 flex-1'
+                >
+                  <Download className='mr-2 h-4 w-4' />
+                  Скачать список
+                </Button>
+              </div>
 
-                  const isCheckboxItem = item.type === 'checkbox';
-                  const isSyrupItem = item.type === 'select';
+              <div className='grid gap-2'>
+                <TooltipProvider>
+                  {shoppingList.map((item, index) => {
+                    if (item.name.toLowerCase() === 'item') return null;
 
-                  const isCupOrLid = ['стакан', 'крышк'].some(
-                    name =>
-                      item.name.toLowerCase().includes(name) &&
-                      !item.name.includes('80')
-                  );
+                    const isFullyReplenished = item.amount <= 0;
+                    const hasSales = item.salesAmount && item.salesAmount > 0;
+                    const deficit = item.previousDeficit || 0;
+                    const hasDeficit = deficit > 0;
+                    const hasSurplus = deficit < 0;
 
-                  return (
-                    <div
-                      key={index}
-                      className={cn(
-                        'flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 border rounded-lg gap-3',
-                        isFullyReplenished
-                          ? 'bg-green-900/20 border-green-600 text-green-300'
-                          : item.status === 'none'
-                          ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
-                          : 'bg-blue-900/20 border-blue-600 text-blue-300'
-                      )}
-                    >
-                      {/* Левый блок - информация о товаре */}
-                      <div className='flex-1 min-w-0 space-y-1'>
-                        <div className='font-medium capitalize'>
-                          <div className='flex items-center gap-2 flex-wrap'>
-                            {extractProductName(item.planogramName, item.name)}
+                    const isCheckboxItem = item.type === 'checkbox';
+                    const isSyrupItem = item.type === 'select';
+
+                    const isCupOrLid = ['стакан', 'крышк'].some(
+                      name =>
+                        item.name.toLowerCase().includes(name) &&
+                        !item.name.includes('80')
+                    );
+
+                    return (
+                      <div
+                        key={index}
+                        className={cn(
+                          'flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 border rounded-lg gap-3',
+                          isFullyReplenished
+                            ? 'bg-green-900/20 border-green-600 text-green-300'
+                            : item.status === 'none'
+                            ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
+                            : 'bg-blue-900/20 border-blue-600 text-blue-300'
+                        )}
+                      >
+                        {/* Левый блок - информация о товаре */}
+                        <div className='flex-1 min-w-0 space-y-1'>
+                          <div className='font-medium capitalize'>
+                            <div className='flex items-center gap-2 flex-wrap'>
+                              {extractProductName(
+                                item.planogramName,
+                                item.name
+                              )}
+                              {item.planogramName &&
+                                extractProductName(
+                                  item.planogramName,
+                                  item.name
+                                ) !== item.name && (
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <AlertTriangle className='h-4 w-4 text-yellow-500 flex-shrink-0' />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>В аппарате: {item.name}</p>
+                                      <p>
+                                        В планограмме:{' '}
+                                        {extractProductName(
+                                          item.planogramName,
+                                          item.name
+                                        )}
+                                      </p>
+                                      {item.planogramName.match(
+                                        /^\d+[A-Za-z]?\./
+                                      ) && (
+                                        <p className='text-xs text-gray-500 mt-1'>
+                                          Ячейка:{' '}
+                                          {
+                                            item.planogramName.match(
+                                              /^(\d+[A-Za-z]?)\./
+                                            )?.[1]
+                                          }
+                                        </p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                            </div>
                             {item.planogramName &&
                               extractProductName(
                                 item.planogramName,
                                 item.name
                               ) !== item.name && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <AlertTriangle className='h-4 w-4 text-yellow-500 flex-shrink-0' />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>В аппарате: {item.name}</p>
-                                    <p>
-                                      В планограмме:{' '}
-                                      {extractProductName(
-                                        item.planogramName,
-                                        item.name
-                                      )}
-                                    </p>
-                                    {item.planogramName.match(
-                                      /^\d+[A-Za-z]?\./
-                                    ) && (
-                                      <p className='text-xs text-gray-500 mt-1'>
-                                        Ячейка:{' '}
-                                        {
-                                          item.planogramName.match(
-                                            /^(\d+[A-Za-z]?)\./
-                                          )?.[1]
-                                        }
-                                      </p>
-                                    )}
-                                  </TooltipContent>
-                                </Tooltip>
+                                <div className='text-sm text-gray-400 mt-1 break-words'>
+                                  Фактически: {item.name}
+                                </div>
                               )}
                           </div>
-                          {item.planogramName &&
-                            extractProductName(
-                              item.planogramName,
-                              item.name
-                            ) !== item.name && (
-                              <div className='text-sm text-gray-400 mt-1 break-words'>
-                                Фактически: {item.name}
+
+                          {isCheckboxItem || isSyrupItem ? (
+                            <div className='text-sm text-gray-400 break-words'>
+                              {hasSales
+                                ? `Продажи: ${item.salesAmount} ${item.unit}`
+                                : 'Расходные материалы'}
+                            </div>
+                          ) : (
+                            <>
+                              {(hasSales || hasDeficit || hasSurplus) && (
+                                <div className='text-sm text-gray-400 break-words'>
+                                  {hasSales &&
+                                    `Продажи: ${item.salesAmount} ${item.unit}`}
+                                  {hasSales &&
+                                    (hasDeficit || hasSurplus) &&
+                                    ' + '}
+                                  {hasDeficit &&
+                                    `Недогруз: ${deficit} ${item.unit}`}
+                                  {hasSurplus &&
+                                    `Излишек: ${Math.abs(deficit)} ${
+                                      item.unit
+                                    }`}
+                                </div>
+                              )}
+                              <div
+                                className={cn(
+                                  'text-base font-bold break-words',
+                                  isFullyReplenished
+                                    ? 'text-green-400'
+                                    : 'text-white'
+                                )}
+                              >
+                                {isFullyReplenished
+                                  ? 'Пополнено'
+                                  : `Нужно: ${item.amount.toLocaleString(
+                                      'ru-RU'
+                                    )} ${item.unit}`}
                               </div>
-                            )}
+                            </>
+                          )}
                         </div>
 
-                        {isCheckboxItem || isSyrupItem ? (
-                          <div className='text-sm text-gray-400 break-words'>
-                            {hasSales
-                              ? `Продажи: ${item.salesAmount} ${item.unit}`
-                              : 'Расходные материалы'}
-                          </div>
-                        ) : (
-                          <>
-                            {(hasSales || hasDeficit || hasSurplus) && (
-                              <div className='text-sm text-gray-400 break-words'>
-                                {hasSales &&
-                                  `Продажи: ${item.salesAmount} ${item.unit}`}
-                                {hasSales &&
-                                  (hasDeficit || hasSurplus) &&
-                                  ' + '}
-                                {hasDeficit &&
-                                  `Недогруз: ${deficit} ${item.unit}`}
-                                {hasSurplus &&
-                                  `Излишек: ${Math.abs(deficit)} ${item.unit}`}
-                              </div>
-                            )}
-                            <div
-                              className={cn(
-                                'text-base font-bold break-words',
-                                isFullyReplenished
-                                  ? 'text-green-400'
-                                  : 'text-white'
-                              )}
-                            >
-                              {isFullyReplenished
-                                ? 'Пополнено'
-                                : `Нужно: ${item.amount.toLocaleString(
-                                    'ru-RU'
-                                  )} ${item.unit}`}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                        {/* Правый блок - кнопки управления */}
+                        <div className='flex items-center gap-2 self-end sm:self-center flex-wrap justify-end'>
+                          {isCheckboxItem ? (
+                            isCupOrLid ? (
+                              <div className='flex flex-col gap-2'>
+                                <div className='flex items-center gap-2'>
+                                  <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
+                                    {item.name.toLowerCase().includes('стаканы')
+                                      ? 'Большой'
+                                      : 'Большая'}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      handleCupLidChange(index, 'big')
+                                    }
+                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
+                                  >
+                                    {item.selectedSizes?.includes('big') && (
+                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                    )}
+                                  </button>
+                                  <span
+                                    className={`text-sm whitespace-nowrap ${
+                                      item.selectedSizes?.includes('big')
+                                        ? 'text-green-500'
+                                        : 'text-yellow-200'
+                                    }`}
+                                  >
+                                    {item.selectedSizes?.includes('big')
+                                      ? 'Не надо'
+                                      : 'Нужно'}
+                                  </span>
+                                </div>
 
-                      {/* Правый блок - кнопки управления */}
-                      <div className='flex items-center gap-2 self-end sm:self-center flex-wrap justify-end'>
-                        {isCheckboxItem ? (
-                          isCupOrLid ? (
-                            <div className='flex flex-col gap-2'>
+                                <div className='flex items-center gap-2'>
+                                  <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
+                                    {item.name.toLowerCase().includes('стаканы')
+                                      ? 'Малый'
+                                      : 'Малая'}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      handleCupLidChange(index, 'small')
+                                    }
+                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
+                                  >
+                                    {item.selectedSizes?.includes('small') && (
+                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                    )}
+                                  </button>
+                                  <span
+                                    className={`text-sm whitespace-nowrap ${
+                                      item.selectedSizes?.includes('small')
+                                        ? 'text-green-500'
+                                        : 'text-yellow-200'
+                                    }`}
+                                  >
+                                    {item.selectedSizes?.includes('small')
+                                      ? 'Не надо'
+                                      : 'Нужно'}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
                               <div className='flex items-center gap-2'>
-                                <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
-                                  {item.name.toLowerCase().includes('стаканы')
-                                    ? 'Большой'
-                                    : 'Большая'}
-                                </span>
                                 <button
-                                  onClick={() =>
-                                    handleCupLidChange(index, 'big')
-                                  }
+                                  onClick={() => handleCheckboxChange(index)}
                                   className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
                                 >
-                                  {item.selectedSizes?.includes('big') && (
+                                  {item.checked && (
                                     <CircleCheckBig className='h-4 w-4 text-green-500' />
                                   )}
                                 </button>
                                 <span
                                   className={`text-sm whitespace-nowrap ${
-                                    item.selectedSizes?.includes('big')
+                                    item.checked
                                       ? 'text-green-500'
                                       : 'text-yellow-200'
                                   }`}
                                 >
-                                  {item.selectedSizes?.includes('big')
-                                    ? 'Не надо'
-                                    : 'Нужно'}
+                                  {item.checked ? 'Не надо' : 'Нужно'}
                                 </span>
                               </div>
-
-                              <div className='flex items-center gap-2'>
-                                <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
-                                  {item.name.toLowerCase().includes('стаканы')
-                                    ? 'Малый'
-                                    : 'Малая'}
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    handleCupLidChange(index, 'small')
-                                  }
-                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
-                                >
-                                  {item.selectedSizes?.includes('small') && (
-                                    <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                  )}
-                                </button>
-                                <span
-                                  className={`text-sm whitespace-nowrap ${
-                                    item.selectedSizes?.includes('small')
-                                      ? 'text-green-500'
-                                      : 'text-yellow-200'
-                                  }`}
-                                >
-                                  {item.selectedSizes?.includes('small')
-                                    ? 'Не надо'
-                                    : 'Нужно'}
-                                </span>
+                            )
+                          ) : isSyrupItem ? (
+                            <div className='w-full sm:w-48'>
+                              <div className='text-sm text-gray-300 mb-1'>
+                                Выберите сиропы:
+                              </div>
+                              <div className='space-y-1'>
+                                {item.syrupOptions?.map(syrup => {
+                                  const isSelected =
+                                    item.selectedSyrups?.includes(syrup.id) ||
+                                    false;
+                                  return (
+                                    <div
+                                      key={syrup.id}
+                                      className='flex items-center justify-between cursor-pointer'
+                                      onClick={() => {
+                                        const selectedSyrups =
+                                          item.selectedSyrups || [];
+                                        const newSelected = isSelected
+                                          ? selectedSyrups.filter(
+                                              id => id !== syrup.id
+                                            )
+                                          : [...selectedSyrups, syrup.id];
+                                        handleSyrupChange(index, newSelected);
+                                      }}
+                                    >
+                                      <div className='flex items-center gap-2 min-w-0'>
+                                        <div
+                                          className={cn(
+                                            'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
+                                            isSelected
+                                              ? 'border-green-500 bg-green-500/10'
+                                              : 'border-gray-400 hover:border-gray-300'
+                                          )}
+                                        >
+                                          {isSelected && (
+                                            <CircleCheckBig className='h-3 w-3 text-green-500' />
+                                          )}
+                                        </div>
+                                        <span
+                                          className={cn(
+                                            'text-sm truncate',
+                                            isSelected
+                                              ? 'text-green-300'
+                                              : 'text-gray-300'
+                                          )}
+                                        >
+                                          {syrup.name}
+                                        </span>
+                                      </div>
+                                      <span
+                                        className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${
+                                          isSelected
+                                            ? 'text-green-500'
+                                            : 'text-yellow-200'
+                                        }`}
+                                      >
+                                        {isSelected ? 'Не надо' : 'Нужно'}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           ) : (
-                            <div className='flex items-center gap-2'>
-                              <button
-                                onClick={() => handleCheckboxChange(index)}
-                                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
-                              >
-                                {item.checked && (
-                                  <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                )}
-                              </button>
-                              <span
-                                className={`text-sm whitespace-nowrap ${
-                                  item.checked
-                                    ? 'text-green-500'
-                                    : 'text-yellow-200'
-                                }`}
-                              >
-                                {item.checked ? 'Не надо' : 'Нужно'}
-                              </span>
-                            </div>
-                          )
-                        ) : isSyrupItem ? (
-                          <div className='w-full sm:w-48'>
-                            <div className='text-sm text-gray-300 mb-1'>
-                              Выберите сиропы:
-                            </div>
-                            <div className='space-y-1'>
-                              {item.syrupOptions?.map(syrup => {
-                                const isSelected =
-                                  item.selectedSyrups?.includes(syrup.id) ||
-                                  false;
-                                return (
-                                  <div
-                                    key={syrup.id}
-                                    className='flex items-center justify-between cursor-pointer'
-                                    onClick={() => {
-                                      const selectedSyrups =
-                                        item.selectedSyrups || [];
-                                      const newSelected = isSelected
-                                        ? selectedSyrups.filter(
-                                            id => id !== syrup.id
-                                          )
-                                        : [...selectedSyrups, syrup.id];
-                                      handleSyrupChange(index, newSelected);
-                                    }}
-                                  >
-                                    <div className='flex items-center gap-2 min-w-0'>
-                                      <div
-                                        className={cn(
-                                          'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
-                                          isSelected
-                                            ? 'border-green-500 bg-green-500/10'
-                                            : 'border-gray-400 hover:border-gray-300'
-                                        )}
-                                      >
-                                        {isSelected && (
-                                          <CircleCheckBig className='h-3 w-3 text-green-500' />
-                                        )}
-                                      </div>
-                                      <span
-                                        className={cn(
-                                          'text-sm truncate',
-                                          isSelected
-                                            ? 'text-green-300'
-                                            : 'text-gray-300'
-                                        )}
-                                      >
-                                        {syrup.name}
-                                      </span>
-                                    </div>
-                                    <span
-                                      className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${
-                                        isSelected
-                                          ? 'text-green-500'
-                                          : 'text-yellow-200'
-                                      }`}
-                                    >
-                                      {isSelected ? 'Не надо' : 'Нужно'}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className='flex items-center gap-2 flex-wrap'>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className={cn(
-                                      'rounded-full flex-shrink-0',
-                                      item.status === 'none' &&
-                                        'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                                    )}
-                                    onClick={() =>
-                                      handleStatusChange(index, 'none')
-                                    }
-                                  >
-                                    <X className='h-5 w-5' />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Не пополнено</p>
-                                </TooltipContent>
-                              </Tooltip>
-
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className={cn(
-                                      'rounded-full flex-shrink-0',
-                                      item.status === 'partial' &&
-                                        'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                                    )}
-                                    onClick={() =>
-                                      handleStatusChange(index, 'partial')
-                                    }
-                                  >
-                                    <Pencil className='h-5 w-5' />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Пополнено частично</p>
-                                </TooltipContent>
-                              </Tooltip>
-
-                              {item.status === 'partial' && (
-                                <div className='ml-2'>
-                                  <div className='flex items-center gap-1 flex-wrap'>
+                            <>
+                              <div className='flex items-center gap-2 flex-wrap'>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
                                     <Button
-                                      variant='outline'
+                                      variant='ghost'
                                       size='icon'
-                                      className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
-                                      onClick={() => {
-                                        const current =
-                                          loadedAmounts[index] ?? 0;
-                                        handleAmountChange(
-                                          index,
-                                          (current - 1).toString()
-                                        );
-                                      }}
+                                      className={cn(
+                                        'rounded-full flex-shrink-0',
+                                        item.status === 'none' &&
+                                          'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                      )}
+                                      onClick={() =>
+                                        handleStatusChange(index, 'none')
+                                      }
                                     >
-                                      -
+                                      <X className='h-5 w-5' />
                                     </Button>
-                                    <div className='w-20 min-w-20'>
-                                      <Input
-                                        type='number'
-                                        value={
-                                          loadedAmounts[index]?.toString() ??
-                                          '0'
-                                        }
-                                        onChange={e =>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Не пополнено</p>
+                                  </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant='ghost'
+                                      size='icon'
+                                      className={cn(
+                                        'rounded-full flex-shrink-0',
+                                        item.status === 'partial' &&
+                                          'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                      )}
+                                      onClick={() =>
+                                        handleStatusChange(index, 'partial')
+                                      }
+                                    >
+                                      <Pencil className='h-5 w-5' />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Пополнено частично</p>
+                                  </TooltipContent>
+                                </Tooltip>
+
+                                {item.status === 'partial' && (
+                                  <div className='ml-2'>
+                                    <div className='flex items-center gap-1 flex-wrap'>
+                                      <Button
+                                        variant='outline'
+                                        size='icon'
+                                        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                        onClick={() => {
+                                          const current =
+                                            loadedAmounts[index] ?? 0;
                                           handleAmountChange(
                                             index,
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder={item.amount?.toString()}
-                                        className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
-                                        inputMode='numeric'
-                                        autoComplete='off'
-                                      />
+                                            (current - 1).toString()
+                                          );
+                                        }}
+                                      >
+                                        -
+                                      </Button>
+                                      <div className='w-20 min-w-20'>
+                                        <Input
+                                          type='number'
+                                          value={
+                                            loadedAmounts[index]?.toString() ??
+                                            '0'
+                                          }
+                                          onChange={e =>
+                                            handleAmountChange(
+                                              index,
+                                              e.target.value
+                                            )
+                                          }
+                                          placeholder={item.amount?.toString()}
+                                          className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
+                                          inputMode='numeric'
+                                          autoComplete='off'
+                                        />
+                                      </div>
+                                      <Button
+                                        variant='outline'
+                                        size='icon'
+                                        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                        onClick={() => {
+                                          const current =
+                                            loadedAmounts[index] ?? 0;
+                                          handleAmountChange(
+                                            index,
+                                            (current + 1).toString()
+                                          );
+                                        }}
+                                      >
+                                        +
+                                      </Button>
                                     </div>
-                                    <Button
-                                      variant='outline'
-                                      size='icon'
-                                      className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
-                                      onClick={() => {
-                                        const current =
-                                          loadedAmounts[index] ?? 0;
-                                        handleAmountChange(
-                                          index,
-                                          (current + 1).toString()
-                                        );
-                                      }}
-                                    >
-                                      +
-                                    </Button>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </TooltipProvider>
+                    );
+                  })}
+                </TooltipProvider>
+              </div>
+            </div>
+          )}
+        </CardContent>
+        {showPlanogramDialog && (
+          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+            <div className='bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4'>
+              <h3 className='text-lg font-semibold text-white mb-4'>
+                {planogramDialogType === 'save'
+                  ? 'Сохранить планограмму'
+                  : 'Удалить планограмму'}
+              </h3>
+              <p className='text-gray-300 mb-6'>
+                {planogramDialogType === 'save'
+                  ? 'Вы уверены, что хотите сохранить текущую планограмму как эталонную? Существующая сохранённая планограмма будет перезаписана.'
+                  : 'Вы уверены, что хотите удалить сохранённую планограмму? После удаления планограмма будет генерироваться из продаж.'}
+              </p>
+              <div className='flex justify-end gap-3'>
+                <Button
+                  variant='outline'
+                  onClick={() =>
+                    dispatch({
+                      type: 'SET_SHOW_PLANOGRAM_DIALOG',
+                      payload: { show: false, type: null },
+                    })
+                  }
+                  className='border-gray-600 text-gray-300'
+                >
+                  Отмена
+                </Button>
+                <Button
+                  onClick={
+                    planogramDialogType === 'save'
+                      ? confirmSavePlanogram
+                      : confirmDeletePlanogram
+                  }
+                  className={
+                    planogramDialogType === 'save'
+                      ? 'bg-purple-600 hover:bg-purple-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }
+                  disabled={savingPlanogram}
+                >
+                  {savingPlanogram ? (
+                    <Loader2 className='animate-spin mr-2 h-4 w-4' />
+                  ) : null}
+                  {planogramDialogType === 'save' ? 'Сохранить' : 'Удалить'}
+                </Button>
+              </div>
             </div>
           </div>
-        )}
-      </CardContent>
-      {showPlanogramDialog && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-          <div className='bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4'>
-            <h3 className='text-lg font-semibold text-white mb-4'>
-              {planogramDialogType === 'save'
-                ? 'Сохранить планограмму'
-                : 'Удалить планограмму'}
-            </h3>
-            <p className='text-gray-300 mb-6'>
-              {planogramDialogType === 'save'
-                ? 'Вы уверены, что хотите сохранить текущую планограмму как эталонную? Существующая сохранённая планограмма будет перезаписана.'
-                : 'Вы уверены, что хотите удалить сохранённую планограмму? После удаления планограмма будет генерироваться из продаж.'}
-            </p>
-            <div className='flex justify-end gap-3'>
-              <Button
-                variant='outline'
-                onClick={() =>
-                  dispatch({
-                    type: 'SET_SHOW_PLANOGRAM_DIALOG',
-                    payload: { show: false, type: null },
-                  })
-                }
-                className='border-gray-600 text-gray-300'
-              >
-                Отмена
-              </Button>
-              <Button
-                onClick={
-                  planogramDialogType === 'save'
-                    ? confirmSavePlanogram
-                    : confirmDeletePlanogram
-                }
-                className={
-                  planogramDialogType === 'save'
-                    ? 'bg-purple-600 hover:bg-purple-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                }
-                disabled={savingPlanogram}
-              >
-                {savingPlanogram ? (
-                  <Loader2 className='animate-spin mr-2 h-4 w-4' />
-                ) : null}
-                {planogramDialogType === 'save' ? 'Сохранить' : 'Удалить'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}{' '}
+        )}{' '}
+      </Card>
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -1563,6 +1556,6 @@ export const ShoppingList = ({
           </svg>
         </button>
       )}
-    </Card>
+    </>
   );
 };
