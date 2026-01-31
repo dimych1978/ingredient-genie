@@ -1030,7 +1030,7 @@ export const ShoppingList = ({
           )}
 
           {machineIds.length === 1 && planogram.length > 0 && (
-            <div className='flex justify-between'>
+            <div className='flex flex-col sm:flex-row sm:justify-between gap-2'>
               <Button
                 onClick={handleSavePlanogram}
                 variant='outline'
