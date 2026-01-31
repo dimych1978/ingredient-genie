@@ -1085,14 +1085,29 @@ export const ShoppingList = ({
                   Сохранить пополненные позиции
                 </Button>
               )}
-              <Button
-                onClick={downloadList}
+               <Button
+                onClick={() =>
+                  document
+                    .querySelector('.shopping-list-container')
+                    ?.scrollTo({ top: 0, behavior: 'smooth' })
+                }
                 variant='outline'
-                className='border-gray-600 text-gray-300 hover:bg-gray-800 flex-1'
+                className='border-blue-600 text-blue-300 hover:bg-blue-900/50 flex-1 md:hidden'
               >
-                <Download className='mr-2 h-4 w-4' />
-                Скачать список
-              </Button>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  className='mr-2'
+                >
+                  <path d='M12 19V5M5 12l7-7 7 7' />
+                </svg>
+                Наверх
+              </Button>{' '}
             </div>
 
             <div className='grid gap-2'>
