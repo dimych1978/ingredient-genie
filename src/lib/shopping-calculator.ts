@@ -20,6 +20,23 @@ export function normalizeForPlanogramComparison(name: string): string {
   return name.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+function normalizeApiCellNumber(cellNumber: string): string {
+  // Если число без буквы (1, 2, 3...), добавляем ведущий 0 для 1-9
+  const match = cellNumber.match(/^(\d+)([A-Za-z]*)$/);
+  if (!match) return cellNumber;
+
+  const num = parseInt(match[1], 10);
+  const suffix = match[2];
+
+  // 1-9 → 01-09
+  if (num >= 1 && num <= 9 && suffix === '') {
+    return `0${num}`;
+  }
+
+  // Остальные оставляем как есть: 10, 11, 1A, 1B...
+  return cellNumber;
+}
+
 const getDisplayUnit = (
   apiAmount: number,
   configUnit: 'г' | 'кг' | 'мл' | 'л' | 'шт'
@@ -44,11 +61,12 @@ export const calculateShoppingList = (
   coffeeProductNumbers?: string[],
   isSavedPlanogram?: boolean
 ): ShoppingListItem[] => {
+  console.log("🚀 ~ calculateShoppingList ~ planogram:", planogram)
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';
   console.log('isSavedPlanogram в калькуляторе:', isSavedPlanogram);
 
-  // 1. ОБРАБОТКА БУТМАТОВ - отдельная простая логика
+  // 1. ОБРАБОТКА БУТМАТОВ
   if (machineType === 'bottle') {
     return calculateBottleShoppingList(salesData, overrides, machineId);
   }
@@ -63,13 +81,14 @@ export const calculateShoppingList = (
   const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
   const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
 
-  // 2. Логика для сохраненной планограммы - самая простая и быстрая
+  // 2. Логика для сохраненной планограммы
   if (isSavedPlanogram && planogram && planogram.length > 0) {
     const itemsMap = new Map<string, ShoppingListItem>();
 
     // 2.1 Создаем "карту аппарата" из сохраненной планограммы
     planogram.forEach(entry => {
       const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+      
       if (match) {
         const productNumber = match[1];
         const name = match[2];
@@ -90,9 +109,12 @@ export const calculateShoppingList = (
 
     // 2.2 Накладываем продажи
     salesData.data.forEach(sale => {
-      if (sale.product_number && itemsMap.has(sale.product_number)) {
-        const item = itemsMap.get(sale.product_number)!;
-        item.salesAmount = (item.salesAmount || 0) + sale.number;
+      if (sale.product_number) {
+        const normalizedNumber = normalizeApiCellNumber(sale.product_number);
+        if (itemsMap.has(normalizedNumber)) {
+          const item = itemsMap.get(normalizedNumber)!;
+          item.salesAmount = (item.salesAmount || 0) + sale.number;
+        }
       }
     });
 
@@ -132,6 +154,7 @@ export const calculateShoppingList = (
 
   // 3. Логика, если НЕТ сохраненной планограммы (isSavedPlanogram: false)
   if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
+    console.log("🚀 ~ calculateShoppingList ~ planogram[0].startsWith('AA'):", planogram[0].startsWith('AA'))
     // Логика для аппарата AA
     const name = planogram[0].replace(/^AA\.?\s*/, '');
 
@@ -273,12 +296,16 @@ export const calculateShoppingList = (
     }
 
     // Снеки
-    else if (sale.product_number && itemMap.has(sale.product_number)) {
-      const item = itemMap.get(sale.product_number)!;
-      item.salesAmount = (item.salesAmount || 0) + sale.number;
+    else if (sale.product_number) {
+      const normalizedNumber = normalizeApiCellNumber(sale.product_number);
+
+      if (itemMap.has(normalizedNumber)) {
+        const item = itemMap.get(normalizedNumber)!;
+        item.salesAmount = (item.salesAmount || 0) + sale.number;
+      }
     }
   });
-    console.log("🚀 ~ calculateShoppingList ~ overrides:", overrides)
+  console.log('🚀 ~ calculateShoppingList ~ overrides:', overrides);
 
   // 3.4. Накладываем остатки из Redis
   Object.entries(overrides).forEach(([key, override]) => {
@@ -292,7 +319,9 @@ export const calculateShoppingList = (
   });
 
   // 3.5. Финальный расчет и сортировка
+  // 3.5. Финальный расчет и сортировка
   const result: ShoppingListItem[] = [];
+
   itemMap.forEach(item => {
     item.amount = Math.ceil(
       Math.max((item.salesAmount || 0) + (item.previousDeficit || 0))
@@ -300,35 +329,10 @@ export const calculateShoppingList = (
     result.push(item);
   });
 
-  // Сортировка: сначала core, потом по productNumber
   result.sort((a, b) => {
     if (a.isCore && !b.isCore) return -1;
     if (!a.isCore && b.isCore) return 1;
-    if (a.isCore && b.isCore) {
-      const indexA = coreIngredientConfigs.findIndex(c => c.name === a.name);
-      const indexB = coreIngredientConfigs.findIndex(c => c.name === b.name);
-      return indexA - indexB;
-    }
-
-    // Исправленная "естественная" сортировка по productNumber
-    const aPN = a.productNumber || '';
-    const bPN = b.productNumber || '';
-
-    // 1. Сравниваем по номеру полки (первая цифра)
-    const aShelf = parseInt(aPN.substring(0, 1), 10) || Infinity;
-    const bShelf = parseInt(bPN.substring(0, 1), 10) || Infinity;
-    if (aShelf !== bShelf) {
-      return aShelf - bShelf;
-    }
-
-    // 2. Внутри одной полки, числовые ячейки идут перед буквенными
-    const isANumeric = /^\d+$/.test(aPN);
-    const isBNumeric = /^\d+$/.test(bPN);
-    if (isANumeric && !isBNumeric) return -1;
-    if (!isANumeric && isBNumeric) return 1;
-
-    // 3. Если оба числовые или оба буквенные, сравниваем как строки
-    return aPN.localeCompare(bPN);
+    return 0;
   });
 
   return result;
@@ -346,10 +350,13 @@ function calculateBottleShoppingList(
   // Продажи
   salesData.data.forEach(sale => {
     if (!sale.planogram?.name) return;
-    const normalizedName = normalizeBottleName(sale.planogram.name);
-    if (normalizedName) {
-      const current = salesByName.get(normalizedName) || 0;
-      salesByName.set(normalizedName, current + sale.number);
+   
+const apiName = sale.planogram.name;
+
+  const exactMatch = planogramsHardCode.bottle.find(item => item === apiName);
+    if (exactMatch) {
+      const current = salesByName.get(exactMatch) || 0;
+      salesByName.set(exactMatch, current + sale.number);
     }
   });
 
@@ -357,10 +364,10 @@ function calculateBottleShoppingList(
   Object.entries(overrides).forEach(([overrideKey, override]) => {
     if (!overrideKey.startsWith(`${machineId}-`)) return;
     const itemNameFromOverride = overrideKey.replace(`${machineId}-`, '');
-    const normalizedName = normalizeBottleName(itemNameFromOverride);
-    if (normalizedName && override.carryOver) {
-      const current = carryOverByName.get(normalizedName) || 0;
-      carryOverByName.set(normalizedName, current + override.carryOver);
+const exactMatch = planogramsHardCode.bottle.find(item => item === itemNameFromOverride);
+    if (exactMatch && override.carryOver) {
+      const current = carryOverByName.get(exactMatch) || 0;
+      carryOverByName.set(exactMatch, current + override.carryOver);
     }
   });
 

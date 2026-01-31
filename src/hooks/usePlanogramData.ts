@@ -67,10 +67,11 @@ export const usePlanogramData = () => {
         );
         console.log('🚀 ~ usePlanogramData ~ planogramArray:', planogramArray);
 
-        // const sorted = sortPlanogram(planogramArray);
+        // Сортируем сохраненную планограмму
+        const sortedPlanogram = sortPlanogramStrings(planogramArray);
 
         return {
-          planogram: planogramArray,
+          planogram: sortedPlanogram,
           coffeeProductNumbers: [],
           salesThisPeriod: new Map(),
           lastActionDate: null,
@@ -118,6 +119,7 @@ export const usePlanogramData = () => {
       dateFrom.setDate(dateFrom.getDate() - 30);
 
       let salesData: TelemetronSalesResponse;
+
       try {
         salesData = await getSalesByProducts(
           vmId,
@@ -149,7 +151,46 @@ export const usePlanogramData = () => {
         };
       }
 
-      // 5. Генерируем планограмму с учетом продаж за "этот период"
+      // 5. Проверка для кофейных аппаратов
+      if (machineType === 'coffee') {
+        const hasSnackSales = salesData.data.some(
+ item => !item.planogram?.ingredients || item.planogram.ingredients.length === 0        );
+        console.log("🚀 ~ usePlanogramData ~ hasSnackSales:", hasSnackSales)
+
+        if (!hasSnackSales) {
+          console.log(
+            'Неспаренный кофейный аппарат - возвращаем пустую планограмму'
+          );
+          return {
+            planogram: [],
+            coffeeProductNumbers: [],
+            salesThisPeriod,
+            lastActionDate,
+            isLoading: false,
+            error: null,
+            isSavedPlanogram: false,
+          };
+        } else {
+           salesData.data = salesData.data.filter(item => 
+      !item.planogram?.ingredients || item.planogram.ingredients.length === 0
+    );
+    const { planogram, coffeeProductNumbers } =
+            generatePlanogramFromSalesData(salesData, salesThisPeriod);
+    console.log("🚀 ~ usePlanogramData ~ planogram with coffee:", planogram)
+
+          return {
+            planogram,
+            coffeeProductNumbers,
+            salesThisPeriod,
+            lastActionDate,
+            isLoading: false,
+            error: null,
+            isSavedPlanogram: false,
+          };
+        }
+      }
+
+      // 6. Генерируем планограмму с учетом продаж за "этот период"
       const { planogram, coffeeProductNumbers } =
         generatePlanogramFromSalesData(salesData, salesThisPeriod);
 
@@ -170,43 +211,89 @@ export const usePlanogramData = () => {
 };
 
 // Функции сортировки и генерации
-function sortPlanogram(planogram: string[]): string[] {
+export function sortPlanogramStrings(planogram: string[]): string[] {
+  const parse = (str: string) => {
+    // Извлекаем номер из строки "01. Название" или "1A. Название" или "10. Название"
+    const match = str.match(/^(\d+[A-Za-z]?)\./);
+    if (!match) {
+      return { shelf: 0, type: 3, suffix: '', mainNum: 0, original: str };
+    }
+
+    const num = match[1];
+    const numMatch = num.match(/^(\d+)([A-Za-z]*)$/);
+    if (!numMatch) {
+      return { shelf: 0, type: 3, suffix: '', mainNum: 0, original: str };
+    }
+
+    const mainNum = parseInt(numMatch[1], 10);
+    const suffix = numMatch[2];
+
+    // ОПРЕДЕЛЕНИЕ ПОЛКИ: по первой цифре
+    let shelf: number;
+
+    if (suffix === '') {
+      // Для цифровых номеров:
+      if (mainNum >= 1 && mainNum <= 9) {
+        shelf = 0; // полка 0: 01-09
+      } else {
+        shelf = Math.floor(mainNum / 10); // полка: первая цифра
+      }
+    } else {
+      // Для буквенных номеров: полка = первая цифра
+      shelf = Math.floor(mainNum);
+    }
+
+    // ОПРЕДЕЛЕНИЕ ТИПА:
+    // 0 = цифры 1-9 (полка 0)
+    // 1 = десятки (10-19, 20-29, ...) - цифровые номера на полках 1-6
+    // 2 = буквенные номера (1A, 1B, 2A, 2B, ...)
+    let type: number;
+
+    if (suffix === '') {
+      if (mainNum >= 1 && mainNum <= 9) {
+        type = 0; // 01-09
+      } else {
+        type = 1; // 10-19, 20-29, ...
+      }
+    } else {
+      type = 2; // буквенные
+    }
+
+    return {
+      shelf,
+      type,
+      suffix,
+      mainNum,
+      original: str,
+    };
+  };
+
   return planogram.sort((a, b) => {
-    // const aMatch = a.match(/^(\d+)([A-Za-z]*?)\./);
-    // const bMatch = b.match(/^(\d+)([A-Za-z]*?)\./);
-    const aMatch = a.match(/^(\d+)([A-Za-z]*?)/);
-    const bMatch = b.match(/^(\d+)([A-Za-z]*?)/);
-    const aNum = aMatch ? aMatch[0] : '';
-    const bNum = bMatch ? bMatch[0] : '';
-    return naturalProductNumberSort(
-      { product_number: aNum },
-      { product_number: bNum }
-    );
+    const A = parse(a);
+    const B = parse(b);
+
+    // 1. Сначала по полке (0, 1, 2...)
+    if (A.shelf !== B.shelf) {
+      return A.shelf - B.shelf;
+    }
+
+    // 2. Внутри полки: сначала цифры (type=0 или 1), потом буквенные (type=2)
+    if (A.type !== B.type) {
+      return A.type - B.type;
+    }
+
+    // 3. Для одинакового типа сортируем по основному числу
+    if (A.type === 0 || A.type === 1) {
+      // Для цифровых: по числу
+      return A.mainNum - B.mainNum;
+    } else {
+      // Для буквенных: по числу, потом по суффиксу
+      if (A.mainNum !== B.mainNum) {
+        return A.mainNum - B.mainNum;
+      }
+      return A.suffix.localeCompare(B.suffix);
+    }
   });
-}
-
-function naturalProductNumberSort(
-  a: { product_number: string },
-  b: { product_number: string }
-) {
-  // const aMatch = a.product_number.match(/^(\d+)([A-Za-z]*)$/);
-  // const bMatch = b.product_number.match(/^(\d+)([A-Za-z]*)$/);
-  const aMatch = a.product_number.match(/^(\d+)([A-Za-z]*)$/);
-  const bMatch = b.product_number.match(/^(\d+)([A-Za-z]*)$/);
-  const aNum = parseInt(aMatch?.[1] || '0');
-  const bNum = parseInt(bMatch?.[1] || '0');
-
-  if (aNum !== bNum) {
-    return aNum - bNum;
-  }
-
-  const aSuffix = aMatch?.[2] || '';
-  const bSuffix = bMatch?.[2] || '';
-
-  if (aSuffix === '' && bSuffix !== '') return -1;
-  if (aSuffix !== '' && bSuffix === '') return 1;
-
-  return aSuffix.localeCompare(bSuffix);
 }
 
 function generatePlanogramFromSalesData(
@@ -216,50 +303,46 @@ function generatePlanogramFromSalesData(
   console.log('=== generatePlanogramFromSalesData ===');
 
   const coffeeProductNumbers = new Set<string>();
-  console.log(
-    '🚀 ~ generatePlanogramFromSalesData ~ coffeeProductNumbers:',
-    coffeeProductNumbers
-  );
 
   const allAA = salesData.data.every(item => item.product_number === 'AA');
+  console.log("🚀 ~ generatePlanogramFromSalesData ~ allAA:", allAA)
 
-if (allAA) {
-  // 1. Ищем запись с максимальным id (самая свежая)
-  let bestName = 'Товар';
-  let maxId = -1;
-  
-  salesData.data.forEach(item => {
-    const id = item.planogram?.id;
-    if (id && id > maxId) {
-      maxId = id;
-      bestName = item.planogram.name;
-    }
-  });
-  
-  // 2. Если все id = null, берем самое продаваемое название
-  if (maxId === -1) {
-    const salesByName = new Map<string, number>();
+  if (allAA) {
+    let bestName = 'Товар';
+    let maxId = -1;
+
     salesData.data.forEach(item => {
-      const name = item.planogram?.name;
-      if (name) {
-        salesByName.set(name, (salesByName.get(name) || 0) + item.number);
+      const id = item.planogram?.id;
+      if (id && id > maxId) {
+        maxId = id;
+        bestName = item.planogram.name;
       }
     });
-    
-    let maxSales = 0;
-    salesByName.forEach((sales, name) => {
-      if (sales > maxSales) {
-        maxSales = sales;
-        bestName = name;
-      }
-    });
+
+    if (maxId === -1) {
+      const salesByName = new Map<string, number>();
+      salesData.data.forEach(item => {
+        const name = item.planogram?.name;
+        if (name) {
+          salesByName.set(name, (salesByName.get(name) || 0) + item.number);
+        }
+      });
+
+      let maxSales = 0;
+      salesByName.forEach((sales, name) => {
+        if (sales > maxSales) {
+          maxSales = sales;
+          bestName = name;
+        }
+      });
+    }
+
+    return {
+      planogram: [`AA. ${bestName}`],
+      coffeeProductNumbers: [],
+    };
   }
-  
-  return {
-    planogram: [`AA. ${bestName}`],
-    coffeeProductNumbers: [],
-  };
-}
+
   // 1. Собираем все записи
   const itemsByProductNumber = new Map<
     string,
@@ -272,14 +355,8 @@ if (allAA) {
   salesData.data.forEach(item => {
     if (!item.product_number || !item.planogram?.name) return;
 
-    // Запоминаем кофейные напитки
     const hasIngredients =
       item.planogram.ingredients && item.planogram.ingredients.length > 0;
-    console.log(
-      `${item.product_number}. ${item.planogram.name}: ingredients?`,
-      hasIngredients
-    );
-
     if (hasIngredients) {
       coffeeProductNumbers.add(item.product_number);
     }
@@ -287,7 +364,6 @@ if (allAA) {
     const productNumber = item.product_number;
     const originalName = item.planogram.name;
 
-    // Фильтрация мусора
     if (
       originalName === 'пр' ||
       (originalName.toLowerCase().includes('нет данных') &&
@@ -312,60 +388,48 @@ if (allAA) {
     }
   });
 
-  // 2. Выбираем лучший вариант с учетом продаж за "этот период"
+  // 2. Выбираем лучший вариант
   const bestNames = new Map<string, string>();
 
   itemsByProductNumber.forEach((items, productNumber) => {
     if (items.length === 0) return;
-
-    if (items.length === 1) {
-      bestNames.set(productNumber, items[0].originalName);
-      return;
-    }
-
-    // Проверяем продажи за "этот период" для каждого варианта
-    // Ищем вариант, у которого есть продажи в salesThisPeriod
-    let bestItem = null;
-
-    for (const item of items) {
-      const salesInThisPeriod = salesThisPeriod.get(productNumber) || 0;
-      if (salesInThisPeriod > 0) {
-        bestItem = item;
-        break;
-      }
-    }
-
-    if (bestItem) {
-      bestNames.set(productNumber, bestItem.originalName);
-    } else {
-      // Нет продаж за "этот период", берем первый вариант
-      bestNames.set(productNumber, items[0].originalName);
-    }
+    bestNames.set(productNumber, items[0].originalName);
   });
 
-  // 3. Генерируем полную планограмму (72 ячейки)
+  // 3. Генерируем полную планограмму в правильном порядке
   const fullPlanogram: string[] = [];
 
-  for (let shelf = 1; shelf <= 6; shelf++) {
-    for (let i = 0; i <= 9; i++) {
-      const cellNum = shelf * 10 + i;
-      const key = `${cellNum}`;
-      const bestName = bestNames.get(key);
-      if (bestName) fullPlanogram.push(`${key}. ${bestName}`);
-    }
-
-    const letters = ['A', 'B'];
-    for (const letter of letters) {
-      const key = `${shelf}${letter}`;
-      const bestName = bestNames.get(key);
-      if (bestName) fullPlanogram.push(`${key}. ${bestName}`);
+  // ПОЛКА 0: 01-09
+  for (let i = 1; i <= 9; i++) {
+    const key = `${i}`;
+    const bestName = bestNames.get(key);
+    if (bestName) {
+      fullPlanogram.push(`0${i}. ${bestName}`);
     }
   }
 
+  // ПОЛКИ 1-6
+  for (let shelf = 1; shelf <= 6; shelf++) {
+    // Цифровые ячейки: 10-19, 20-29, ...
+    for (let i = 0; i <= 9; i++) {
+      const key = `${shelf}${i}`;
+      const bestName = bestNames.get(key);
+      if (bestName) fullPlanogram.push(`${key}. ${bestName}`);
+    }
+
+    // Буквенные ячейки: 1A, 1B, 2A, 2B, ...
+    const bestNameA = bestNames.get(`${shelf}A`);
+    if (bestNameA) fullPlanogram.push(`${shelf}A. ${bestNameA}`);
+
+    const bestNameB = bestNames.get(`${shelf}B`);
+    if (bestNameB) fullPlanogram.push(`${shelf}B. ${bestNameB}`);
+  }
+
   // 4. Сортируем
-  const sorted = sortPlanogram(fullPlanogram);
+  console.log('до сортировки', fullPlanogram);
+  const sorted = sortPlanogramStrings(fullPlanogram);
+  console.log('после сортировки', sorted);
   console.log('Итоговая планограмма:', sorted.length, 'элементов');
-  console.log('Кофейные productNumbers:', Array.from(coffeeProductNumbers));
 
   return {
     planogram: sorted,

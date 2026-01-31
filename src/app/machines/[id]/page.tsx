@@ -136,14 +136,6 @@ export default function MachineStatusPage() {
     [id, machineData, toast]
   );
 
-  useEffect(() => {
-  if (effectiveStartDate && !isLoading) {
-    // Тут нужно вызвать перезагрузку ShoppingList
-    // Но ShoppingList внутри сам загружает данные при forceLoad=true
-    // Нужно передать какой-то сигнал для перезагрузки
-  }
-}, [effectiveStartDate]);
-
   const refreshTimestamp = useCallback(async (newTimestamp: string) => {
     setEffectiveStartDate(newTimestamp);
   }, []);

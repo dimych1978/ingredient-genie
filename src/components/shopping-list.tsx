@@ -23,6 +23,7 @@ import type {
   ShoppingListItem,
 } from '@/types/telemetron';
 import {
+  deleteSavedPlanogram,
   getLoadingOverrides,
   saveLastSaveTime,
   saveLoadingOverrides,
@@ -97,20 +98,25 @@ interface ShoppingListProps {
 type ShoppingListState = {
   loading: boolean;
   saving: boolean;
+  deleting: boolean;
   shoppingList: ShoppingListItemWithStatus[];
   loadedAmounts: number[];
   planogram: string[];
   coffeeProductNumbers: string[];
   salesThisPeriod: Map<string, number>;
   savingPlanogram: boolean;
+  deletingPlanogram: boolean;
   showPlanogramDialog: boolean;
+  planogramDialogType: 'save' | 'delete' | null;
   hasLoaded: boolean;
   isSavedPlanogram: boolean;
+  isDeletedPlanogram: boolean;
 };
 
 type ShoppingListAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SAVING'; payload: boolean }
+  | { type: 'SET_DELETING'; payload: boolean }
   | { type: 'SET_SHOPPING_LIST'; payload: ShoppingListItemWithStatus[] }
   | {
       type: 'SET_PLANOGRAM_DATA';
@@ -122,7 +128,11 @@ type ShoppingListAction =
       };
     }
   | { type: 'SET_SAVING_PLANOGRAM'; payload: boolean }
-  | { type: 'SET_SHOW_PLANOGRAM_DIALOG'; payload: boolean }
+  | { type: 'SET_DELETING_PLANOGRAM'; payload: boolean }
+  | {
+      type: 'SET_SHOW_PLANOGRAM_DIALOG';
+      payload: { show: boolean; type: 'save' | 'delete' | null };
+    }
   | { type: 'SET_HAS_LOADED'; payload: boolean }
   | { type: 'UPDATE_LOADED_AMOUNTS'; payload: number[] }
   | {
@@ -153,15 +163,19 @@ type ShoppingListAction =
 const initialState: ShoppingListState = {
   loading: false,
   saving: false,
+  deleting: false,
   shoppingList: [],
   loadedAmounts: [],
   planogram: [],
   coffeeProductNumbers: [],
   salesThisPeriod: new Map(),
   savingPlanogram: false,
+  deletingPlanogram: false,
   showPlanogramDialog: false,
+  planogramDialogType: null,
   hasLoaded: false,
   isSavedPlanogram: false,
+  isDeletedPlanogram: false,
 };
 
 function shoppingListReducer(
@@ -173,6 +187,8 @@ function shoppingListReducer(
       return { ...state, loading: action.payload };
     case 'SET_SAVING':
       return { ...state, saving: action.payload };
+    case 'SET_DELETING':
+      return { ...state, deleting: action.payload };
     case 'SET_SHOPPING_LIST': {
       const loadedAmounts = action.payload.map(
         item => item.loadedAmount ?? item.amount
@@ -195,8 +211,14 @@ function shoppingListReducer(
       };
     case 'SET_SAVING_PLANOGRAM':
       return { ...state, savingPlanogram: action.payload };
+    case 'SET_DELETING_PLANOGRAM':
+      return { ...state, deletingPlanogram: action.payload };
     case 'SET_SHOW_PLANOGRAM_DIALOG':
-      return { ...state, showPlanogramDialog: action.payload };
+      return {
+        ...state,
+        showPlanogramDialog: action.payload.show,
+        planogramDialogType: action.payload.type,
+      };
     case 'SET_HAS_LOADED':
       return { ...state, hasLoaded: action.payload };
     case 'UPDATE_LOADED_AMOUNTS': {
@@ -284,6 +306,7 @@ export const ShoppingList = ({
     salesThisPeriod,
     savingPlanogram,
     showPlanogramDialog,
+    planogramDialogType,
     hasLoaded,
     isSavedPlanogram,
   } = state;
@@ -409,9 +432,18 @@ export const ShoppingList = ({
     const machineType = machineData ? getMachineType(machineData) : 'snack';
 
     // Для снековых аппаратов ждем планограмму
-    if (machineType !== 'coffee' && planogramRef.current.length === 0) {
+    if (machineType !== 'coffee' ) {
+      const isAAApparatus = planogramRef.current.length === 1 && 
+                         planogramRef.current[0]?.startsWith('AA');
+      console.log("🚀 ~ ShoppingList ~ isAAApparatus:", isAAApparatus)
+    
+    // Если НЕ AA аппарат и планограмма пустая - ждем
+    if (!isAAApparatus && planogramRef.current.length === 0) {
       console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
       return;
+    }
+      // console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
+      // return;
     }
 
     // ТОЛЬКО проверка на machineIds
@@ -660,20 +692,20 @@ export const ShoppingList = ({
           requiredAmount: item.amount,
           loadedAmount: actualLoadedAmount,
           timestamp: new Date().toISOString(),
-           checked: item.checked,
+          checked: item.checked,
           selectedSizes: item.selectedSizes,
           selectedSyrups: item.selectedSyrups,
         };
 
         if (item.type === 'checkbox') {
-  override.checked = item.checked ?? false;
-  override.checkedType = item.checkedType;
-  override.selectedSizes = item.selectedSizes || [];
-}
+          override.checked = item.checked ?? false;
+          override.checkedType = item.checkedType;
+          override.selectedSizes = item.selectedSizes || [];
+        }
 
-if (item.type === 'select') {
-  override.selectedSyrups = item.selectedSyrups || [];
-}
+        if (item.type === 'select') {
+          override.selectedSyrups = item.selectedSyrups || [];
+        }
 
         if (item.type === 'auto') {
           if (item.status === 'none') {
@@ -734,7 +766,27 @@ if (item.type === 'select') {
       return;
     }
 
-    dispatch({ type: 'SET_SHOW_PLANOGRAM_DIALOG', payload: true });
+    dispatch({
+      type: 'SET_SHOW_PLANOGRAM_DIALOG',
+      payload: { show: true, type: 'save' },
+    });
+  };
+
+  const handleDeletePlanogram = () => {
+    if (machineIds.length !== 1 || planogram.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description:
+          'Для удаления планограммы выберите один аппарат и дождитесь загрузки планограммы.',
+      });
+      return;
+    }
+
+    dispatch({
+      type: 'SET_SHOW_PLANOGRAM_DIALOG',
+      payload: { show: true, type: 'delete' },
+    });
   };
 
   const confirmSavePlanogram = async () => {
@@ -788,7 +840,61 @@ if (item.type === 'select') {
       });
     } finally {
       dispatch({ type: 'SET_SAVING_PLANOGRAM', payload: false });
-      dispatch({ type: 'SET_SHOW_PLANOGRAM_DIALOG', payload: false });
+      dispatch({
+        type: 'SET_SHOW_PLANOGRAM_DIALOG',
+        payload: { show: false, type: null },
+      });
+    }
+  };
+
+  const confirmDeletePlanogram = async () => {
+    const machineId = machineIds[0];
+    console.log('🚀 ~ confirmDeletePlanogram ~ machineId:', machineId);
+
+    dispatch({ type: 'SET_DELETING_PLANOGRAM', payload: true });
+
+    try {
+      const planogramObject: Record<string, string> = {};
+
+      const result = await deleteSavedPlanogram(machineId);
+      console.log('🚀 ~ confirmDeletePlanogram ~ result:', result);
+
+      if (result.success) {
+        toast({
+          title: 'Планограмма удалена',
+          description: 'Текущая планограмма удалена',
+        });
+        // Обновляем кеш
+        planogramCache.current = {
+          machineId,
+          data: {
+            planogram,
+            salesThisPeriod,
+            coffeeProductNumbers,
+            isSavedPlanogram,
+          },
+          timestamp: Date.now(),
+        };
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось удалить планограмму.',
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка удаления планограммы:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка',
+        description: 'Произошла ошибка при удалении планограммы.',
+      });
+    } finally {
+      dispatch({ type: 'SET_DELETING_PLANOGRAM', payload: false });
+      dispatch({
+        type: 'SET_SHOW_PLANOGRAM_DIALOG',
+        payload: { show: false, type: null },
+      });
     }
   };
 
@@ -859,7 +965,6 @@ if (item.type === 'select') {
           <p className='text-gray-400 text-sm pt-2'>{description}</p>
         )}
       </CardHeader>
-
       <CardContent className='p-4 space-y-4'>
         {showControls && (
           <div className='space-y-4'>
@@ -923,19 +1028,34 @@ if (item.type === 'select') {
         )}
 
         {machineIds.length === 1 && planogram.length > 0 && (
-          <Button
-            onClick={handleSavePlanogram}
-            variant='outline'
-            className='border-purple-600 text-purple-300 hover:bg-purple-900/50'
-            disabled={savingPlanogram}
-          >
-            {savingPlanogram ? (
-              <Loader2 className='animate-spin mr-2 h-4 w-4' />
-            ) : (
-              <Bookmark className='mr-2 h-4 w-4' />
-            )}
-            Сохранить планограмму
-          </Button>
+          <div className='flex justify-between'>
+            <Button
+              onClick={handleSavePlanogram}
+              variant='outline'
+              className='border-purple-600 text-purple-300 hover:bg-purple-900/50'
+              disabled={savingPlanogram}
+            >
+              {savingPlanogram ? (
+                <Loader2 className='animate-spin mr-2 h-4 w-4' />
+              ) : (
+                <Bookmark className='mr-2 h-4 w-4' />
+              )}
+              Сохранить планограмму
+            </Button>
+            <Button
+              onClick={handleDeletePlanogram}
+              variant='outline'
+              className='border-red-600 text-red-300 hover:bg-red-900/50'
+              disabled={savingPlanogram}
+            >
+              {savingPlanogram ? (
+                <Loader2 className='animate-spin mr-2 h-4 w-4' />
+              ) : (
+                <Bookmark className='mr-2 h-4 w-4' />
+              )}
+              Удалить планограмму
+            </Button>
+          </div>
         )}
 
         {loading && (
@@ -986,12 +1106,13 @@ if (item.type === 'select') {
                   const hasDeficit = deficit > 0;
                   const hasSurplus = deficit < 0;
 
-                  const isCheckboxItem =
-                    item.type === 'checkbox';
+                  const isCheckboxItem = item.type === 'checkbox';
                   const isSyrupItem = item.type === 'select';
 
-                  const isCupOrLid = ['стакан', 'крышк'].some(name =>
-                    item.name.toLowerCase().includes(name) && !item.name.includes("80")
+                  const isCupOrLid = ['стакан', 'крышк'].some(
+                    name =>
+                      item.name.toLowerCase().includes(name) &&
+                      !item.name.includes('80')
                   );
 
                   return (
@@ -1356,17 +1477,18 @@ if (item.type === 'select') {
           </div>
         )}
       </CardContent>
-
       {showPlanogramDialog && (
         <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
           <div className='bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4'>
             <h3 className='text-lg font-semibold text-white mb-4'>
-              Сохранить планограмму
+              {planogramDialogType === 'save'
+                ? 'Сохранить планограмму'
+                : 'Удалить планограмму'}
             </h3>
             <p className='text-gray-300 mb-6'>
-              Вы уверены, что хотите сохранить текущую планограмму как
-              эталонную? Существующая сохранённая планограмма будет
-              перезаписана.
+              {planogramDialogType === 'save'
+                ? 'Вы уверены, что хотите сохранить текущую планограмму как эталонную? Существующая сохранённая планограмма будет перезаписана.'
+                : 'Вы уверены, что хотите удалить сохранённую планограмму? После удаления планограмма будет генерироваться из продаж.'}
             </p>
             <div className='flex justify-end gap-3'>
               <Button
@@ -1374,7 +1496,7 @@ if (item.type === 'select') {
                 onClick={() =>
                   dispatch({
                     type: 'SET_SHOW_PLANOGRAM_DIALOG',
-                    payload: false,
+                    payload: { show: false, type: null },
                   })
                 }
                 className='border-gray-600 text-gray-300'
@@ -1382,19 +1504,27 @@ if (item.type === 'select') {
                 Отмена
               </Button>
               <Button
-                onClick={confirmSavePlanogram}
-                className='bg-purple-600 hover:bg-purple-700'
+                onClick={
+                  planogramDialogType === 'save'
+                    ? confirmSavePlanogram
+                    : confirmDeletePlanogram
+                }
+                className={
+                  planogramDialogType === 'save'
+                    ? 'bg-purple-600 hover:bg-purple-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }
                 disabled={savingPlanogram}
               >
                 {savingPlanogram ? (
                   <Loader2 className='animate-spin mr-2 h-4 w-4' />
                 ) : null}
-                Сохранить
+                {planogramDialogType === 'save' ? 'Сохранить' : 'Удалить'}
               </Button>
             </div>
           </div>
         </div>
-      )}
+      )}{' '}
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

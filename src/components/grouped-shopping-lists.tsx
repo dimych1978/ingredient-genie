@@ -16,8 +16,6 @@ export const GroupedShoppingLists = ({
   onSaveChanges,
 }: GroupedShoppingListsProps) => {
   const [showLists, setShowLists] = useState(false);
-  // const [actualDates, setActualDates] = useState(specialMachineDates);
-
   const groupedMachines = useMemo(() => {
     const groups: Record<string, string[]> = {
       coffee: [],
@@ -50,18 +48,6 @@ export const GroupedShoppingLists = ({
     // Потом показываем списки
     setShowLists(prev => !prev);
   }, [machineIds.length, onSaveChanges]);
-
-// useEffect(() => {
-//     const loadDates = async () => {
-//       const dates: Record<string, string> = {};
-//       for (const id of machineIds) {
-//         const date = await getLastTelemetronPress(id);
-//         if (date) dates[id] = date;
-//       }
-//       setActualDates(dates);
-//     };
-//     if (machineIds.length > 0) loadDates();
-//   }, [machineIds]);
 
   return (
     <div className="space-y-6">

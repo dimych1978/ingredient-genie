@@ -86,7 +86,7 @@ async function handleTelemetronRequest(
     
     // Получаем Bearer токен
     const token = await getTelemetronToken();
-    // console.log("🚀 ~ handleTelemetronRequest ~ token:", token)
+    console.log("🚀 ~ handleTelemetronRequest ~ token:", token)
     
     const headers: HeadersInit = {
       'Authorization': `Bearer ${token}`,
