@@ -36,6 +36,7 @@ interface GroupedShoppingListsProps {
   machineIds: string[];
   specialMachineDates: Record<string, string>;
   onSaveChanges: () => void;
+  aaMachineIds: Set<string>;
 }
 
 // Упрощенный тип для внутреннего использования
@@ -50,6 +51,7 @@ export const GroupedShoppingLists = ({
   machineIds,
   specialMachineDates,
   onSaveChanges,
+  aaMachineIds,
 }: GroupedShoppingListsProps) => {
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,9 @@ export const GroupedShoppingLists = ({
     setLoading(true);
     setCombinedList([]);
 
-    if (machineIds.length > 0) {
+    const machineIdsToProcess = machineIds.filter(id => !aaMachineIds.has(id));
+
+    if (machineIdsToProcess.length > 0) {
       onSaveChanges();
     }
 
@@ -75,7 +79,7 @@ export const GroupedShoppingLists = ({
       const allDates: Record<string, string> = { ...specialMachineDates };
       const dateTo = new Date();
 
-      const overviewPromises = machineIds
+      const overviewPromises = machineIdsToProcess
         .filter(id => !allDates[id])
         .map(async id => {
           try {
@@ -83,16 +87,9 @@ export const GroupedShoppingLists = ({
             const lastCollection = overview.data?.cache?.last_collection_at;
             if (lastCollection) {
               allDates[id] = lastCollection;
-            } else {
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              allDates[id] = yesterday.toISOString();
             }
           } catch (e) {
             console.error(`Ошибка получения overview для ${id}:`, e);
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            allDates[id] = yesterday.toISOString();
           }
         });
 
@@ -100,7 +97,7 @@ export const GroupedShoppingLists = ({
 
       // 2. Загрузить все продажи с правильными датами, дополнив их machineId
       const allSales: (TelemetronSaleItem & { machineId: string })[] = [];
-      const salesPromises = machineIds.map(async id => {
+      const salesPromises = machineIdsToProcess.map(async id => {
         const dateFrom = allDates[id];
         if (dateFrom) {
           try {
@@ -175,7 +172,7 @@ export const GroupedShoppingLists = ({
         const override = allOverrides[key];
         const machineIdFromFile = key.split('-')[0];
 
-        if (machineIds.includes(machineIdFromFile)) {
+        if (machineIdsToProcess.includes(machineIdFromFile)) {
           const name = key.substring(machineIdFromFile.length + 1);
           const carryOver = override.carryOver || 0;
 
@@ -248,7 +245,11 @@ export const GroupedShoppingLists = ({
     getMachineOverview,
     getSalesByProducts,
     showList,
+    aaMachineIds,
   ]);
+
+  const machineIdsToProcessCount = machineIds.filter(id => !aaMachineIds.has(id)).length;
+
 
   return (
     <div className="space-y-6">
@@ -256,8 +257,8 @@ export const GroupedShoppingLists = ({
         <CardHeader>
           <CardTitle>Формирование общего заказа</CardTitle>
           <CardDescription>
-            {machineIds.length > 0
-              ? `Нажмите кнопку, чтобы создать сводный список по ${machineIds.length} аппаратам.`
+             {machineIds.length > 0
+              ? `Нажмите, чтобы создать сводный список по ${machineIdsToProcessCount} аппаратам (за исключением аппаратов без планограммы).`
               : 'Сначала добавьте аппараты в список выше.'}
           </CardDescription>
         </CardHeader>
@@ -265,7 +266,7 @@ export const GroupedShoppingLists = ({
           <Button
             onClick={handleGenerateClick}
             className="w-full"
-            disabled={machineIds.length === 0 || loading}
+            disabled={machineIdsToProcessCount === 0 || loading}
           >
             {loading ? (
               <>
@@ -286,7 +287,7 @@ export const GroupedShoppingLists = ({
           <CardHeader>
             <CardTitle>Общий заказ</CardTitle>
             <CardDescription>
-              Сводный список на основе продаж и остатков для {machineIds.length}{' '}
+              Сводный список на основе продаж и остатков для {machineIdsToProcessCount}{' '}
               апп.
             </CardDescription>
           </CardHeader>

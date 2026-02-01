@@ -10,14 +10,6 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { GroupedShoppingLists } from '@/components/grouped-shopping-lists';
 import {
@@ -67,6 +59,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
+import { TelemetronSaleItem } from '@/types/telemetron';
 
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -82,9 +75,10 @@ export const TomorrowsMachines = () => {
     Record<string, string>
   >({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [aaMachineIds, setAaMachineIds] = useState<Set<string>>(new Set());
 
   const { toast } = useToast();
-  const { getMachineOverview } = useTelemetronApi();
+  const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
 
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [dialogState, setDialogState] = useState<{
@@ -111,8 +105,39 @@ export const TomorrowsMachines = () => {
         const loadedIds = scheduleIds || [];
         const finalDates = { ...initialSpecialDates };
 
+        // Проверяем аппараты на статус "AA" (без планограммы)
+        const checkAAPromises = loadedIds.map(async id => {
+          try {
+            const dateTo = new Date();
+            const dateFrom = new Date();
+            dateFrom.setDate(dateTo.getDate() - 7); // Проверяем продажи за последнюю неделю
+            const salesData = await getSalesByProducts(
+              id,
+              format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
+              format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+            );
+            if (
+              salesData.data &&
+              salesData.data.length > 0 &&
+              salesData.data.every((item: TelemetronSaleItem) => item.product_number === 'AA')
+            ) {
+              return id;
+            }
+          } catch (e) {
+            console.error(`Ошибка проверки АА статуса для ${id}:`, e);
+          }
+          return null;
+        });
+
+        const aaResults = await Promise.all(checkAAPromises);
+        const newAaMachineIds = new Set(
+          aaResults.filter((id): id is string => id !== null)
+        );
+        setAaMachineIds(newAaMachineIds);
+
+        // Запрашиваем даты только для тех аппаратов, у которых их нет и которые не "AA"
         const overviewPromises = loadedIds
-          .filter(id => !finalDates[id]) // Запрашиваем даты только для тех, у кого их нет
+          .filter(id => !finalDates[id] && !newAaMachineIds.has(id))
           .map(async id => {
             try {
               const overview = await getMachineOverview(id);
@@ -143,7 +168,7 @@ export const TomorrowsMachines = () => {
         setIsLoading(false);
       }
     },
-    [toast, getMachineOverview]
+    [toast, getMachineOverview, getSalesByProducts]
   );
 
   useEffect(() => {
@@ -226,37 +251,54 @@ export const TomorrowsMachines = () => {
 
   const handleAddMachineClick = useCallback(async () => {
     if (!machineToAdd) return;
+    setIsLoading(true);
 
-    const machine = allMachines.find(m => m.id === machineToAdd);
-    const special = isSpecialMachine(machine);
-
-    // Logic for special machines (e.g. Krea, TCN)
-    if (special) {
-      const lastDateString = specialMachineDates[machineToAdd];
-      const lastDate = lastDateString ? new Date(lastDateString) : null;
-      if (lastDate) {
-        setDialogState({ open: true, machineId: machineToAdd, lastDate });
-      } else {
-        setCalendarState({ open: true, machineId: machineToAdd });
-      }
-      return;
-    }
-
-    // Logic for regular machines (e.g. Opera, Kikko)
     try {
-      setIsLoading(true);
+      // Сначала проверяем на статус "AA"
+      const dateTo = new Date();
+      const dateFrom = new Date();
+      dateFrom.setDate(dateTo.getDate() - 7);
+      const salesData = await getSalesByProducts(
+        machineToAdd,
+        format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
+        format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+      );
+
+      if (
+        salesData.data &&
+        salesData.data.length > 0 &&
+        salesData.data.every((item: TelemetronSaleItem) => item.product_number === 'AA')
+      ) {
+        setAaMachineIds(prev => new Set(prev).add(machineToAdd));
+        addMachineToDay(machineToAdd);
+        return; // Выходим, так как аппарат AA добавлен
+      }
+
+      // Если не AA, продолжаем обычную логику
+      const machine = allMachines.find(m => m.id === machineToAdd);
+      const special = isSpecialMachine(machine);
+
+      if (special) {
+        const lastDateString = specialMachineDates[machineToAdd];
+        const lastDate = lastDateString ? new Date(lastDateString) : null;
+        if (lastDate) {
+          setDialogState({ open: true, machineId: machineToAdd, lastDate });
+        } else {
+          setCalendarState({ open: true, machineId: machineToAdd });
+        }
+        return;
+      }
+
       const overview = await getMachineOverview(machineToAdd);
       const lastCollection = overview.data?.cache?.last_collection_at;
 
       if (lastCollection) {
-        // Date found, add machine to list
         setSpecialMachineDates(prev => ({
           ...prev,
           [machineToAdd]: lastCollection,
         }));
         addMachineToDay(machineToAdd);
       } else {
-        // No date found, prompt user for manual input
         toast({
           title: 'Требуется указать дату',
           description: `Для аппарата #${machineToAdd} не найдена дата последней инкассации. Пожалуйста, выберите дату.`,
@@ -278,6 +320,7 @@ export const TomorrowsMachines = () => {
     specialMachineDates,
     addMachineToDay,
     getMachineOverview,
+    getSalesByProducts,
     toast,
   ]);
 
@@ -314,7 +357,6 @@ export const TomorrowsMachines = () => {
           ...prev,
           [machineId]: date.toISOString(),
         }));
-        // Если аппарат еще не в списке, добавляем его
         if (!machineIdsForDay.includes(machineId)) {
           addMachineToDay(machineId);
         }
@@ -415,6 +457,7 @@ export const TomorrowsMachines = () => {
           ) : machinesForDay.length > 0 ? (
             <div className="space-y-3">
               {machinesForDay.map(machine => {
+                const isAaMachine = aaMachineIds.has(machine.id);
                 const serviceDate = specialMachineDates[machine.id];
                 const dateDisplay = serviceDate ? (
                   format(new Date(serviceDate), 'dd.MM.yyyy HH:mm')
@@ -427,20 +470,26 @@ export const TomorrowsMachines = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{machine.name} (#{machine.id})</p>
                       <p className="text-sm text-muted-foreground whitespace-pre-line break-words">{machine.location}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className='text-sm font-medium'>{dateDisplay}</span>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='h-6 w-6 p-0'
-                          onClick={() => {
-                            setCalendarState({ open: true, machineId: machine.id });
-                          }}
-                          title='Изменить дату'
-                        >
-                          <CalendarIcon className='h-3 w-3' />
-                        </Button>
-                      </div>
+                      {isAaMachine ? (
+                        <div className="flex items-center gap-2 mt-2">
+                            <span className='text-sm font-medium text-purple-400'>Аппарат без планограммы (AA)</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 mt-2">
+                            <span className='text-sm font-medium'>{dateDisplay}</span>
+                            <Button
+                            variant='ghost'
+                            size='sm'
+                            className='h-6 w-6 p-0'
+                            onClick={() => {
+                                setCalendarState({ open: true, machineId: machine.id });
+                            }}
+                            title='Изменить дату'
+                            >
+                            <CalendarIcon className='h-3 w-3' />
+                            </Button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
@@ -480,7 +529,7 @@ export const TomorrowsMachines = () => {
                   className='w-full justify-between'
                   disabled={isLoading}
                 >
-                  {isLoading ? (
+                  {isLoading && machineIdsForDay.length === 0 ? (
                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   ) : machineToAdd ? (
                     unselectedMachines.find(
@@ -540,7 +589,7 @@ export const TomorrowsMachines = () => {
               onClick={handleAddMachineClick}
               disabled={!machineToAdd || isLoading}
             >
-              {isLoading && !machineIdsForDay.length ? (
+              {isLoading ? (
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
               ) : (
                 <PlusCircle className='mr-2 h-4 w-4' />
@@ -549,7 +598,6 @@ export const TomorrowsMachines = () => {
             </Button>
           </div>
 
-          {/* Popover for calendar, not tied to the button */}
           <Popover
             open={calendarState.open}
             onOpenChange={open => setCalendarState(prev => ({ ...prev, open }))}
@@ -570,7 +618,6 @@ export const TomorrowsMachines = () => {
               />
             </PopoverContent>
           </Popover>
-          {/* </div> */}
 
           {machineIdsForDay.length > 0 && (
             <div className='mt-4'>
@@ -578,6 +625,7 @@ export const TomorrowsMachines = () => {
                 machineIds={machineIdsForDay}
                 specialMachineDates={specialMachineDates}
                 onSaveChanges={handleSaveChanges}
+                aaMachineIds={aaMachineIds}
               />
             </div>
           )}
