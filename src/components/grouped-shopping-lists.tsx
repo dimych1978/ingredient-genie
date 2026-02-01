@@ -153,7 +153,7 @@ export const GroupedShoppingLists = ({
               coffeeIngredientsMap.set(config.name, current);
             }
           });
-        } else {
+        } else if(machineType !== 'coffee') {
           // Если продажа снека или бутылки
           const name = sale.planogram.name;
           const current = productMap.get(name) || { amount: 0, unit: 'шт' };

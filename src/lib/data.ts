@@ -1588,23 +1588,24 @@ export const planogramsHardCode: Record<string, string[]> = {
 
 export const productReplacements: Record<string, string[]> = {
   // Формат: "Основной товар из планограммы || Альтернатива": ["Вариант 1 из API", "Вариант 2 из API"]
-  "Батончик Смарт Формула, 40гр || Протеин": [
-    "Батончик Смарт Формула, 40гр", 
-    "Батончик Смарт Формула/Протеин",
-    "Протеин"
+  'Батончик Смарт Формула, 40гр || Протеин': [
+    'Батончик Смарт Формула, 40гр',
+    'Батончик Смарт Формула/Протеин',
+    'Протеин',
   ],
-  "Пирожное basker wheels панкейк 36гр || Орион Чоко-пай/Тонди": [
-    "Пирожное basker wheels панкейк 36гр",
-    "Орион Чоко-пай/Тонди"
+  'Пирожное basker wheels панкейк 36гр || Орион Чоко-пай/Тонди': [
+    'Пирожное basker wheels панкейк 36гр',
+    'Орион Чоко-пай/Тонди',
   ],
-  "Добрый/Черноголовка вода+сок в ассорт.": [
-    "Добрый/Черноголовка вода+сок в ассорт."
-  ]
+  'Добрый/Черноголовка вода+сок в ассорт.': [
+    'Добрый/Черноголовка вода+сок в ассорт.',
+  ],
 };
 
 export const alternativeDisplayNames: Record<string, string> = {
-  "Батончик Смарт Формула, 40гр": "Батончик Смарт Формула, 40гр || Протеин",
-  "Пирожное basker wheels панкейк 36гр": "Пирожное basker wheels || Орион Чоко-пай"
+  'Батончик Смарт Формула, 40гр': 'Батончик Смарт Формула, 40гр || Протеин',
+  'Пирожное basker wheels панкейк 36гр':
+    'Пирожное basker wheels || Орион Чоко-пай',
 };
 
 export const getMachineType = (
@@ -1619,8 +1620,8 @@ export const getMachineType = (
   });
 
   if (
-    ['krea', 'opera', 'kikko', 'koro', 'colibri', 'saeco', 'jetinno'].some(type =>
-      model.includes(type)
+    ['krea', 'opera', 'kikko', 'koro', 'colibri', 'saeco', 'jetinno'].some(
+      type => model.includes(type)
     )
   ) {
     return 'coffee';
@@ -1651,8 +1652,8 @@ export const machineIngredients: MachineIngredients = {
     },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     {
-      name: 'капучино ваниль',
-      apiNames: ['Капучино Ваниль'],
+      name: 'ваниль',
+      apiNames: ['Капучино Ваниль', 'ваниль'],
       unit: 'г',
       type: 'auto',
     },
@@ -1664,12 +1665,17 @@ export const machineIngredients: MachineIngredients = {
     },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     {
-      name: 'стаканы 300',
+      name: 'стакан',
       apiNames: ['Стаканчик', 'Стакан'],
       unit: 'шт',
       type: 'auto',
     },
-    { name: 'крышки 80', apiNames: ['Крышка'], unit: 'шт', type: 'checkbox' },
+    {
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышки 80'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
     {
       name: 'размешиватели 125',
       apiNames: ['Размешиватель'],
@@ -1687,13 +1693,13 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'кофе',
-      apiNames: ['Кофе зерновой'],
+      apiNames: ['Кофе зерновой, кофе'],
       unit: 'г',
       type: 'auto',
     },
     {
       name: 'сливки',
-      apiNames: ['Сливки сухие'],
+      apiNames: ['Сливки сухие', 'сливки'],
       unit: 'г',
       type: 'auto',
     },
@@ -1717,29 +1723,17 @@ export const machineIngredients: MachineIngredients = {
     },
     // Чекбоксы
     {
-      name: 'стаканы',
-      apiNames: ['Стаканчик'],
+      name: 'стакан',
+      apiNames: ['Стаканчик', 'Стакан'],
       unit: 'шт',
       type: 'checkbox',
     },
-    // {
-    //   name: 'стаканчик малый',
-    //   apiNames: ['Стаканчик'],
-    //   unit: 'шт',
-    //   type: 'checkbox',
-    // },
     {
       name: 'крышки',
-      apiNames: ['Крышка'],
+      apiNames: ['Крышки', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
     },
-    // {
-    //   name: 'крышка малая',
-    //   apiNames: ['Крышка'],
-    //   unit: 'шт',
-    //   type: 'checkbox',
-    // },
     {
       name: 'размешиватель',
       apiNames: ['Размешиватель'],
@@ -1769,13 +1763,13 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'кофе',
-      apiNames: ['Кофе зерновой'],
+      apiNames: ['Кофе зерновой', 'кофе'],
       unit: 'г',
       type: 'auto',
     },
     {
       name: 'сливки',
-      apiNames: ['Сливки сухие'],
+      apiNames: ['Сливки сухие', 'сливки'],
       unit: 'г',
       type: 'auto',
     },
@@ -1793,14 +1787,14 @@ export const machineIngredients: MachineIngredients = {
     },
     // Чекбоксы
     {
-      name: 'стаканчик малый',
-      apiNames: ['Стаканчик'],
+      name: 'стакан',
+      apiNames: ['Стаканчик', 'Стакан'],
       unit: 'шт',
       type: 'checkbox',
     },
     {
-      name: 'крышка малая',
-      apiNames: ['Крышка'],
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
     },
@@ -1827,29 +1821,29 @@ export const machineIngredients: MachineIngredients = {
   kikko: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
-      name: 'кофе зерновой',
-      apiNames: ['Кофе зерновой'],
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'кофе'],
       unit: 'г',
       type: 'auto',
     },
     {
-      name: 'сливки сухие',
-      apiNames: ['Сливки сухие'],
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
       unit: 'г',
       type: 'auto',
     },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     {
-      name: 'капучино ваниль',
-      apiNames: ['Капучино Ваниль'],
+      name: 'ваниль',
+      apiNames: ['Капучино Ваниль', 'ваниль'],
       unit: 'г',
       type: 'auto',
     },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
     {
-      name: 'стаканчик',
-      apiNames: ['Стаканчик', 'Стакан пластиковый'],
+      name: 'стакан',
+      apiNames: ['Стаканчик', 'Стакан'],
       unit: 'шт',
       type: 'auto',
     },
@@ -1862,17 +1856,32 @@ export const machineIngredients: MachineIngredients = {
   ],
   saeco: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
-    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     {
-      name: 'капучино ваниль',
-      apiNames: ['Капучино Ваниль'],
+      name: 'ваниль',
+      apiNames: ['Капучино Ваниль', 'ваниль'],
       unit: 'г',
       type: 'auto',
     },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
-    { name: 'стаканы 150', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
+    {
+      name: 'стакан',
+      apiNames: ['Стаканчик', 'Стакан'],
+      unit: 'шт',
+      type: 'auto',
+    },
     {
       name: 'размешиватели 105',
       apiNames: ['Размешиватель'],
@@ -1883,18 +1892,39 @@ export const machineIngredients: MachineIngredients = {
   ],
   'saeco-max': [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
-    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     {
-      name: 'капучино ваниль',
-      apiNames: ['Капучино Ваниль'],
+      name: 'ваниль',
+      apiNames: ['Капучино Ваниль', 'ваниль'],
       unit: 'г',
       type: 'auto',
     },
     { name: 'кисель', apiNames: ['Кисель'], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
-    { name: 'стаканы 150', apiNames: ['Стаканчик'], unit: 'шт', type: 'auto' },
+    {
+      name: 'стакан',
+      apiNames: ['Стаканчик', 'Стакан'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышки 80'],
+      unit: 'шт',
+      type: 'auto',
+    },
     {
       name: 'размешиватели 105',
       apiNames: ['Размешиватель'],
@@ -1905,13 +1935,24 @@ export const machineIngredients: MachineIngredients = {
   ],
   colibri: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    { name: 'кофе', apiNames: ['Кофе зерновой'], unit: 'г', type: 'auto' },
-    { name: 'сливки', apiNames: ['Сливки сухие'], unit: 'г', type: 'auto' },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     { name: 'чай', apiNames: ['Чай'], unit: 'г', type: 'auto' },
     {
-      name: 'стаканы пластик',
-      apiNames: ['Стаканчик', 'Стакан пластиковый'],
+      name: 'стакан',
+      apiNames: ['Стаканчик', 'Стакан'],
+
       unit: 'шт',
       type: 'auto',
     },
@@ -1951,18 +1992,31 @@ export const getIngredientConfig = (
   // Нормализуем название из API
   const normalizedApiName = apiName.toLowerCase().trim();
 
-  // Ищем модель
-  const modelKey = Object.keys(machineIngredients).find(model =>
-    machineModel?.toLowerCase().includes(model.toLowerCase())
-  );
+  // Ищем модель в первую очередь
+  if (machineModel) {
+    const modelKey = Object.keys(machineIngredients).find(model =>
+      machineModel.toLowerCase().includes(model.toLowerCase())
+    );
 
-  if (!modelKey) return undefined;
+    if (modelKey) {
+      const found = machineIngredients[modelKey].find(ingredient =>
+        ingredient.apiNames.some(
+          name => name.toLowerCase().trim() === normalizedApiName
+        )
+      );
+      if (found) return found;
+    }
+  }
 
-  // Ищем ингредиент в конфиге модели
-  return machineIngredients[modelKey].find(
-    ingredient =>
-      ingredient.apiNames.some(api =>
-        api.toLowerCase().includes(normalizedApiName)
-      ) || ingredient.name.toLowerCase() === normalizedApiName
-  );
+  // Если не нашли в конкретной модели или модели нет, ищем по всем
+  for (const modelKey in machineIngredients) {
+    const found = machineIngredients[modelKey].find(ingredient =>
+      ingredient.apiNames.some(
+        name => name.toLowerCase().trim() === normalizedApiName
+      )
+    );
+    if (found) return found;
+  }
+
+  return undefined;
 };
