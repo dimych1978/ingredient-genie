@@ -66,6 +66,7 @@ import {
 } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -83,6 +84,7 @@ export const TomorrowsMachines = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const { toast } = useToast();
+  const { getMachineOverview } = useTelemetronApi();
 
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [dialogState, setDialogState] = useState<{
@@ -101,13 +103,36 @@ export const TomorrowsMachines = () => {
       setIsLoading(true);
       try {
         const dateKey = format(date, 'yyyy-MM-dd');
-        const [dates, schedule] = await Promise.all([
+        const [initialSpecialDates, scheduleIds] = await Promise.all([
           getSpecialMachineDates(),
           getDailySchedule(dateKey),
         ]);
-        setSpecialMachineDates(dates);
-        setMachineIdsForDay(schedule || []);
-        setHasUnsavedChanges(false); // Сбрасываем флаг при загрузке
+
+        const loadedIds = scheduleIds || [];
+        const finalDates = { ...initialSpecialDates };
+
+        const overviewPromises = loadedIds
+          .filter(id => !finalDates[id]) // Запрашиваем даты только для тех, у кого их нет
+          .map(async id => {
+            try {
+              const overview = await getMachineOverview(id);
+              const lastCollection = overview.data?.cache?.last_collection_at;
+              if (lastCollection) {
+                finalDates[id] = lastCollection;
+              }
+            } catch (e) {
+              console.error(
+                `Не удалось получить overview для аппарата ${id} при загрузке`,
+                e
+              );
+            }
+          });
+
+        await Promise.all(overviewPromises);
+
+        setSpecialMachineDates(finalDates);
+        setMachineIdsForDay(loadedIds);
+        setHasUnsavedChanges(false);
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -118,54 +143,53 @@ export const TomorrowsMachines = () => {
         setIsLoading(false);
       }
     },
-    [toast]
+    [toast, getMachineOverview]
   );
 
   useEffect(() => {
     loadScheduleForDate(selectedDate);
   }, [selectedDate, loadScheduleForDate]);
 
-  
+  const handleSaveChanges = useCallback(async () => {
+    const dateString = format(selectedDate, 'yyyy-MM-dd');
+    const result = await saveDailySchedule(dateString, machineIdsForDay);
 
-const handleSaveChanges = useCallback(async () => {
-  const dateString = format(selectedDate, 'yyyy-MM-dd');
-  const result = await saveDailySchedule(dateString, machineIdsForDay);
+    if (result.success) {
+      try {
+        const nextWeek = new Date(selectedDate);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        const nextWeekString = format(nextWeek, 'yyyy-MM-dd');
 
-  if (result.success) {
-    try {
-      const nextWeek = new Date(selectedDate);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      const nextWeekString = format(nextWeek, 'yyyy-MM-dd');
+        await saveDailySchedule(nextWeekString, machineIdsForDay);
 
-      await saveDailySchedule(nextWeekString, machineIdsForDay);
+        toast({
+          title: 'Расписание сохранено',
+          description: `Список аппаратов на ${format(
+            selectedDate,
+            'dd.MM.yyyy'
+          )} сохранен. Также сохранено на ${format(nextWeek, 'dd.MM.yyyy')}.`,
+        });
+      } catch (error) {
+        console.error('Ошибка при сохранении на след неделю:', error);
+        toast({
+          title: 'Расписание частично сохранено',
+          description: `Список аппаратов на ${format(
+            selectedDate,
+            'dd.MM.yyyy'
+          )} сохранен. На следующую неделю не удалось сохранить.`,
+        });
+      }
 
+      setHasUnsavedChanges(false);
+    } else {
       toast({
-        title: 'Расписание сохранено',
-        description: `Список аппаратов на ${format(
-          selectedDate,
-          'dd.MM.yyyy'
-        )} сохранен. Также сохранено на ${format(nextWeek, 'dd.MM.yyyy')}.`,
-      });
-    } catch (error) {
-      console.error('Ошибка при сохранении на след неделю:', error);
-      toast({
-        title: 'Расписание частично сохранено',
-        description: `Список аппаратов на ${format(
-          selectedDate,
-          'dd.MM.yyyy'
-        )} сохранен. На следующую неделю не удалось сохранить.`,
+        variant: 'destructive',
+        title: 'Ошибка сохранения',
+        description: 'Не удалось сохранить расписание.',
       });
     }
+  }, [selectedDate, machineIdsForDay, toast]);
 
-    setHasUnsavedChanges(false);
-  } else {
-    toast({
-      variant: 'destructive',
-      title: 'Ошибка сохранения',
-      description: 'Не удалось сохранить расписание.',
-    });
-  }
-}, [selectedDate, machineIdsForDay, toast]);  
   // --- COMPUTED VALUES ---
 
   const machinesForDay = useMemo(() => {
@@ -200,12 +224,13 @@ const handleSaveChanges = useCallback(async () => {
     [machineIdsForDay]
   );
 
-  const handleAddMachineClick = () => {
+  const handleAddMachineClick = useCallback(async () => {
     if (!machineToAdd) return;
 
     const machine = allMachines.find(m => m.id === machineToAdd);
-
     const special = isSpecialMachine(machine);
+
+    // Logic for special machines (e.g. Krea, TCN)
     if (special) {
       const lastDateString = specialMachineDates[machineToAdd];
       const lastDate = lastDateString ? new Date(lastDateString) : null;
@@ -214,10 +239,47 @@ const handleSaveChanges = useCallback(async () => {
       } else {
         setCalendarState({ open: true, machineId: machineToAdd });
       }
-    } else {
-      addMachineToDay(machineToAdd);
+      return;
     }
-  };
+
+    // Logic for regular machines (e.g. Opera, Kikko)
+    try {
+      setIsLoading(true);
+      const overview = await getMachineOverview(machineToAdd);
+      const lastCollection = overview.data?.cache?.last_collection_at;
+
+      if (lastCollection) {
+        // Date found, add machine to list
+        setSpecialMachineDates(prev => ({
+          ...prev,
+          [machineToAdd]: lastCollection,
+        }));
+        addMachineToDay(machineToAdd);
+      } else {
+        // No date found, prompt user for manual input
+        toast({
+          title: 'Требуется указать дату',
+          description: `Для аппарата #${machineToAdd} не найдена дата последней инкассации. Пожалуйста, выберите дату.`,
+        });
+        setCalendarState({ open: true, machineId: machineToAdd });
+      }
+    } catch (error) {
+      console.error('Error fetching machine overview on add:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка API',
+        description: `Не удалось получить данные для аппарата #${machineToAdd}.`,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    machineToAdd,
+    specialMachineDates,
+    addMachineToDay,
+    getMachineOverview,
+    toast,
+  ]);
 
   const handleRemoveMachine = (idToRemove: string) => {
     setMachineIdsForDay(prev => prev.filter(id => id !== idToRemove));
@@ -252,7 +314,10 @@ const handleSaveChanges = useCallback(async () => {
           ...prev,
           [machineId]: date.toISOString(),
         }));
-        addMachineToDay(machineId);
+        // Если аппарат еще не в списке, добавляем его
+        if (!machineIdsForDay.includes(machineId)) {
+          addMachineToDay(machineId);
+        }
         toast({
           title: 'Дата сохранена',
           description: `Начальная дата для аппарата #${machineId} установлена.`,
@@ -288,14 +353,14 @@ const handleSaveChanges = useCallback(async () => {
     <>
       <Card className='shadow-lg'>
         <CardHeader>
-          <CardTitle className='font-headline text-2xl flex items-center justify-between gap-2'>
+          <CardTitle className='font-headline text-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
             <div className='flex items-center gap-2'>
               <CalendarIcon className='h-6 w-6 text-primary' />
               <span>Аппараты на дату</span>
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant='outline' disabled={isLoading}>
+                <Button variant='outline' disabled={isLoading} className="w-full sm:w-auto">
                   <CalendarIcon className='mr-2 h-4 w-4' />
                   {getFormattedDate(selectedDate)}
                 </Button>
@@ -317,7 +382,7 @@ const handleSaveChanges = useCallback(async () => {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <div className='flex gap-2'>
+          <div className='flex flex-col sm:flex-row gap-2'>
             <Button
               onClick={handleSaveChanges}
               disabled={isLoading || !hasUnsavedChanges}
@@ -348,45 +413,56 @@ const handleSaveChanges = useCallback(async () => {
               </p>
             </div>
           ) : machinesForDay.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Название</TableHead>
-                  <TableHead>Местоположение</TableHead>
-                  <TableHead className='text-right'>Действия</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {machinesForDay.map(machine => (
-                  <TableRow key={machine.id}>
-                    <TableCell className='font-mono'>#{machine.id}</TableCell>
-                    <TableCell className='font-medium'>
-                      {machine.name}
-                    </TableCell>
-                    <TableCell className='text-muted-foreground'>
-                      {machine.location}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <Button asChild variant='ghost' size='icon'>
-                        <Link href={`/machines/${machine.id}`}>
-                          <Eye className='h-4 w-4' />
-                          <span className='sr-only'>Посмотреть</span>
-                        </Link>
-                      </Button>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        onClick={() => handleRemoveMachine(machine.id)}
-                      >
-                        <X className='h-4 w-4 text-destructive' />
-                        <span className='sr-only'>Удалить</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-3">
+              {machinesForDay.map(machine => {
+                const serviceDate = specialMachineDates[machine.id];
+                const dateDisplay = serviceDate ? (
+                  format(new Date(serviceDate), 'dd.MM.yyyy HH:mm')
+                ) : (
+                  <span className='text-yellow-500'>Нет данных...</span>
+                );
+
+                return (
+                  <div key={machine.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{machine.name} (#{machine.id})</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line break-words">{machine.location}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className='text-sm font-medium'>{dateDisplay}</span>
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          className='h-6 w-6 p-0'
+                          onClick={() => {
+                            setCalendarState({ open: true, machineId: machine.id });
+                          }}
+                          title='Изменить дату'
+                        >
+                          <CalendarIcon className='h-3 w-3' />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                       <Button asChild variant='ghost' size='icon'>
+                          <Link href={`/machines/${machine.id}`}>
+                            <Eye className='h-4 w-4' />
+                            <span className='sr-only'>Посмотреть</span>
+                          </Link>
+                        </Button>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          onClick={() => handleRemoveMachine(machine.id)}
+                        >
+                          <X className='h-4 w-4 text-destructive' />
+                          <span className='sr-only'>Удалить</span>
+                        </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <p className='text-muted-foreground text-center py-4'>
               На {format(selectedDate, 'dd.MM.yyyy')} аппаратов не
@@ -394,7 +470,7 @@ const handleSaveChanges = useCallback(async () => {
             </p>
           )}
 
-          <div className='flex gap-2 items-center p-2 border rounded-lg'>
+          <div className='flex flex-col sm:flex-row gap-2 items-center p-2 border rounded-lg'>
             <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -402,12 +478,17 @@ const handleSaveChanges = useCallback(async () => {
                   role='combobox'
                   aria-expanded={comboboxOpen}
                   className='w-full justify-between'
+                  disabled={isLoading}
                 >
-                  {machineToAdd
-                    ? unselectedMachines.find(
-                        machine => machine.id === machineToAdd
-                      )?.name
-                    : 'Выберите аппарат для добавления...'}
+                  {isLoading ? (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  ) : machineToAdd ? (
+                    unselectedMachines.find(
+                      machine => machine.id === machineToAdd
+                    )?.name
+                  ) : (
+                    'Выберите аппарат для добавления...'
+                  )}
                   <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                 </Button>
               </PopoverTrigger>
@@ -455,15 +536,15 @@ const handleSaveChanges = useCallback(async () => {
                 </Command>
               </PopoverContent>
             </Popover>
-            {/* <Popover
-              open={calendarState.open}
-              onOpenChange={open =>
-                setCalendarState(prev => ({ ...prev, open }))
-              }
+            <Button
+              onClick={handleAddMachineClick}
+              disabled={!machineToAdd || isLoading}
             >
-              <PopoverTrigger asChild> */}
-            <Button onClick={handleAddMachineClick} disabled={!machineToAdd}>
-              <PlusCircle className='mr-2 h-4 w-4' />
+              {isLoading && !machineIdsForDay.length ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <PlusCircle className='mr-2 h-4 w-4' />
+              )}
               Добавить
             </Button>
           </div>
