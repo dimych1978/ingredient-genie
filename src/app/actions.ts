@@ -213,14 +213,6 @@ export async function readAllOverrides(): Promise<LoadingOverrides> {
     return {};
   }
 }
-async function writeAllOverrides(overrides: LoadingOverrides): Promise<void> {
-  try {
-    await kv.set(OVERRIDES_KEY, overrides);
-  } catch (error) {
-    console.error('Ошибка записи состояний загрузки в KV:', error);
-    throw new Error('Не удалось сохранить состояния.');
-  }
-}
 
 export async function getLoadingOverrides(
   machineId: string

@@ -11,17 +11,12 @@ import {
   getLastSaveTime,
 } from '@/app/actions';
 import { useTelemetronApi } from './useTelemetronApi';
-import {
-  allMachines,
-  getMachineType,
-  machineIngredients,
-  planogramsHardCode,
-} from '@/lib/data';
+import { allMachines, getMachineType, planogramsHardCode } from '@/lib/data';
 
 export type PlanogramData = {
-  planogram: string[]; // Отсортированные строки планограммы
-  salesThisPeriod: Map<string, number>; // Продажи за "этот период" по ячейкам
-  lastActionDate: string | null; // Дата последнего сохранения/нажатия
+  planogram: string[];
+  salesThisPeriod: Map<string, number>;
+  lastActionDate: string | null;
   isLoading: boolean;
   error: string | null;
   coffeeProductNumbers: string[];
@@ -48,7 +43,7 @@ export const usePlanogramData = () => {
           planogram: planogramsHardCode.bottle.map(
             (item, index) => `${index + 1}. ${item}`
           ),
-          coffeeProductNumbers: [], // Бутылочные аппараты не имеют кофейных напитков
+          coffeeProductNumbers: [],
           salesThisPeriod: new Map(),
           lastActionDate: null,
           isLoading: false,
@@ -154,8 +149,11 @@ export const usePlanogramData = () => {
       // 5. Проверка для кофейных аппаратов
       if (machineType === 'coffee') {
         const hasSnackSales = salesData.data.some(
- item => !item.planogram?.ingredients || item.planogram.ingredients.length === 0        );
-        console.log("🚀 ~ usePlanogramData ~ hasSnackSales:", hasSnackSales)
+          item =>
+            !item.planogram?.ingredients ||
+            item.planogram.ingredients.length === 0
+        );
+        console.log('🚀 ~ usePlanogramData ~ hasSnackSales:', hasSnackSales);
 
         if (!hasSnackSales) {
           console.log(
@@ -171,12 +169,17 @@ export const usePlanogramData = () => {
             isSavedPlanogram: false,
           };
         } else {
-           salesData.data = salesData.data.filter(item => 
-      !item.planogram?.ingredients || item.planogram.ingredients.length === 0
-    );
-    const { planogram, coffeeProductNumbers } =
+          salesData.data = salesData.data.filter(
+            item =>
+              !item.planogram?.ingredients ||
+              item.planogram.ingredients.length === 0
+          );
+          const { planogram, coffeeProductNumbers } =
             generatePlanogramFromSalesData(salesData, salesThisPeriod);
-    console.log("🚀 ~ usePlanogramData ~ planogram with coffee:", planogram)
+          console.log(
+            '🚀 ~ usePlanogramData ~ planogram with coffee:',
+            planogram
+          );
 
           return {
             planogram,
@@ -305,7 +308,7 @@ function generatePlanogramFromSalesData(
   const coffeeProductNumbers = new Set<string>();
 
   const allAA = salesData.data.every(item => item.product_number === 'AA');
-  console.log("🚀 ~ generatePlanogramFromSalesData ~ allAA:", allAA)
+  console.log('🚀 ~ generatePlanogramFromSalesData ~ allAA:', allAA);
 
   if (allAA) {
     let bestName = 'Товар';

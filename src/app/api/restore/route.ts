@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
-// Импортируем ваши данные из JSON файла
-// Создадим этот файл на шаге 1.3
+// Импортируем данные из JSON файла
 import overridesData from '@/lib/forRedis.json';
 
 // Функция для восстановления данных

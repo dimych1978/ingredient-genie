@@ -61,7 +61,7 @@ export const calculateShoppingList = (
   coffeeProductNumbers?: string[],
   isSavedPlanogram?: boolean
 ): ShoppingListItem[] => {
-  console.log("🚀 ~ calculateShoppingList ~ planogram:", planogram)
+  console.log('🚀 ~ calculateShoppingList ~ planogram:', planogram);
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';
   console.log('isSavedPlanogram в калькуляторе:', isSavedPlanogram);
@@ -88,7 +88,7 @@ export const calculateShoppingList = (
     // 2.1 Создаем "карту аппарата" из сохраненной планограммы
     planogram.forEach(entry => {
       const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-      
+
       if (match) {
         const productNumber = match[1];
         const name = match[2];
@@ -154,7 +154,10 @@ export const calculateShoppingList = (
 
   // 3. Логика, если НЕТ сохраненной планограммы (isSavedPlanogram: false)
   if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
-    console.log("🚀 ~ calculateShoppingList ~ planogram[0].startsWith('AA'):", planogram[0].startsWith('AA'))
+    console.log(
+      "🚀 ~ calculateShoppingList ~ planogram[0].startsWith('AA'):",
+      planogram[0].startsWith('AA')
+    );
     // Логика для аппарата AA
     const name = planogram[0].replace(/^AA\.?\s*/, '');
 
@@ -262,7 +265,7 @@ export const calculateShoppingList = (
     // 4. Возвращаем ОДИН товар
     return [
       {
-        name: apiName, // ← "Шок.бат. Сникерс 55 гр."
+        name: apiName, 
         productNumber: 'AA',
         planogramName: planogram[0],
         amount: Math.ceil(Math.max(0, totalSales + carryOver)),
@@ -350,10 +353,10 @@ function calculateBottleShoppingList(
   // Продажи
   salesData.data.forEach(sale => {
     if (!sale.planogram?.name) return;
-   
-const apiName = sale.planogram.name;
 
-  const exactMatch = planogramsHardCode.bottle.find(item => item === apiName);
+    const apiName = sale.planogram.name;
+
+    const exactMatch = planogramsHardCode.bottle.find(item => item === apiName);
     if (exactMatch) {
       const current = salesByName.get(exactMatch) || 0;
       salesByName.set(exactMatch, current + sale.number);
@@ -364,7 +367,9 @@ const apiName = sale.planogram.name;
   Object.entries(overrides).forEach(([overrideKey, override]) => {
     if (!overrideKey.startsWith(`${machineId}-`)) return;
     const itemNameFromOverride = overrideKey.replace(`${machineId}-`, '');
-const exactMatch = planogramsHardCode.bottle.find(item => item === itemNameFromOverride);
+    const exactMatch = planogramsHardCode.bottle.find(
+      item => item === itemNameFromOverride
+    );
     if (exactMatch && override.carryOver) {
       const current = carryOverByName.get(exactMatch) || 0;
       carryOverByName.set(exactMatch, current + override.carryOver);

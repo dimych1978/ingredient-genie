@@ -11,7 +11,7 @@ export interface Ingredient {
   apiNames: string[];
   unit: string;
   type: IngredientType;
-  syrupOptions?: SyrupOption[]; // только для сиропа
+  syrupOptions?: SyrupOption[];
 }
 
 export interface TelemetronIngredient {
@@ -56,7 +56,7 @@ export interface LoadingOverride {
   carryOver?: number; // Сколько недополнено (для переноса)
   timestamp?: string;
   checked?: boolean;
-  checkedType?: ('big' | 'small');
+  checkedType?: 'big' | 'small';
   selectedSyrups?: string[];
   selectedSizes?: ('big' | 'small')[];
 }
@@ -71,8 +71,8 @@ export interface ShoppingListItem {
   previousDeficit?: number; // Сколько не доложили в прошлый раз
   salesAmount?: number; // Только продажи (для информации)
   isCore: boolean;
-  type?: IngredientType; // 'auto' | 'checkbox' | 'select'
-  syrupOptions?: SyrupOption[]; // для сиропа
+  type?: IngredientType;
+  syrupOptions?: SyrupOption[];
   checked?: boolean;
   planogramName: string | null;
   productNumber?: string;

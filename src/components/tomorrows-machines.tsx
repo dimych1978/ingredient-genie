@@ -119,7 +119,9 @@ export const TomorrowsMachines = () => {
             if (
               salesData.data &&
               salesData.data.length > 0 &&
-              salesData.data.every((item: TelemetronSaleItem) => item.product_number === 'AA')
+              salesData.data.every(
+                (item: TelemetronSaleItem) => item.product_number === 'AA'
+              )
             ) {
               return id;
             }
@@ -267,7 +269,9 @@ export const TomorrowsMachines = () => {
       if (
         salesData.data &&
         salesData.data.length > 0 &&
-        salesData.data.every((item: TelemetronSaleItem) => item.product_number === 'AA')
+        salesData.data.every(
+          (item: TelemetronSaleItem) => item.product_number === 'AA'
+        )
       ) {
         setAaMachineIds(prev => new Set(prev).add(machineToAdd));
         addMachineToDay(machineToAdd);
@@ -402,7 +406,11 @@ export const TomorrowsMachines = () => {
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant='outline' disabled={isLoading} className="w-full sm:w-auto">
+                <Button
+                  variant='outline'
+                  disabled={isLoading}
+                  className='w-full sm:w-auto'
+                >
                   <CalendarIcon className='mr-2 h-4 w-4' />
                   {getFormattedDate(selectedDate)}
                 </Button>
@@ -455,7 +463,7 @@ export const TomorrowsMachines = () => {
               </p>
             </div>
           ) : machinesForDay.length > 0 ? (
-            <div className="space-y-3">
+            <div className='space-y-3'>
               {machinesForDay.map(machine => {
                 const isAaMachine = aaMachineIds.has(machine.id);
                 const serviceDate = specialMachineDates[machine.id];
@@ -466,47 +474,61 @@ export const TomorrowsMachines = () => {
                 );
 
                 return (
-                  <div key={machine.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{machine.name} (#{machine.id})</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line break-words">{machine.location}</p>
+                  <div
+                    key={machine.id}
+                    className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg'
+                  >
+                    <div className='flex-1 min-w-0'>
+                      <p className='font-medium truncate'>
+                        {machine.name} (#{machine.id})
+                      </p>
+                      <p className='text-sm text-muted-foreground whitespace-pre-line break-words'>
+                        {machine.location}
+                      </p>
                       {isAaMachine ? (
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className='text-sm font-medium text-purple-400'>Аппарат без планограммы (AA)</span>
+                        <div className='flex items-center gap-2 mt-2'>
+                          <span className='text-sm font-medium text-purple-400'>
+                            Аппарат без планограммы (AA)
+                          </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className='text-sm font-medium'>{dateDisplay}</span>
-                            <Button
+                        <div className='flex items-center gap-2 mt-2'>
+                          <span className='text-sm font-medium'>
+                            {dateDisplay}
+                          </span>
+                          <Button
                             variant='ghost'
                             size='sm'
                             className='h-6 w-6 p-0'
                             onClick={() => {
-                                setCalendarState({ open: true, machineId: machine.id });
+                              setCalendarState({
+                                open: true,
+                                machineId: machine.id,
+                              });
                             }}
                             title='Изменить дату'
-                            >
+                          >
                             <CalendarIcon className='h-3 w-3' />
-                            </Button>
+                          </Button>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
-                       <Button asChild variant='ghost' size='icon'>
-                          <Link href={`/machines/${machine.id}`}>
-                            <Eye className='h-4 w-4' />
-                            <span className='sr-only'>Посмотреть</span>
-                          </Link>
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          onClick={() => handleRemoveMachine(machine.id)}
-                        >
-                          <X className='h-4 w-4 text-destructive' />
-                          <span className='sr-only'>Удалить</span>
-                        </Button>
+                    <div className='flex items-center gap-2 self-end sm:self-center flex-shrink-0'>
+                      <Button asChild variant='ghost' size='icon'>
+                        <Link href={`/machines/${machine.id}`}>
+                          <Eye className='h-4 w-4' />
+                          <span className='sr-only'>Посмотреть</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => handleRemoveMachine(machine.id)}
+                      >
+                        <X className='h-4 w-4 text-destructive' />
+                        <span className='sr-only'>Удалить</span>
+                      </Button>
                     </div>
                   </div>
                 );

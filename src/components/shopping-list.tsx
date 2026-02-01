@@ -17,7 +17,6 @@ import {
 import type {
   TelemetronSalesResponse,
   TelemetronSaleItem,
-  LoadingStatus,
   LoadingOverrides,
   LoadingOverride,
   ShoppingListItem,
@@ -32,13 +31,7 @@ import {
   setSpecialMachineDate,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Loader2,
   ShoppingCart,
@@ -286,7 +279,6 @@ export const ShoppingList = ({
   dateFrom,
   showControls = true,
   forceLoad = false,
-  specialMachineDates = {},
   onDateChange,
   onTimestampUpdate,
   sort = 'grouped',
@@ -412,7 +404,7 @@ export const ShoppingList = ({
     return () => {
       isMounted = false;
     };
-  }, [machineIds.join('-')]); // Только при изменении machineIds
+  }, [machineIds.join('-')]);
 
   // Кнопка для поднятия наверх
   useEffect(() => {
@@ -443,8 +435,6 @@ export const ShoppingList = ({
         console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
         return;
       }
-      // console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
-      // return;
     }
 
     // ТОЛЬКО проверка на machineIds
@@ -492,8 +482,6 @@ export const ShoppingList = ({
           console.error(`Ошибка для аппарата ${vmId}:`, e);
         }
       }
-
-      const machineType = machineData ? getMachineType(machineData) : 'snack';
 
       const calculatedList = calculateShoppingList(
         { data: allSales },
@@ -1539,7 +1527,7 @@ export const ShoppingList = ({
           className={cn(
             'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
             'flex items-center justify-center z-50',
-            'md:hidden' // Только на мобильных
+            'md:hidden'
           )}
           aria-label='Наверх'
         >

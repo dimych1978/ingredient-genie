@@ -14,7 +14,7 @@ let tokenCache: { token: string; expiry: number } | null = null;
 async function getTelemetronToken(): Promise<string> {
   const username = process.env.TELEMETRON_USERNAME;
   const password = process.env.TELEMETRON_PASSWORD;
-  
+
   if (!username || !password) {
     console.error('Telemetron credentials missing in environment');
     throw new Error('Telemetron credentials not configured');
@@ -27,14 +27,14 @@ async function getTelemetronToken(): Promise<string> {
   }
 
   console.log('Requesting new token from Telemetron...');
-  
+
   try {
     const tokenResponse = await fetch(`${TELEMETRON_BASE_URL}/api/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Token-Applicant': 'site'
+        Accept: 'application/json',
+        'X-Token-Applicant': 'site',
       },
       body: JSON.stringify({
         grant_type: 'password',
@@ -43,27 +43,32 @@ async function getTelemetronToken(): Promise<string> {
         username: username,
         password: password,
         scope: '',
-        lang: 'ru'
-      })
+        lang: 'ru',
+      }),
     });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('Token request failed:', tokenResponse.status, errorText);
-      throw new Error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
+      throw new Error(
+        `Token request failed: ${tokenResponse.status} - ${errorText}`
+      );
     }
 
     const tokenData = await tokenResponse.json();
-    
+
     // Сохраняем в кэш
     tokenCache = {
       token: tokenData.access_token,
-      expiry: Date.now() + (tokenData.expires_in * 1000)
+      expiry: Date.now() + tokenData.expires_in * 1000,
     };
-    
-    console.log('Token obtained successfully, expires in:', tokenData.expires_in, 'seconds');
+
+    console.log(
+      'Token obtained successfully, expires in:',
+      tokenData.expires_in,
+      'seconds'
+    );
     return tokenData.access_token;
-    
   } catch (error) {
     console.error('Error getting Telemetron token:', error);
     throw error;
@@ -80,25 +85,27 @@ async function handleTelemetronRequest(
     const resolvedParams = await params;
     const path = resolvedParams.path.join('/');
     const searchParams = request.nextUrl.searchParams.toString();
-    const url = `${TELEMETRON_BASE_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
-    
+    const url = `${TELEMETRON_BASE_URL}/api/${path}${
+      searchParams ? `?${searchParams}` : ''
+    }`;
+
     console.log(`Proxying ${method} request to: ${url}`);
-    
+
     // Получаем Bearer токен
     const token = await getTelemetronToken();
-    console.log("🚀 ~ handleTelemetronRequest ~ token:", token)
-    
+    // console.log("🚀 ~ handleTelemetronRequest ~ token:", token)
+
     const headers: HeadersInit = {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
     };
 
     let body: BodyInit | undefined;
-    
+
     if (method === 'POST') {
       const contentType = request.headers.get('content-type');
       console.log('Content-Type received:', contentType);
-      
+
       // Обработка FormData
       if (contentType?.includes('multipart/form-data')) {
         const formData = await request.formData();
@@ -117,7 +124,7 @@ async function handleTelemetronRequest(
     }
 
     console.log('Sending request with headers:', Object.keys(headers));
-    
+
     const response = await fetch(url, {
       method,
       headers,
@@ -131,13 +138,16 @@ async function handleTelemetronRequest(
       } catch {
         errorBody = 'Не удалось прочитать тело ошибки';
       }
-      
-      console.error(`Telemetron API error ${response.status}:`, errorBody.substring(0, 200));
-      
+
+      console.error(
+        `Telemetron API error ${response.status}:`,
+        errorBody.substring(0, 200)
+      );
+
       return NextResponse.json(
-        { 
+        {
           error: `Telemetron API error: ${response.status} ${response.statusText}`,
-          details: errorBody.substring(0, 500)
+          details: errorBody.substring(0, 500),
         },
         { status: response.status }
       );
@@ -158,20 +168,20 @@ async function handleTelemetronRequest(
           return NextResponse.json(data);
         } else {
           return NextResponse.json(
-            { 
+            {
               message: 'HTML response without JSON',
               contentType: contentType,
-              body: responseText.substring(0, 1000)
+              body: responseText.substring(0, 1000),
             },
             { status: 200 }
           );
         }
       } catch (parseError) {
         return NextResponse.json(
-          { 
+          {
             error: 'Failed to parse JSON from HTML response',
             contentType: contentType,
-            body: responseText.substring(0, 1000)
+            body: responseText.substring(0, 1000),
           },
           { status: 500 }
         );
@@ -193,26 +203,26 @@ async function handleTelemetronRequest(
 
     // Если другой content-type
     return NextResponse.json(
-      { 
+      {
         message: 'Unknown response format',
         contentType: contentType,
-        body: responseText.substring(0, 1000)
+        body: responseText.substring(0, 1000),
       },
       { status: 200 }
     );
-
   } catch (error) {
     console.error('Proxy internal error:', error);
-    
+
     return NextResponse.json(
-      { 
-        error: 'Internal server error in proxy', 
-        details: error instanceof Error ? error.message : String(error)
+      {
+        error: 'Internal server error in proxy',
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
   }
 }
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }

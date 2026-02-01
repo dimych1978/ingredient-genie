@@ -322,7 +322,7 @@ export default function MachineStatusPage() {
             }
             onDateChange={handleManualDateChange}
             onTimestampUpdate={refreshTimestamp}
-            markAsServiced={isServiced} // Добавить новый проп
+            markAsServiced={isServiced} 
           />
         </div>
       </div>

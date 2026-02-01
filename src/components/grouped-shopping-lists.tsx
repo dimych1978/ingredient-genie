@@ -22,15 +22,8 @@ import {
 } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import type {
-  ShoppingListItem,
-  TelemetronSaleItem,
-} from '@/types/telemetron';
-import {
-  allMachines,
-  getIngredientConfig,
-  getMachineType,
-} from '@/lib/data';
+import type { TelemetronSaleItem } from '@/types/telemetron';
+import { allMachines, getIngredientConfig, getMachineType } from '@/lib/data';
 
 interface GroupedShoppingListsProps {
   machineIds: string[];
@@ -107,10 +100,12 @@ export const GroupedShoppingLists = ({
               format(dateTo, 'yyyy-MM-dd HH:mm:ss')
             );
             if (salesData.data) {
-              const machineSales = salesData.data.map((sale: TelemetronSaleItem) => ({
-                ...sale,
-                machineId: id,
-              }));
+              const machineSales = salesData.data.map(
+                (sale: TelemetronSaleItem) => ({
+                  ...sale,
+                  machineId: id,
+                })
+              );
               allSales.push(...machineSales);
             }
           } catch (e) {
@@ -143,7 +138,7 @@ export const GroupedShoppingLists = ({
           sale.planogram.ingredients &&
           sale.planogram.ingredients.length > 0
         ) {
-          // Это продажа кофейного напитка, раскладываем на ингредиенты
+          // Если продажа кофейного напитка, раскладываем на ингредиенты
           sale.planogram.ingredients.forEach(apiIngredient => {
             const config = getIngredientConfig(
               apiIngredient.name,
@@ -159,7 +154,7 @@ export const GroupedShoppingLists = ({
             }
           });
         } else {
-          // Это продажа снека, бутылки или напитка без ингредиентов
+          // Если продажа снека или бутылки
           const name = sale.planogram.name;
           const current = productMap.get(name) || { amount: 0, unit: 'шт' };
           current.amount += sale.number;
@@ -167,7 +162,7 @@ export const GroupedShoppingLists = ({
         }
       });
 
-      // Обработка оверрайдов (недогрузов/излишков)
+      // Обработка оверрайдов
       for (const key in allOverrides) {
         const override = allOverrides[key];
         const machineIdFromFile = key.split('-')[0];
@@ -248,16 +243,17 @@ export const GroupedShoppingLists = ({
     aaMachineIds,
   ]);
 
-  const machineIdsToProcessCount = machineIds.filter(id => !aaMachineIds.has(id)).length;
-
+  const machineIdsToProcessCount = machineIds.filter(
+    id => !aaMachineIds.has(id)
+  ).length;
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-muted/20">
+    <div className='space-y-6'>
+      <Card className='bg-muted/20'>
         <CardHeader>
           <CardTitle>Формирование общего заказа</CardTitle>
           <CardDescription>
-             {machineIds.length > 0
+            {machineIds.length > 0
               ? `Нажмите, чтобы создать сводный список по ${machineIdsToProcessCount} аппаратам (за исключением аппаратов без планограммы).`
               : 'Сначала добавьте аппараты в список выше.'}
           </CardDescription>
@@ -265,12 +261,12 @@ export const GroupedShoppingLists = ({
         <CardContent>
           <Button
             onClick={handleGenerateClick}
-            className="w-full"
+            className='w-full'
             disabled={machineIdsToProcessCount === 0 || loading}
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                 Формирование...
               </>
             ) : showList ? (
@@ -287,8 +283,8 @@ export const GroupedShoppingLists = ({
           <CardHeader>
             <CardTitle>Общий заказ</CardTitle>
             <CardDescription>
-              Сводный список на основе продаж и остатков для {machineIdsToProcessCount}{' '}
-              апп.
+              Сводный список на основе продаж и остатков для{' '}
+              {machineIdsToProcessCount} апп.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -296,14 +292,14 @@ export const GroupedShoppingLists = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Название</TableHead>
-                  <TableHead className="text-right">Количество</TableHead>
+                  <TableHead className='text-right'>Количество</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {combinedList.map(item => (
                   <TableRow key={item.name}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className='font-medium'>{item.name}</TableCell>
+                    <TableCell className='text-right'>
                       {item.amount} {item.unit}
                     </TableCell>
                   </TableRow>
@@ -314,7 +310,7 @@ export const GroupedShoppingLists = ({
         </Card>
       )}
       {showList && !loading && combinedList.length === 0 && (
-        <p className="text-muted-foreground text-center py-4">
+        <p className='text-muted-foreground text-center py-4'>
           Нет товаров для заказа за выбранные периоды.
         </p>
       )}
