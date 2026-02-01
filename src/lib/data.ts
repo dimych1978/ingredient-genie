@@ -1672,7 +1672,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'крышки',
-      apiNames: ['Крышки', 'крышки 80'],
+      apiNames: ['Крышки', "крышка", 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
     },
@@ -1730,7 +1730,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'крышки',
-      apiNames: ['Крышки', 'крышки 80'],
+      apiNames: ['Крышки', "крышка", 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
     },
@@ -1794,7 +1794,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'крышки',
-      apiNames: ['Крышки', 'крышки 80'],
+      apiNames: ['Крышки', "крышка", 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
     },
@@ -1921,7 +1921,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'крышки',
-      apiNames: ['Крышки', 'крышки 80'],
+      apiNames: ['Крышки', "крышка", 'крышки 80'],
       unit: 'шт',
       type: 'auto',
     },

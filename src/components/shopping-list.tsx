@@ -1099,12 +1099,6 @@ export const ShoppingList = ({
                     const isCheckboxItem = item.type === 'checkbox';
                     const isSyrupItem = item.type === 'select';
 
-                    const isCupOrLid = ['стакан', 'крышк'].some(
-                      name =>
-                        item.name.toLowerCase().includes(name) &&
-                        !item.name.includes('80')
-                    );
-
                     return (
                       <div
                         key={index}
@@ -1213,89 +1207,7 @@ export const ShoppingList = ({
 
                         {/* Правый блок - кнопки управления */}
                         <div className='flex items-center gap-2 self-end sm:self-center flex-wrap justify-end'>
-                          {isCheckboxItem ? (
-                            isCupOrLid ? (
-                              <div className='flex flex-col gap-2'>
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
-                                    {item.name.toLowerCase().includes('стаканы')
-                                      ? 'Большой'
-                                      : 'Большая'}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      handleCupLidChange(index, 'big')
-                                    }
-                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
-                                  >
-                                    {item.selectedSizes?.includes('big') && (
-                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                    )}
-                                  </button>
-                                  <span
-                                    className={`text-sm whitespace-nowrap ${
-                                      item.selectedSizes?.includes('big')
-                                        ? 'text-green-500'
-                                        : 'text-yellow-200'
-                                    }`}
-                                  >
-                                    {item.selectedSizes?.includes('big')
-                                      ? 'Не надо'
-                                      : 'Нужно'}
-                                  </span>
-                                </div>
-
-                                <div className='flex items-center gap-2'>
-                                  <span className='text-sm text-yellow-200 mr-2 whitespace-nowrap'>
-                                    {item.name.toLowerCase().includes('стаканы')
-                                      ? 'Малый'
-                                      : 'Малая'}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      handleCupLidChange(index, 'small')
-                                    }
-                                    className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
-                                  >
-                                    {item.selectedSizes?.includes('small') && (
-                                      <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                    )}
-                                  </button>
-                                  <span
-                                    className={`text-sm whitespace-nowrap ${
-                                      item.selectedSizes?.includes('small')
-                                        ? 'text-green-500'
-                                        : 'text-yellow-200'
-                                    }`}
-                                  >
-                                    {item.selectedSizes?.includes('small')
-                                      ? 'Не надо'
-                                      : 'Нужно'}
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className='flex items-center gap-2'>
-                                <button
-                                  onClick={() => handleCheckboxChange(index)}
-                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
-                                >
-                                  {item.checked && (
-                                    <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                  )}
-                                </button>
-                                <span
-                                  className={`text-sm whitespace-nowrap ${
-                                    item.checked
-                                      ? 'text-green-500'
-                                      : 'text-yellow-200'
-                                  }`}
-                                >
-                                  {item.checked ? 'Не надо' : 'Нужно'}
-                                </span>
-                              </div>
-                            )
-                          ) : isSyrupItem ? (
+                          {isSyrupItem ? (
                             <div className='w-full sm:w-48'>
                               <div className='text-sm text-gray-300 mb-1'>
                                 Выберите сиропы:
@@ -1357,6 +1269,26 @@ export const ShoppingList = ({
                                   );
                                 })}
                               </div>
+                            </div>
+                          ) : isCheckboxItem ? (
+                            <div className='flex items-center gap-2'>
+                              <button
+                                onClick={() => handleCheckboxChange(index)}
+                                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
+                              >
+                                {item.checked && (
+                                  <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                )}
+                              </button>
+                              <span
+                                className={`text-sm whitespace-nowrap ${
+                                  item.checked
+                                    ? 'text-green-500'
+                                    : 'text-yellow-200'
+                                }`}
+                              >
+                                {item.checked ? 'Не надо' : 'Нужно'}
+                              </span>
                             </div>
                           ) : (
                             <>
