@@ -76,6 +76,7 @@ export const TomorrowsMachines = () => {
   >({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [aaMachineIds, setAaMachineIds] = useState<Set<string>>(new Set());
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
@@ -176,6 +177,16 @@ export const TomorrowsMachines = () => {
   useEffect(() => {
     loadScheduleForDate(selectedDate);
   }, [selectedDate, loadScheduleForDate]);
+
+  // Кнопка для поднятия наверх
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSaveChanges = useCallback(async () => {
     const dateString = format(selectedDate, 'yyyy-MM-dd');
@@ -684,6 +695,30 @@ export const TomorrowsMachines = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={cn(
+            'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
+            'flex items-center justify-center z-50',
+            'md:hidden'
+          )}
+          aria-label='Наверх'
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+          >
+            <path d='M12 19V5M5 12l7-7 7 7' />
+          </svg>
+        </button>
+      )}
     </>
   );
 };
