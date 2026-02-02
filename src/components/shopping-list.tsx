@@ -311,6 +311,9 @@ export const ShoppingList = ({
   const { getSalesByProducts } = useTelemetronApi();
   const { loadPlanogramData } = usePlanogramData();
   const { toast } = useToast();
+  
+  const machine = useMemo(() => (machineIds.length === 1 ? allMachines.find((m) => m.id === machineIds[0]) : undefined), [machineIds]);
+
 
   const planogramCache = useRef<{
     machineId: string;
@@ -1096,7 +1099,9 @@ export const ShoppingList = ({
                     const hasDeficit = deficit > 0;
                     const hasSurplus = deficit < 0;
 
-                    const isCheckboxItem = item.type === 'checkbox';
+                    const isKreaMachine = machine?.model?.toLowerCase().includes('krea');
+                    const isSpecialKreaItem = isKreaMachine && (item.name === 'стакан' || item.name === 'крышки');
+                    const isCheckboxItem = item.type === 'checkbox' && !isSpecialKreaItem;
                     const isSyrupItem = item.type === 'select';
 
                     return (
@@ -1163,8 +1168,12 @@ export const ShoppingList = ({
                                 </div>
                               )}
                           </div>
-
-                          {isCheckboxItem || isSyrupItem ? (
+                          
+                          {isSpecialKreaItem ? (
+                             <div className='text-sm text-gray-400 break-words'>
+                                {`Продажи: ${item.salesAmount || 0} ${item.unit}`}
+                             </div>
+                          ) : isSyrupItem || isCheckboxItem ? (
                             <div className='text-sm text-gray-400 break-words'>
                               {hasSales
                                 ? `Продажи: ${item.salesAmount} ${item.unit}`
@@ -1270,6 +1279,34 @@ export const ShoppingList = ({
                                 })}
                               </div>
                             </div>
+                           ) : isSpecialKreaItem ? (
+                                <div className='flex flex-col gap-2 w-full sm:w-40'>
+                                    {(['big', 'small'] as const).map(size => {
+                                        const isSelected = item.selectedSizes?.includes(size);
+                                        return (
+                                            <div
+                                                key={size}
+                                                className='flex items-center justify-between cursor-pointer'
+                                                onClick={() => handleCupLidChange(index, size)}
+                                            >
+                                                <div className='flex items-center gap-2 min-w-0'>
+                                                    <div className={cn(
+                                                        'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
+                                                        isSelected ? 'border-green-500 bg-green-500/10' : 'border-gray-400 hover:border-gray-300'
+                                                    )}>
+                                                        {isSelected && <CircleCheckBig className='h-3 w-3 text-green-500' />}
+                                                    </div>
+                                                    <span className={cn('text-sm truncate', isSelected ? 'text-green-300' : 'text-gray-300')}>
+                                                        {size === 'big' ? 'Большие' : 'Малые'}
+                                                    </span>
+                                                </div>
+                                                <span className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${isSelected ? 'text-green-500' : 'text-yellow-200'}`}>
+                                                    {isSelected ? 'Не надо' : 'Нужно'}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                           ) : isCheckboxItem ? (
                             <div className='flex items-center gap-2'>
                               <button
