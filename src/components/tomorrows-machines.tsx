@@ -64,7 +64,7 @@ import { TelemetronSaleItem } from '@/types/telemetron';
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setDate(tomorrow.getDate());
     return tomorrow;
   });
 
@@ -77,6 +77,7 @@ export const TomorrowsMachines = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [aaMachineIds, setAaMachineIds] = useState<Set<string>>(new Set());
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [calendarDayPicker, setCalendarDayPicker] = useState(false);
 
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
@@ -91,6 +92,9 @@ export const TomorrowsMachines = () => {
     open: boolean;
     machineId: string | null;
   }>({ open: false, machineId: null });
+  const [scheduleCache, setScheduleCache] = useState<
+    Record<string, string[] | null>
+  >({});
 
   // --- DATA FETCHING AND SAVING ---
   const loadScheduleForDate = useCallback(
@@ -98,11 +102,17 @@ export const TomorrowsMachines = () => {
       setIsLoading(true);
       try {
         const dateKey = format(date, 'yyyy-MM-dd');
-        const [initialSpecialDates, scheduleIds] = await Promise.all([
-          getSpecialMachineDates(),
-          getDailySchedule(dateKey),
-        ]);
+        let scheduleIds: string[] | null;
 
+        // Проверяем кэш
+        if (dateKey in scheduleCache && scheduleCache[dateKey] !== null) {
+          scheduleIds = scheduleCache[dateKey];
+        } else {
+          scheduleIds = await getDailySchedule(dateKey);
+          setScheduleCache(prev => ({ ...prev, [dateKey]: scheduleIds }));
+        }
+
+        const initialSpecialDates = await getSpecialMachineDates();
         const loadedIds = scheduleIds || [];
         const finalDates = { ...initialSpecialDates };
 
@@ -171,7 +181,7 @@ export const TomorrowsMachines = () => {
         setIsLoading(false);
       }
     },
-    [toast, getMachineOverview, getSalesByProducts]
+    [toast, getMachineOverview, getSalesByProducts, scheduleCache]
   );
 
   useEffect(() => {
@@ -192,6 +202,11 @@ export const TomorrowsMachines = () => {
     const dateString = format(selectedDate, 'yyyy-MM-dd');
     const result = await saveDailySchedule(dateString, machineIdsForDay);
 
+    setScheduleCache(prev => ({
+      ...prev,
+      [dateString]: machineIdsForDay,
+    }));
+
     if (result.success) {
       try {
         const nextWeek = new Date(selectedDate);
@@ -199,6 +214,11 @@ export const TomorrowsMachines = () => {
         const nextWeekString = format(nextWeek, 'yyyy-MM-dd');
 
         await saveDailySchedule(nextWeekString, machineIdsForDay);
+
+        setScheduleCache(prev => ({
+          ...prev,
+          [nextWeekString]: machineIdsForDay,
+        }));
 
         toast({
           title: 'Расписание сохранено',
@@ -415,7 +435,10 @@ export const TomorrowsMachines = () => {
               <CalendarIcon className='h-6 w-6 text-primary' />
               <span>Аппараты на дату</span>
             </div>
-            <Popover>
+            <Popover
+              open={calendarDayPicker}
+              onOpenChange={setCalendarDayPicker}
+            >
               <PopoverTrigger asChild>
                 <Button
                   variant='outline'
@@ -426,11 +449,17 @@ export const TomorrowsMachines = () => {
                   {getFormattedDate(selectedDate)}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className='w-auto p-0'>
+              <PopoverContent className='w-auto p-0' align='start'>
                 <Calendar
                   mode='single'
                   selected={selectedDate}
-                  onSelect={date => date && setSelectedDate(date)}
+                  onSelect={date => {
+                    console.log('Date selected:', date); // ← Добавьте эту строку
+                    if (date) {
+                      setSelectedDate(date);
+                      setCalendarDayPicker(false);
+                    }
+                  }}
                   initialFocus
                   locale={ru}
                 />
