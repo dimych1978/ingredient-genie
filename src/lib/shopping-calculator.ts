@@ -81,64 +81,77 @@ export const calculateShoppingList = (
   const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
   const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
 
-  // 2. Логика для сохраненной планограммы
-  if (isSavedPlanogram && planogram && planogram.length > 0) {
-    const itemsMap = new Map<string, ShoppingListItem>();
+// 2. Логика для сохраненной планограммы
+if (isSavedPlanogram && planogram && planogram.length > 0) {
+  const itemsMap = new Map<string, ShoppingListItem>();
 
-    // 2.1 Создаем "карту аппарата" из сохраненной планограммы
-    planogram.forEach(entry => {
-      const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-
-      if (match) {
-        const productNumber = match[1];
-        const name = match[2];
-        itemsMap.set(productNumber, {
-          name: name,
-          productNumber: productNumber,
-          planogramName: entry,
-          amount: 0,
-          unit: 'шт',
-          salesAmount: 0,
-          previousDeficit: 0,
-          isCore: false,
-          type: 'auto',
-          status: 'none',
-        });
-      }
-    });
-
-    // 2.2 Накладываем продажи
-    salesData.data.forEach(sale => {
-      if (sale.product_number) {
-        const normalizedNumber = normalizeApiCellNumber(sale.product_number);
-        if (itemsMap.has(normalizedNumber)) {
-          const item = itemsMap.get(normalizedNumber)!;
-          item.salesAmount = (item.salesAmount || 0) + sale.number;
-        }
-      }
-    });
-
-    // 2.3 Накладываем остатки
-    Object.entries(overrides).forEach(([key, override]) => {
-      const itemName = key.replace(`${machineId}-`, '');
-      console.log(`Остатки для ${itemName}:`, {
-        carryOver: override.carryOver,
-        status: override.status,
-        loadedAmount: override.loadedAmount,
-        requiredAmount: override.requiredAmount,
+    // 2.1 ДОБАВЛЯЕМ КОФЕЙНЫЕ ИНГРЕДИЕНТЫ И ДЛЯ СОХРАНЕННОЙ ПЛАНОГРАММЫ!
+  coreIngredientConfigs.forEach(config => {
+    const key = config.name;
+    if (!Array.from(itemsMap.values()).some(item => item.name === key)) {
+      itemsMap.set(key, {
+        name: config.name,
+        planogramName: config.name,
+        amount: 0,
+        unit: config.unit,
+        salesAmount: 0,
+        previousDeficit: 0,
+        isCore: true,
+        type: config.type,
+        syrupOptions: config.syrupOptions,
+        status: 'none',
       });
+    }
+  });
 
-      // Ищем товар по имени, так как в Redis ключ без productNumber
-      for (const item of itemsMap.values()) {
-        if (item.name === itemName) {
-          item.previousDeficit = override.carryOver || 0;
-          console.log(
-            `Для ${itemName}: carryOver=${override.carryOver}, previousDeficit=${item.previousDeficit}`
-          );
-          break;
-        }
+  // 2.2 Создаем "карту аппарата" из сохраненной планограммы
+  planogram.forEach(entry => {
+    const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
+    if (match) {
+      const productNumber = match[1];
+      const name = match[2];
+      itemsMap.set(productNumber, {
+        name: name,
+        productNumber: productNumber,
+        planogramName: entry,
+        amount: 0,
+        unit: 'шт',
+        salesAmount: 0,
+        previousDeficit: 0,
+        isCore: false,
+        type: 'auto',
+        status: 'none',
+      });
+    }
+  });
+
+
+  // 2.3 Накладываем продажи
+  salesData.data.forEach(sale => {
+    if (sale.product_number) {
+      const normalizedNumber = normalizeApiCellNumber(sale.product_number);
+      if (itemsMap.has(normalizedNumber)) {
+        const item = itemsMap.get(normalizedNumber)!;
+        item.salesAmount = (item.salesAmount || 0) + sale.number;
       }
-    });
+    }
+    
+    // ТАКЖЕ ОБРАБАТЫВАЕМ КОФЕЙНЫЕ ИНГРЕДИЕНТЫ!
+    if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
+      sale.planogram.ingredients.forEach(apiIngredient => {
+        const config = getIngredientConfig(apiIngredient.name, machineModel);
+        if (config) {
+          const item = Array.from(itemsMap.values()).find(
+            i => i.name === config.name
+          );
+          if (item) {
+            item.salesAmount =
+              (item.salesAmount || 0) + apiIngredient.volume * sale.number;
+          }
+        }
+      });
+    }
+  });
 
     // 2.4 Финальный расчет и возврат
     const result: ShoppingListItem[] = [];
@@ -202,7 +215,6 @@ export const calculateShoppingList = (
         const name = match[2];
 
         const config = getIngredientConfig(name, machineModel);
-
         if (!itemMap.has(productNumber)) {
           itemMap.set(productNumber, {
             name: name,

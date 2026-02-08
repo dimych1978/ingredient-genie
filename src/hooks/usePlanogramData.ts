@@ -307,7 +307,7 @@ function generatePlanogramFromSalesData(
 
   const coffeeProductNumbers = new Set<string>();
 
-  const allAA = salesData.data.every(item => item.product_number === 'AA');
+  const allAA = salesData.data.some(item => item.product_number === 'AA' || item.product_number === '-');
   console.log('🚀 ~ generatePlanogramFromSalesData ~ allAA:', allAA);
 
   if (allAA) {

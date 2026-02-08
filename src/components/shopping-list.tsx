@@ -62,7 +62,6 @@ import {
   isSpecialMachine,
 } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
-import debounce from 'lodash.debounce';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -287,6 +286,7 @@ export const ShoppingList = ({
   const [state, dispatch] = useReducer(shoppingListReducer, initialState);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isPlanogramDataReady, setPlanogramDataReady] = useState(false);
 
   const {
     loading,
@@ -341,64 +341,44 @@ export const ShoppingList = ({
 
   // Загрузка планограммы - ТОЛЬКО при изменении machineIds
   useEffect(() => {
-    if (machineIds.length !== 1) return;
-
-    const machineId = machineIds[0];
+    if (machineIds.length !== 1) {
+      setPlanogramDataReady(true);
+      return;
+    }
     let isMounted = true;
+    setPlanogramDataReady(false);
 
     const loadPlanogram = async () => {
-      // Проверяем кеш
+      const machineId = machineIds[0];
       if (
         planogramCache.current &&
         planogramCache.current.machineId === machineId &&
         Date.now() - planogramCache.current.timestamp < CACHE_TTL
       ) {
-        console.log('Используем кешированную планограмму');
-        const cached = planogramCache.current.data;
         if (isMounted) {
-          dispatch({
-            type: 'SET_PLANOGRAM_DATA',
-            payload: {
-              planogram: cached.planogram,
-              salesThisPeriod: cached.salesThisPeriod,
-              coffeeProductNumbers: cached.coffeeProductNumbers,
-              isSavedPlanogram: cached.isSavedPlanogram,
-            },
-          });
+          dispatch({ type: 'SET_PLANOGRAM_DATA', payload: planogramCache.current.data });
+          setPlanogramDataReady(true);
         }
         return;
       }
 
-      console.log('Загружаем планограмму из Redis');
       try {
         const result = await stableLoadPlanogramData(machineId);
 
         if (isMounted) {
-          // Сохраняем в кеш
           planogramCache.current = {
             machineId,
-            data: {
-              planogram: result.planogram,
-              salesThisPeriod: result.salesThisPeriod,
-              coffeeProductNumbers: result.coffeeProductNumbers,
-              isSavedPlanogram: result.isSavedPlanogram,
-            },
+            data: result,
             timestamp: Date.now(),
           };
-
-          // Обновляем состояние
-          dispatch({
-            type: 'SET_PLANOGRAM_DATA',
-            payload: {
-              planogram: result.planogram,
-              salesThisPeriod: result.salesThisPeriod,
-              coffeeProductNumbers: result.coffeeProductNumbers,
-              isSavedPlanogram: result.isSavedPlanogram,
-            },
-          });
+          dispatch({ type: 'SET_PLANOGRAM_DATA', payload: result });
         }
       } catch (error) {
         console.error('Ошибка загрузки планограммы:', error);
+      } finally {
+        if (isMounted) {
+          setPlanogramDataReady(true);
+        }
       }
     };
 
@@ -407,7 +387,7 @@ export const ShoppingList = ({
     return () => {
       isMounted = false;
     };
-  }, [machineIds.join('-')]);
+  }, [machineIds.join('-'), stableLoadPlanogramData]);
 
   // Кнопка для поднятия наверх
   useEffect(() => {
@@ -419,27 +399,7 @@ export const ShoppingList = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Загрузка shopping list - debounced
   const loadShoppingList = useCallback(async () => {
-    const machineData = allMachines.find(
-      m => m.id === machineIdsRef.current[0]
-    );
-    const machineType = machineData ? getMachineType(machineData) : 'snack';
-
-    // Для снековых аппаратов ждем планограмму
-    if (machineType !== 'coffee') {
-      const isAAApparatus =
-        planogramRef.current.length === 1 &&
-        planogramRef.current[0]?.startsWith('AA');
-      console.log('🚀 ~ ShoppingList ~ isAAApparatus:', isAAApparatus);
-
-      // Если НЕ AA аппарат и планограмма пустая - ждем
-      if (!isAAApparatus && planogramRef.current.length === 0) {
-        console.log('⏳ Ждем загрузки планограммы для снекового аппарата...');
-        return;
-      }
-    }
-
     // ТОЛЬКО проверка на machineIds
     if (machineIdsRef.current.length === 0) {
       if (forceLoad) {
@@ -542,34 +502,25 @@ export const ShoppingList = ({
             : 'Не удалось сформировать список.',
       });
     }
-  }, [dateFrom, sort, forceLoad, isSavedPlanogram]);
+  }, [
+    dateFrom,
+    sort,
+    forceLoad,
+    isSavedPlanogram,
+    coffeeProductNumbers,
+    salesThisPeriod,
+    stableGetSalesByProducts,
+    stableToast,
+  ]);
 
-  // Обновление планограммы
+  // Триггер для загрузки списка.
   useEffect(() => {
-    console.log('🔄 Планограмма обновлена:', planogram.length);
-
-    if (planogram.length > 0 && forceLoad && !hasLoaded) {
-      console.log('🚀 Планограмма загружена, запускаем loadShoppingList');
-      loadShoppingList();
+    if (!forceLoad || hasLoaded || !isPlanogramDataReady) {
+      return;
     }
-  }, [planogram.length, forceLoad, hasLoaded, loadShoppingList]);
-
-  // Debounced загрузка shopping list
-  const debouncedLoadShoppingList = useMemo(
-    () => debounce(loadShoppingList, 500),
-    [loadShoppingList]
-  );
-
-  // Триггер загрузки shopping list
-  useEffect(() => {
-    if (forceLoad && !hasLoadedRef.current) {
-      debouncedLoadShoppingList();
-    }
-
-    return () => {
-      debouncedLoadShoppingList.cancel();
-    };
-  }, [forceLoad]);
+    console.log('🚀 Данные планограммы готовы, запускаем loadShoppingList');
+    loadShoppingList();
+  }, [isPlanogramDataReady, forceLoad, hasLoaded, loadShoppingList]);
 
   // Сброс флага загрузки при смене аппарата
   useEffect(() => {

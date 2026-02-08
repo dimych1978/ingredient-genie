@@ -19,15 +19,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
   allMachines,
   getIngredientConfig,
   getMachineType,
-  machineIngredients,
 } from '@/lib/data';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface GroupedShoppingListsProps {
   machineIds: string[];
@@ -36,12 +40,12 @@ interface GroupedShoppingListsProps {
   aaMachineIds: Set<string>;
 }
 
-// Упрощенный тип для внутреннего использования
 type CombinedListItem = {
   name: string;
   amount: number;
   unit: string;
   isCoffeeIngredient: boolean;
+  breakdown: Record<string, { name: string; amount: number }>;
 };
 
 export const GroupedShoppingLists = ({
@@ -72,7 +76,6 @@ export const GroupedShoppingLists = ({
     }
 
     try {
-      // 1. Собрать все правильные даты начала
       const allDates: Record<string, string> = { ...specialMachineDates };
       const dateTo = new Date();
 
@@ -92,7 +95,6 @@ export const GroupedShoppingLists = ({
 
       await Promise.all(overviewPromises);
 
-      // 2. Загрузить все продажи с правильными датами, дополнив их machineId
       const allSales: (TelemetronSaleItem & { machineId: string })[] = [];
       const salesPromises = machineIdsToProcess.map(async id => {
         const dateFrom = allDates[id];
@@ -119,30 +121,37 @@ export const GroupedShoppingLists = ({
       });
 
       await Promise.all(salesPromises);
-
-      // 3. Загрузить все оверрайды
       const allOverrides = await readAllOverrides();
 
-      // 4. Сгруппировать и посчитать
       const coffeeIngredientsMap = new Map<
         string,
-        { amount: number; unit: string }
+        {
+          amount: number;
+          unit: string;
+          breakdown: Record<string, { name: string; amount: number }>;
+        }
       >();
-      const productMap = new Map<string, { amount: number; unit: 'шт' }>();
+      const productMap = new Map<
+        string,
+        {
+          amount: number;
+          unit: 'шт';
+          breakdown: Record<string, { name: string; amount: number }>;
+        }
+      >();
 
-      // Обработка продаж
       allSales.forEach(sale => {
         if (!sale.planogram?.name) return;
 
         const machine = allMachines.find(m => m.id === sale.machineId);
         const machineType = machine ? getMachineType(machine) : 'snack';
+        if (!machine) return;
 
         if (
           machineType === 'coffee' &&
           sale.planogram.ingredients &&
           sale.planogram.ingredients.length > 0
         ) {
-          // Если продажа кофейного напитка, раскладываем на ингредиенты
           sale.planogram.ingredients.forEach(apiIngredient => {
             const config = getIngredientConfig(
               apiIngredient.name,
@@ -152,21 +161,40 @@ export const GroupedShoppingLists = ({
               const current = coffeeIngredientsMap.get(config.name) || {
                 amount: 0,
                 unit: config.unit,
+                breakdown: {},
               };
-              current.amount += apiIngredient.volume * sale.number;
+              const amountToAdd = apiIngredient.volume * sale.number;
+              current.amount += amountToAdd;
+              const machineBreakdown =
+                current.breakdown[sale.machineId] || {
+                  name: machine.name,
+                  amount: 0,
+                };
+              machineBreakdown.amount += amountToAdd;
+              current.breakdown[sale.machineId] = machineBreakdown;
               coffeeIngredientsMap.set(config.name, current);
             }
           });
         } else if (machineType !== 'coffee') {
-          // Если продажа снека или бутылки
           const name = sale.planogram.name;
-          const current = productMap.get(name) || { amount: 0, unit: 'шт' };
-          current.amount += sale.number;
+          const current = productMap.get(name) || {
+            amount: 0,
+            unit: 'шт',
+            breakdown: {},
+          };
+          const amountToAdd = sale.number;
+          current.amount += amountToAdd;
+          const machineBreakdown =
+            current.breakdown[sale.machineId] || {
+              name: machine.name,
+              amount: 0,
+            };
+          machineBreakdown.amount += amountToAdd;
+          current.breakdown[sale.machineId] = machineBreakdown;
           productMap.set(name, current);
         }
       });
 
-      // Обработка оверрайдов
       for (const key in allOverrides) {
         const override = allOverrides[key];
         const machineIdFromFile = key.split('-')[0];
@@ -176,25 +204,43 @@ export const GroupedShoppingLists = ({
           const carryOver = override.carryOver || 0;
 
           const machine = allMachines.find(m => m.id === machineIdFromFile);
+          if (!machine) continue;
 
-          // Проверяем, это ингредиент или продукт
           const ingredientConfig = getIngredientConfig(name, machine?.model);
           if (ingredientConfig) {
             const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
               amount: 0,
               unit: ingredientConfig.unit,
+              breakdown: {},
             };
             current.amount += carryOver;
+            const machineBreakdown =
+              current.breakdown[machineIdFromFile] || {
+                name: machine.name,
+                amount: 0,
+              };
+            machineBreakdown.amount += carryOver;
+            current.breakdown[machineIdFromFile] = machineBreakdown;
             coffeeIngredientsMap.set(ingredientConfig.name, current);
           } else {
-            const current = productMap.get(name) || { amount: 0, unit: 'шт' };
+            const current = productMap.get(name) || {
+              amount: 0,
+              unit: 'шт',
+              breakdown: {},
+            };
             current.amount += carryOver;
+            const machineBreakdown =
+              current.breakdown[machineIdFromFile] || {
+                name: machine.name,
+                amount: 0,
+              };
+            machineBreakdown.amount += carryOver;
+            current.breakdown[machineIdFromFile] = machineBreakdown;
             productMap.set(name, current);
           }
         }
       }
 
-      // 5. Финальный расчет и формирование списка
       const finalList: CombinedListItem[] = [];
 
       coffeeIngredientsMap.forEach((value, name) => {
@@ -205,6 +251,7 @@ export const GroupedShoppingLists = ({
             amount: totalAmount,
             unit: value.unit,
             isCoffeeIngredient: true,
+            breakdown: value.breakdown,
           });
         }
       });
@@ -217,11 +264,11 @@ export const GroupedShoppingLists = ({
             amount: totalAmount,
             unit: value.unit,
             isCoffeeIngredient: false,
+            breakdown: value.breakdown,
           });
         }
       });
 
-      // 6. Сортировка: сначала кофейные, потом остальные по алфавиту
       finalList.sort((a, b) => {
         if (a.isCoffeeIngredient && !b.isCoffeeIngredient) {
           return -1;
@@ -299,6 +346,7 @@ export const GroupedShoppingLists = ({
                 <TableRow>
                   <TableHead>Название</TableHead>
                   <TableHead className="text-right">Количество</TableHead>
+                  <TableHead className="w-12 text-right">Инфо</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -307,6 +355,42 @@ export const GroupedShoppingLists = ({
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell className="text-right">
                       {item.amount} {item.unit}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="space-y-2">
+                            <h4 className="font-medium leading-none">
+                              Детализация
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              Разбивка для: <strong>{item.name}</strong>
+                            </p>
+                          </div>
+                          <div className="mt-4 space-y-1">
+                            {Object.entries(item.breakdown)
+                              .filter(([, details]) => Math.ceil(details.amount) !== 0)
+                              .map(([machineId, details]) => (
+                                <div
+                                  key={machineId}
+                                  className="flex justify-between items-center text-sm"
+                                >
+                                  <span className="truncate pr-2">
+                                    {details.name} (#{machineId})
+                                  </span>
+                                  <span className="font-mono text-right flex-shrink-0">
+                                    {Math.ceil(details.amount)} {item.unit}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
                   </TableRow>
                 ))}
