@@ -1,4 +1,3 @@
-//tomorrows-machines.tsx
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -114,14 +113,28 @@ export const TomorrowsMachines = () => {
 
         const initialSpecialDates = await getSpecialMachineDates();
         const loadedIds = scheduleIds || [];
-        const finalDates = { ...initialSpecialDates };
+        const finalDates: Record<string, string> = {};
+        const newAaMachineIds = new Set<string>();
 
-        // Проверяем аппараты на статус "AA" (без планограммы)
+        // Разделяем аппараты на обычные и специальные
+        const normalMachines: string[] = [];
+        const specialMachines: string[] = [];
+
+        loadedIds.forEach(id => {
+          const machine = allMachines.find(m => m.id === id);
+          if (isSpecialMachine(machine)) {
+            specialMachines.push(id);
+          } else {
+            normalMachines.push(id);
+          }
+        });
+
+        // 1. Проверяем все аппараты на статус "AA" (без планограммы)
         const checkAAPromises = loadedIds.map(async id => {
           try {
             const dateTo = new Date();
             const dateFrom = new Date();
-            dateFrom.setDate(dateTo.getDate() - 7); // Проверяем продажи за последнюю неделю
+            dateFrom.setDate(dateTo.getDate() - 7);
             const salesData = await getSalesByProducts(
               id,
               format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
@@ -134,39 +147,82 @@ export const TomorrowsMachines = () => {
                 (item: TelemetronSaleItem) => item.product_number === 'AA'
               )
             ) {
-              return id;
+              newAaMachineIds.add(id);
+              return { id, isAA: true };
             }
           } catch (e) {
             console.error(`Ошибка проверки АА статуса для ${id}:`, e);
           }
-          return null;
+          return { id, isAA: false };
         });
 
         const aaResults = await Promise.all(checkAAPromises);
-        const newAaMachineIds = new Set(
-          aaResults.filter((id): id is string => id !== null)
-        );
+        aaResults.forEach(result => {
+          if (result.isAA) {
+            newAaMachineIds.add(result.id);
+          }
+        });
+
         setAaMachineIds(newAaMachineIds);
 
-        // Запрашиваем даты только для тех аппаратов, у которых их нет и которые не "AA"
-        const overviewPromises = loadedIds
-          .filter(id => !finalDates[id] && !newAaMachineIds.has(id))
+        // 2. Для ОБЫЧНЫХ аппаратов получаем даты ТОЛЬКО из Telemetron API
+        const normalMachinePromises = normalMachines
+          .filter(id => !newAaMachineIds.has(id)) // Пропускаем AA аппараты
           .map(async id => {
             try {
               const overview = await getMachineOverview(id);
               const lastCollection = overview.data?.cache?.last_collection_at;
               if (lastCollection) {
-                finalDates[id] = lastCollection;
+                return { id, date: lastCollection, source: 'api' };
+              } else {
+                console.warn(`Для обычного аппарата #${id} не найдена дата в API`);
+                return { id, date: null, source: 'api' };
               }
             } catch (e) {
               console.error(
-                `Не удалось получить overview для аппарата ${id} при загрузке`,
+                `Не удалось получить overview для обычного аппарата ${id}`,
                 e
               );
+              return { id, date: null, source: 'api' };
             }
           });
 
-        await Promise.all(overviewPromises);
+        const normalResults = await Promise.all(normalMachinePromises);
+        normalResults.forEach(result => {
+          if (result.date) {
+            finalDates[result.id] = result.date;
+          }
+        });
+
+        // 3. Для СПЕЦИАЛЬНЫХ аппаратов получаем даты из Redis
+        const specialMachinePromises = specialMachines
+          .filter(id => !newAaMachineIds.has(id)) // Пропускаем AA аппараты
+          .map(async id => {
+            const redisDate = initialSpecialDates[id];
+            if (redisDate) {
+              return { id, date: redisDate, source: 'redis' };
+            }
+            
+            // Если нет даты в Redis, пробуем получить из API как запасной вариант
+            try {
+              const overview = await getMachineOverview(id);
+              const lastCollection = overview.data?.cache?.last_collection_at;
+              if (lastCollection) {
+                return { id, date: lastCollection, source: 'api-fallback' };
+              }
+            } catch (e) {
+              console.warn(`Не удалось получить дату из API для специального аппарата ${id}`, e);
+            }
+            
+            return { id, date: null, source: 'none' };
+          });
+
+        const specialResults = await Promise.all(specialMachinePromises);
+        specialResults.forEach(result => {
+          if (result.date) {
+            finalDates[result.id] = result.date;
+          }
+        });
 
         setSpecialMachineDates(finalDates);
         setMachineIdsForDay(loadedIds);
@@ -314,16 +370,34 @@ export const TomorrowsMachines = () => {
       const special = isSpecialMachine(machine);
 
       if (special) {
+        // Для специальных аппаратов проверяем Redis
         const lastDateString = specialMachineDates[machineToAdd];
         const lastDate = lastDateString ? new Date(lastDateString) : null;
         if (lastDate) {
           setDialogState({ open: true, machineId: machineToAdd, lastDate });
         } else {
-          setCalendarState({ open: true, machineId: machineToAdd });
+          // Если нет даты в Redis, пробуем получить из API
+          try {
+            const overview = await getMachineOverview(machineToAdd);
+            const lastCollection = overview.data?.cache?.last_collection_at;
+            if (lastCollection) {
+              setDialogState({ 
+                open: true, 
+                machineId: machineToAdd, 
+                lastDate: new Date(lastCollection) 
+              });
+            } else {
+              setCalendarState({ open: true, machineId: machineToAdd });
+            }
+          } catch (e) {
+            console.error('Error fetching overview for special machine:', e);
+            setCalendarState({ open: true, machineId: machineToAdd });
+          }
         }
         return;
       }
 
+      // Для обычных аппаратов всегда получаем данные из API
       const overview = await getMachineOverview(machineToAdd);
       const lastCollection = overview.data?.cache?.last_collection_at;
 
@@ -386,25 +460,41 @@ export const TomorrowsMachines = () => {
     setCalendarState({ open: false, machineId: null });
 
     if (date && machineId) {
-      const result = await setSpecialMachineDate(machineId, date.toISOString());
-      if (result.success) {
+      const machine = allMachines.find(m => m.id === machineId);
+      
+      if (isSpecialMachine(machine)) {
+        // Для специальных аппаратов сохраняем в Redis
+        const result = await setSpecialMachineDate(machineId, date.toISOString());
+        if (result.success) {
+          setSpecialMachineDates(prev => ({
+            ...prev,
+            [machineId]: date.toISOString(),
+          }));
+          toast({
+            title: 'Дата сохранена',
+            description: `Начальная дата для специального аппарата #${machineId} сохранена в Redis.`,
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Ошибка',
+            description: 'Не удалось сохранить дату в Redis.',
+          });
+        }
+      } else {
+        // Для обычных аппаратов просто обновляем локальное состояние
         setSpecialMachineDates(prev => ({
           ...prev,
           [machineId]: date.toISOString(),
         }));
-        if (!machineIdsForDay.includes(machineId)) {
-          addMachineToDay(machineId);
-        }
         toast({
-          title: 'Дата сохранена',
-          description: `Начальная дата для аппарата #${machineId} установлена.`,
+          title: 'Дата обновлена',
+          description: `Дата для обычного аппарата #${machineId} обновлена локально.`,
         });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не удалось сохранить дату.',
-        });
+      }
+      
+      if (!machineIdsForDay.includes(machineId)) {
+        addMachineToDay(machineId);
       }
     }
   };
