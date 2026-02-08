@@ -344,19 +344,19 @@ export const GroupedShoppingLists = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Название</TableHead>
-                  <TableHead className="text-right">Количество</TableHead>
-                  <TableHead className="w-12 text-right">Инфо</TableHead>
+                  <TableHead className="p-2">Название</TableHead>
+                  <TableHead className="p-2 text-right whitespace-nowrap">Количество</TableHead>
+                  <TableHead className="p-2 w-12 text-right">Инфо</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {combinedList.map(item => (
                   <TableRow key={item.name}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="p-2 font-medium break-words">{item.name}</TableCell>
+                    <TableCell className="p-2 text-right whitespace-nowrap">
                       {item.amount} {item.unit}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="p-2 text-right">
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
