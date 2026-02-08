@@ -449,18 +449,16 @@ export const TomorrowsMachines = () => {
                   {getFormattedDate(selectedDate)}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className='w-auto p-0' align='start'>
+              <PopoverContent className='w-auto p-0' align='center'>
                 <Calendar
                   mode='single'
                   selected={selectedDate}
                   onSelect={date => {
-                    console.log('Date selected:', date); // ← Добавьте эту строку
                     if (date) {
                       setSelectedDate(date);
                       setCalendarDayPicker(false);
                     }
                   }}
-                  initialFocus
                   locale={ru}
                 />
               </PopoverContent>

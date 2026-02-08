@@ -92,3 +92,20 @@
     text-overflow: ellipsis;
   }
 }
+
+/* Global fix for calendar popover alignment */
+@layer components {
+  .rdp-vhidden {
+      display: none !important;
+  }
+
+  [data-radix-popper-content-wrapper]:has(.rdp) {
+    transform: translateX(calc(-100% + var(--radix-popover-trigger-width))) !important;
+  }
+
+ /* Calendar fixes - добавляем только это */
+/* Calendar fixes - обновляем CSS */
+/* Оставьте только это, если нужно */
+.rdp-day:hover {
+  border-radius: 0.375rem; /* rounded-md */
+}}
