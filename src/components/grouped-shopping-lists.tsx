@@ -201,10 +201,12 @@ export const GroupedShoppingLists = ({
 
         if (machineIdsToProcess.includes(machineIdFromFile)) {
           const name = key.substring(machineIdFromFile.length + 1);
-          const carryOver = override.carryOver || 0;
+          let carryOver = override.carryOver || 0;
 
           const machine = allMachines.find(m => m.id === machineIdFromFile);
           if (!machine) continue;
+
+          if(name.toLocaleLowerCase() === 'вода' && getMachineType(machine) === 'coffee' && carryOver < 0) {carryOver = 0};
 
           const ingredientConfig = getIngredientConfig(name, machine?.model);
           if (ingredientConfig) {
