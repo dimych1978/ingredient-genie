@@ -144,14 +144,10 @@ export const GroupedShoppingLists = ({
         if (!sale.planogram?.name) return;
 
         const machine = allMachines.find(m => m.id === sale.machineId);
-        const machineType = machine ? getMachineType(machine) : 'snack';
         if (!machine) return;
 
-        if (
-          machineType === 'coffee' &&
-          sale.planogram.ingredients &&
-          sale.planogram.ingredients.length > 0
-        ) {
+        // Если у продажи есть ингредиенты - это напиток. Считаем ингредиенты.
+        if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
           sale.planogram.ingredients.forEach(apiIngredient => {
             const config = getIngredientConfig(
               apiIngredient.name,
@@ -175,7 +171,9 @@ export const GroupedShoppingLists = ({
               coffeeIngredientsMap.set(config.name, current);
             }
           });
-        } else if (machineType !== 'coffee') {
+        } 
+        // Если ингредиентов нет - это снек/бутылка. Считаем как товар.
+        else {
           const name = sale.planogram.name;
           const current = productMap.get(name) || {
             amount: 0,
@@ -206,7 +204,14 @@ export const GroupedShoppingLists = ({
           const machine = allMachines.find(m => m.id === machineIdFromFile);
           if (!machine) continue;
 
-          if(name.toLocaleLowerCase() === 'вода' && getMachineType(machine) === 'coffee' && carryOver < 0) {carryOver = 0};
+          // Для 'вода' в кофейных аппаратах игнорируем излишки (отрицательный carryOver)
+          if (
+            name.toLowerCase() === 'вода' &&
+            getMachineType(machine) === 'coffee' &&
+            carryOver < 0
+          ) {
+            carryOver = 0;
+          }
 
           const ingredientConfig = getIngredientConfig(name, machine?.model);
           if (ingredientConfig) {
