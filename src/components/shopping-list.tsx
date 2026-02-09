@@ -1051,7 +1051,7 @@ export const ShoppingList = ({
                     const hasSurplus = deficit < 0;
 
                     const isKreaMachine = machine?.model?.toLowerCase().includes('krea');
-                    const isSpecialKreaItem = isKreaMachine && (item.name === 'стакан' || item.name === 'крышки');
+                    const isSpecialKreaItem = isKreaMachine && (item.name === 'стаканы' || item.name === 'крышки');
                     const isCheckboxItem = item.type === 'checkbox' && !isSpecialKreaItem;
                     const isSyrupItem = item.type === 'select';
 
