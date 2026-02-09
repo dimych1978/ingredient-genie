@@ -102,13 +102,13 @@
   },
   "33367-вода": {
     "status": "none",
-    "requiredAmount": 8210,
+    "requiredAmount": 16430,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 8210
+    "carryOver": 16430
   },
   "33367-кофе зерновой": {
     "status": "none",
@@ -132,13 +132,13 @@
   },
   "33367-шоколад": {
     "status": "none",
-    "requiredAmount": 501,
+    "requiredAmount": 680,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 501
+    "carryOver": 680
   },
   "33367-капучино ваниль": {
     "status": "none",
@@ -152,23 +152,23 @@
   },
   "33367-чай": {
     "status": "none",
-    "requiredAmount": 30,
+    "requiredAmount": 50,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 30
+    "carryOver": 50
   },
   "33367-сахар": {
     "status": "none",
-    "requiredAmount": 210,
+    "requiredAmount": 438,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 210
+    "carryOver": 438
   },
   "33367-стаканчик": {
     "status": "none",
@@ -191,17 +191,20 @@
     "carryOver": 119
   },
   "33367-Читос ": {
-    "status": "none",
-    "requiredAmount": 2,
-    "loadedAmount": 0,
-    "timestamp": "2026-01-26T05:58:11.699Z",
-    "carryOver": 2
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T09:13:02.835Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
   },
   "33367-Чипсы Лейс 37гр": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -209,9 +212,9 @@
   },
   "33367-Сухарики Кириешки 33г": {
     "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -221,7 +224,7 @@
     "status": "partial",
     "requiredAmount": 9,
     "loadedAmount": 9,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -229,19 +232,19 @@
   },
   "33367-Шок.бат. Твикс": {
     "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33367-Йота": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "status": "partial",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -249,9 +252,9 @@
   },
   "33367-Шоколад Беби фокс/ВАфли 40гр.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "requiredAmount": 5,
+    "loadedAmount": 5,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -261,7 +264,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -270,28 +273,28 @@
   "33367-Лимонад \"Добрый\" 0,5 в ассорт.": {
     "status": "partial",
     "requiredAmount": 3,
-    "loadedAmount": -1,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "loadedAmount": -4,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 4
+    "carryOver": 7
   },
   "33367-Калинов морс 0,5": {
     "status": "partial",
-    "requiredAmount": 10,
-    "loadedAmount": 8,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "requiredAmount": 5,
+    "loadedAmount": 5,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 2
+    "carryOver": 0
   },
   "33367-Сок Палпи в ассорт. 0.45": {
     "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -299,19 +302,19 @@
   },
   "33367-Чай Рич 0,5": {
     "status": "partial",
-    "requiredAmount": 6,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "requiredAmount": 5,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 2
   },
   "33367-Лимонад \"Добрый\" ж/б 0,33 в ассорт.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "status": "partial",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -319,9 +322,9 @@
   },
   "33367-Милкис напиток 0.3": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -331,7 +334,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -339,29 +342,29 @@
   },
   "33367-Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5": {
     "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": -1,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "requiredAmount": 5,
+    "loadedAmount": -11,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 5
+    "carryOver": 16
   },
   "33367-Мал. лимон - Актив Малаховская 0.5л.": {
     "status": "partial",
-    "requiredAmount": 7,
-    "loadedAmount": 7,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "requiredAmount": 5,
+    "loadedAmount": 5,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33367-Пирожное basker wheels панкейк 36гр": {
-    "status": "partial",
-    "requiredAmount": 5,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -369,19 +372,19 @@
   },
   "33354-Вафли Веселая тёлочка": {
     "status": "none",
-    "requiredAmount": 1,
+    "requiredAmount": 2,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 2
   },
   "33354-Сухарики Кириешки 33г": {
-    "status": "none",
-    "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "status": "partial",
+    "requiredAmount": 5,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -391,7 +394,7 @@
     "status": "partial",
     "requiredAmount": 5,
     "loadedAmount": 5,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -401,7 +404,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -418,30 +421,30 @@
     "carryOver": 0
   },
   "33354-Арахис бирка": {
-    "status": "none",
-    "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "status": "partial",
+    "requiredAmount": 6,
+    "loadedAmount": 6,
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 0
   },
   "33354-Сухарики Фишка 40г": {
-    "status": "none",
-    "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "status": "partial",
+    "requiredAmount": 5,
+    "loadedAmount": 5,
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 0
   },
   "33354-Круассаны 7 дней мини": {
-    "status": "none",
-    "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -451,27 +454,27 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "timestamp": "2026-02-09T08:32:08.431Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33354-Шок.бат. Пикник 42гр.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.309Z",
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "33354-Шок.бат. Твикс": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
+    "status": "partial",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -479,19 +482,19 @@
   },
   "33354-Шок.бат. Баунти/Натс": {
     "status": "none",
-    "requiredAmount": 0,
+    "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33354-Шок. Хрутка  криспи  22г.": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -501,7 +504,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -509,39 +512,39 @@
   },
   "33354-Киндер Делис пирож. глаз. 42 гр.": {
     "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 0
-  },
-  "33354-Шоколад Беби фокс/ВАфли 40гр.": {
-    "status": "none",
     "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 1
   },
-  "33354-Печенье Школьн. шпарг. 50гр./Посольское 44гр.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.317Z",
+  "33354-Шоколад Беби фокс/ВАфли 40гр.": {
+    "status": "partial",
+    "requiredAmount": 5,
+    "loadedAmount": 5,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
+  "33354-Печенье Школьн. шпарг. 50гр./Посольское 44гр.": {
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:32:08.432Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 1
+  },
   "33354-Пирожное basker wheels панкейк 36гр": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -551,17 +554,17 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33354-Шок.  M&M 45г": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "partial",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -571,27 +574,27 @@
     "status": "none",
     "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 1
   },
   "33354-Дирол X-FRESH 18г": {
-    "status": "none",
+    "status": "partial",
     "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 2
   },
   "33354-Йота": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -601,17 +604,17 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33354-Мармелад Яшкино/frunel": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -621,7 +624,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -629,19 +632,19 @@
   },
   "33354-Соломка 40.гр": {
     "status": "none",
-    "requiredAmount": 0,
+    "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33354-Батончик Смарт Формула/Протеин": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -649,39 +652,39 @@
   },
   "33354-Конф. Простое Чудо 40г": {
     "status": "none",
-    "requiredAmount": 0,
+    "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33354-Лимонад \"Добрый\" 0,5 в ассорт.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33354-Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "partial",
+    "requiredAmount": 2,
+    "loadedAmount": -4,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 6
   },
   "33354-Калинов морс 0,5": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -691,7 +694,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -701,7 +704,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -710,12 +713,12 @@
   "33354-Чай Рич 0,5": {
     "status": "partial",
     "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "loadedAmount": -3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 4
   },
   "33354-Добрый/Черноголовка вода+сок в ассорт.": {
     "status": "partial",
@@ -731,7 +734,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -739,19 +742,19 @@
   },
   "33354-Лимонад \"Добрый\" ж/б 0,33 в ассорт.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 0,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33354-Сок Добрый в ассорт 0.33": {
     "status": "partial",
     "requiredAmount": 1,
     "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -759,9 +762,9 @@
   },
   "33354-Сок Рич в ассорт.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -771,37 +774,37 @@
     "status": "partial",
     "requiredAmount": 1,
     "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33354-Сок 0,2л": {
-    "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33354-Лимонад Черноголовка ж/б 0.33 в ассорт.": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "status": "none",
+    "requiredAmount": 2,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "33354-Батончик Гуд Микс": {
     "status": "partial",
     "requiredAmount": 2,
     "loadedAmount": 2,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -809,9 +812,9 @@
   },
   "33354-Чипсы \"От Мартина\" 100г": {
     "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -819,9 +822,9 @@
   },
   "33354-Печенье Mr. О, 96гр.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -829,29 +832,29 @@
   },
   "33354-Крекер Яшкино с сыром 135гр": {
     "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 0
   },
   "33354-Печенье Форсайт 190гр": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-07T07:42:09.318Z",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T08:32:08.432Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33400-Чипсы Лейс 37гр": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.021Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -859,19 +862,19 @@
   },
   "33400-Круассаны 7 дней мини": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 3,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Шоколад Беби фокс/ВАфли 40гр.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "partial",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -889,9 +892,9 @@
   },
   "33400-Сухарики Фишка 40г": {
     "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -901,17 +904,17 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33400-Печенье Mr. О, 96гр.": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -919,29 +922,29 @@
   },
   "33400-Вафли голандские с начинкой яшкино 36гр": {
     "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 1,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 2
   },
   "33400-Конф. Простое Чудо 40г": {
-    "status": "none",
+    "status": "partial",
     "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 2
   },
   "33400-Йота": {
     "status": "none",
     "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -951,7 +954,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -959,29 +962,29 @@
   },
   "33400-Арахис бирка": {
     "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33400-Батончик Смарт Формула/Протеин": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 7,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 7
   },
   "33400-Печенье Любятово в ассорт. 88гр.": {
     "status": "partial",
-    "requiredAmount": 6,
-    "loadedAmount": 6,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -991,57 +994,57 @@
     "status": "partial",
     "requiredAmount": 3,
     "loadedAmount": 3,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33400-Шок.бат. Твикс": {
-    "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Шок.бат. Баунти/Натс": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33400-Шок.бат. Пикник 42гр.": {
-    "status": "partial",
-    "requiredAmount": 5,
-    "loadedAmount": 5,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Меллер/Ментос": {
-    "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Батончик Здоровый перекус 50гр": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1049,39 +1052,39 @@
   },
   "33400-Шок.  M&M 45г": {
     "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 2,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 1
   },
   "33400-Дирол X-FRESH 18г": {
-    "status": "partial",
-    "requiredAmount": 8,
-    "loadedAmount": 7,
-    "timestamp": "2026-02-06T09:31:34.022Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 1
-  },
-  "33400-Лимонад \"Добрый\" 0,5 в ассорт.": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
+  "33400-Лимонад \"Добрый\" 0,5 в ассорт.": {
+    "status": "partial",
+    "requiredAmount": 0,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T10:11:02.383Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 1
+  },
   "33400-Чай Фрэш 0,5л.": {
     "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1091,7 +1094,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1099,23 +1102,23 @@
   },
   "33400-Калинов морс 0,5": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 4,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Чай Рич 0,5": {
-    "status": "partial",
+    "status": "none",
     "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Добрый/Черноголовка вода+сок в ассорт. ": {
     "status": "none",
@@ -1129,19 +1132,19 @@
   },
   "33400-Печенье Супер Контик 100гр.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33400-Чипсы \"От Мартина\" 100г": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "partial",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1149,29 +1152,29 @@
   },
   "33400-Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5": {
     "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 0,
+    "loadedAmount": -3,
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 3
   },
   "33400-Мин.вода  Газ.Черноголовка/Норма жизни 0,5": {
     "status": "partial",
-    "requiredAmount": 0,
+    "requiredAmount": 1,
     "loadedAmount": -2,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 2
+    "carryOver": 3
   },
   "33400-Лимонад \"Добрый\" ж/б 0,33 в ассорт.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "partial",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.384Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1181,7 +1184,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.384Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1189,9 +1192,9 @@
   },
   "33400-Сухарики Кириешки 33г": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T10:11:02.384Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1199,39 +1202,39 @@
   },
   "33400-Соломка 40.гр": {
     "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "requiredAmount": 1,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T10:11:02.384Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "33400-Карамель Бон Пари 75гр": {
-    "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:11:02.384Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33400-Печенье Школьн. шпарг. 50гр./Посольское 44гр.": {
-    "status": "none",
+    "status": "partial",
     "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "loadedAmount": -2,
+    "timestamp": "2026-02-09T10:11:02.384Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "33400-Круассаны 7 дней миди": {
     "status": "partial",
     "requiredAmount": 5,
     "loadedAmount": 5,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1241,7 +1244,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T09:31:34.022Z",
+    "timestamp": "2026-02-09T10:11:02.383Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1249,43 +1252,43 @@
   },
   "33349-вода": {
     "status": "partial",
-    "requiredAmount": 14600,
-    "loadedAmount": 14600,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "requiredAmount": 10810,
+    "loadedAmount": 7810,
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 3000
   },
   "33349-кофе": {
     "status": "partial",
-    "requiredAmount": 358,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T08:53:06.836Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": -642
-  },
-  "33349-сливки": {
-    "status": "partial",
-    "requiredAmount": 325,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T08:53:06.836Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": -675
-  },
-  "33349-шоколад": {
-    "status": "partial",
-    "requiredAmount": 850,
-    "loadedAmount": 850,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "requiredAmount": -332,
+    "loadedAmount": -332,
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
+  },
+  "33349-сливки": {
+    "status": "partial",
+    "requiredAmount": -389,
+    "loadedAmount": -389,
+    "timestamp": "2026-02-09T04:58:36.510Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
+  },
+  "33349-шоколад": {
+    "status": "none",
+    "requiredAmount": 286,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:58:36.510Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 286
   },
   "33349-капучино ваниль": {
     "status": "none",
@@ -1298,24 +1301,24 @@
     "carryOver": 370
   },
   "33349-банан": {
-    "status": "partial",
-    "requiredAmount": 810,
-    "loadedAmount": 810,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "status": "none",
+    "requiredAmount": 60,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 60
   },
   "33349-чай": {
     "status": "none",
-    "requiredAmount": 555,
+    "requiredAmount": 658,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 555
+    "carryOver": 658
   },
   "33349-стаканы 300": {
     "status": "partial",
@@ -1348,14 +1351,14 @@
     "carryOver": 34
   },
   "33349-сахар": {
-    "status": "partial",
-    "requiredAmount": -80,
-    "loadedAmount": 1080,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "status": "none",
+    "requiredAmount": -952,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -1160
+    "carryOver": -952
   },
   "33351-Шок.бат. Сникерс 55 гр.": {
     "status": "partial",
@@ -1369,39 +1372,39 @@
   },
   "58910-вода": {
     "status": "none",
-    "requiredAmount": -17600,
+    "requiredAmount": -15690,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -17600
+    "carryOver": -15690
   },
   "58910-кофе": {
     "status": "none",
-    "requiredAmount": -388,
+    "requiredAmount": -250,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -388
+    "carryOver": -250
   },
   "58910-сливки": {
-    "status": "none",
-    "requiredAmount": -100,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "status": "partial",
+    "requiredAmount": 48,
+    "loadedAmount": 348,
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -100
+    "carryOver": -300
   },
   "58910-шоколад": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1411,7 +1414,7 @@
     "status": "none",
     "requiredAmount": -122,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -1419,33 +1422,33 @@
   },
   "58910-сахар": {
     "status": "none",
-    "requiredAmount": 204,
+    "requiredAmount": 234,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 204
+    "carryOver": 234
   },
   "58910-стаканы": {
     "status": "none",
-    "requiredAmount": 29,
+    "requiredAmount": 39,
     "loadedAmount": 0,
-    "timestamp": "2026-01-28T04:31:53.975Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
-    "selectedSizes": [],
+    "selectedSizes": ["small"],
     "selectedSyrups": [],
-    "carryOver": 29
+    "carryOver": 39
   },
   "58910-крышки": {
     "status": "none",
-    "requiredAmount": 74,
+    "requiredAmount": 84,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": true,
     "selectedSizes": ["small", "big"],
     "selectedSyrups": [],
-    "carryOver": 74
+    "carryOver": 84
   },
   "58910-размешиватель": {
     "status": "none",
@@ -1459,13 +1462,13 @@
   },
   "58910-сироп": {
     "status": "none",
-    "requiredAmount": 680,
+    "requiredAmount": 780,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T05:34:55.243Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
-    "selectedSyrups": ["banana", "caramel", "coconut"],
-    "carryOver": 680
+    "selectedSyrups": ["caramel", "coconut", "banana", "vanilla"],
+    "carryOver": 780
   },
   "41913-вода": {
     "status": "partial",
@@ -1578,44 +1581,44 @@
     "carryOver": -780
   },
   "33353-вода": {
+    "status": "none",
+    "requiredAmount": 9010,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:38:02.975Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 9010
+  },
+  "33353-кофе": {
     "status": "partial",
-    "requiredAmount": 11610,
-    "loadedAmount": 11610,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "requiredAmount": -402,
+    "loadedAmount": -402,
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
-  "33353-кофе": {
-    "status": "partial",
-    "requiredAmount": 288,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T07:17:43.606Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": -712
-  },
   "33353-сливки": {
     "status": "partial",
-    "requiredAmount": 265,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "requiredAmount": -451,
+    "loadedAmount": -451,
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -735
+    "carryOver": 0
   },
   "33353-шоколад": {
     "status": "none",
-    "requiredAmount": 153,
+    "requiredAmount": 265,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 153
+    "carryOver": 265
   },
   "33353-капучино ваниль": {
     "status": "partial",
@@ -1629,23 +1632,23 @@
   },
   "33353-банан": {
     "status": "none",
-    "requiredAmount": 330,
+    "requiredAmount": 390,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 330
+    "carryOver": 390
   },
   "33353-чай": {
     "status": "none",
-    "requiredAmount": 535,
+    "requiredAmount": 576,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 535
+    "carryOver": 576
   },
   "33353-стаканы 300": {
     "status": "partial",
@@ -1678,64 +1681,64 @@
     "carryOver": 34
   },
   "33353-сахар": {
-    "status": "none",
-    "requiredAmount": 92,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "status": "partial",
+    "requiredAmount": 304,
+    "loadedAmount": 604,
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 92
+    "carryOver": -300
   },
   "33367-Скитлс": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "requiredAmount": 2,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33280-вода": {
-    "status": "none",
-    "requiredAmount": 7940,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "status": "partial",
+    "requiredAmount": 23880,
+    "loadedAmount": 20880,
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 7940
+    "carryOver": 3000
   },
   "33280-кофе": {
-    "status": "none",
-    "requiredAmount": 300,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "status": "partial",
+    "requiredAmount": 798,
+    "loadedAmount": 798,
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 300
+    "carryOver": 0
   },
   "33280-сливки": {
     "status": "partial",
-    "requiredAmount": 950,
-    "loadedAmount": 950,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "requiredAmount": 369,
+    "loadedAmount": 369,
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33280-шоколад": {
-    "status": "none",
-    "requiredAmount": 173,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "status": "partial",
+    "requiredAmount": 561,
+    "loadedAmount": 561,
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 173
+    "carryOver": 0
   },
   "33280-капучино ваниль": {
     "status": "none",
@@ -1749,23 +1752,23 @@
   },
   "33280-банан": {
     "status": "none",
-    "requiredAmount": 0,
+    "requiredAmount": 210,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 210
   },
   "33280-чай": {
     "status": "none",
-    "requiredAmount": 806,
+    "requiredAmount": 929,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 806
+    "carryOver": 929
   },
   "33280-стаканы 300": {
     "status": "partial",
@@ -1799,93 +1802,93 @@
   },
   "33280-сахар": {
     "status": "none",
-    "requiredAmount": -380,
+    "requiredAmount": -48,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -380
+    "carryOver": -48
   },
   "33474-вода": {
     "status": "partial",
-    "requiredAmount": 10880,
-    "loadedAmount": 9880,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "requiredAmount": 5570,
+    "loadedAmount": 6570,
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1000
+    "carryOver": -1000
   },
   "33474-кофе": {
     "status": "partial",
-    "requiredAmount": 670,
-    "loadedAmount": 770,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "requiredAmount": 186,
+    "loadedAmount": 1000,
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -100
+    "carryOver": -814
   },
   "33474-сливки": {
-    "status": "partial",
-    "requiredAmount": 892,
-    "loadedAmount": 1590,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "status": "none",
+    "requiredAmount": -376,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -698
+    "carryOver": -376
   },
   "33474-шоколад": {
-    "status": "partial",
-    "requiredAmount": 215,
-    "loadedAmount": 255,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "status": "none",
+    "requiredAmount": 29,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -40
+    "carryOver": 29
   },
   "33474-ваниль": {
-    "status": "partial",
-    "requiredAmount": 78,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "status": "none",
+    "requiredAmount": -870,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -922
+    "carryOver": -870
   },
   "33474-сахар": {
     "status": "none",
-    "requiredAmount": 270,
+    "requiredAmount": 321,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 270
+    "carryOver": 321
   },
   "33474-стаканы": {
     "status": "none",
-    "requiredAmount": 20,
+    "requiredAmount": 42,
     "loadedAmount": 0,
-    "timestamp": "2026-01-26T07:03:42.864Z",
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
-    "selectedSizes": ["small"],
+    "selectedSizes": ["big"],
     "selectedSyrups": [],
-    "carryOver": 20
+    "carryOver": 42
   },
   "33474-крышки": {
     "status": "none",
-    "requiredAmount": 100,
+    "requiredAmount": 122,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": ["small", "big"],
     "selectedSyrups": [],
-    "carryOver": 100
+    "carryOver": 122
   },
   "33474-размешиватель": {
     "status": "none",
@@ -1899,13 +1902,13 @@
   },
   "33474-сироп": {
     "status": "none",
-    "requiredAmount": 900,
+    "requiredAmount": 1070,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T12:04:27.786Z",
+    "timestamp": "2026-02-09T11:52:36.291Z",
     "checked": false,
     "selectedSizes": [],
-    "selectedSyrups": ["banana", "vanilla", "coconut", "caramel"],
-    "carryOver": 900
+    "selectedSyrups": ["banana", "vanilla", "caramel"],
+    "carryOver": 1070
   },
   "43293-вода": {
     "status": "none",
@@ -2119,9 +2122,9 @@
   },
   "58695-вода": {
     "status": "partial",
-    "requiredAmount": 16665,
-    "loadedAmount": 16665,
-    "timestamp": "2026-02-05T10:20:55.660Z",
+    "requiredAmount": 6210,
+    "loadedAmount": 6210,
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -2129,19 +2132,19 @@
   },
   "58695-кофе": {
     "status": "partial",
-    "requiredAmount": 470,
-    "loadedAmount": 470,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "requiredAmount": 270,
+    "loadedAmount": 1000,
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": -730
   },
   "58695-сливки": {
     "status": "partial",
-    "requiredAmount": 1008,
-    "loadedAmount": 1008,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "requiredAmount": 526,
+    "loadedAmount": 526,
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -2149,53 +2152,53 @@
   },
   "58695-шоколад": {
     "status": "partial",
-    "requiredAmount": 574,
-    "loadedAmount": 574,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "requiredAmount": 248,
+    "loadedAmount": 1000,
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": -752
   },
   "58695-ваниль": {
     "status": "none",
-    "requiredAmount": -622,
+    "requiredAmount": -544,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -622
+    "carryOver": -544
   },
   "58695-сахар": {
     "status": "none",
-    "requiredAmount": 252,
+    "requiredAmount": 300,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 252
+    "carryOver": 300
   },
   "58695-стаканы": {
     "status": "none",
-    "requiredAmount": 90,
+    "requiredAmount": 119,
     "loadedAmount": 0,
-    "timestamp": "2026-01-29T10:47:33.248Z",
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
-    "selectedSizes": ["small", "big"],
+    "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 90
+    "carryOver": 119
   },
   "58695-крышки": {
     "status": "none",
-    "requiredAmount": 145,
+    "requiredAmount": 174,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "timestamp": "2026-02-09T12:22:51.578Z",
     "checked": false,
     "selectedSizes": ["big", "small"],
     "selectedSyrups": [],
-    "carryOver": 145
+    "carryOver": 174
   },
   "58695-размешиватель": {
     "status": "none",
@@ -2209,13 +2212,13 @@
   },
   "58695-сироп": {
     "status": "none",
-    "requiredAmount": 840,
+    "requiredAmount": 1000,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T10:20:55.661Z",
+    "timestamp": "2026-02-09T12:22:51.579Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": ["banana", "vanilla", "coconut", "caramel"],
-    "carryOver": 840
+    "carryOver": 1000
   },
   "37211-вода": {
     "status": "partial",
@@ -2428,74 +2431,74 @@
     "carryOver": 0
   },
   "33367-Шок.бат. Пикник 42гр.": {
-    "status": "partial",
+    "status": "none",
     "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33367-Батончик Смарт Формула/Протеин": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "33367-Арахис бирка": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "33367-Круассаны Яшкино 45г": {
     "status": "partial",
     "requiredAmount": 2,
     "loadedAmount": 2,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "33367-Конф. Простое Чудо 40г": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33367-Мармелад Яшкино/frunel": {
     "status": "none",
-    "requiredAmount": 0,
+    "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33367-Батончик Здоровый перекус 50гр": {
-    "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-06T10:50:12.501Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "33343-вода": {
     "status": "partial",
@@ -4458,10 +4461,10 @@
     "carryOver": -588
   },
   "51151-вода": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "status": "partial",
+    "requiredAmount": 19310,
+    "loadedAmount": 19310,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4469,33 +4472,33 @@
   },
   "51151-кофе": {
     "status": "partial",
-    "requiredAmount": 0,
-    "loadedAmount": -600,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "requiredAmount": 1098,
+    "loadedAmount": 1000,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 600
+    "carryOver": 98
   },
   "51151-сливки": {
-    "status": "partial",
-    "requiredAmount": -594,
-    "loadedAmount": -394,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "status": "none",
+    "requiredAmount": 345,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -200
+    "carryOver": 345
   },
   "51151-шоколад": {
     "status": "partial",
-    "requiredAmount": 521,
-    "loadedAmount": 321,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "requiredAmount": 1034,
+    "loadedAmount": 1000,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 200
+    "carryOver": 34
   },
   "51151-капучино ваниль": {
     "status": "partial",
@@ -4508,24 +4511,24 @@
     "carryOver": 980
   },
   "51151-банан": {
-    "status": "partial",
-    "requiredAmount": 0,
-    "loadedAmount": -90,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "status": "none",
+    "requiredAmount": 180,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 90
+    "carryOver": 180
   },
   "51151-чай": {
     "status": "partial",
-    "requiredAmount": 805,
-    "loadedAmount": -100,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "requiredAmount": 967,
+    "loadedAmount": 967,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 905
+    "carryOver": 0
   },
   "51151-стаканы 300": {
     "status": "partial",
@@ -4559,19 +4562,19 @@
   },
   "51151-сахар": {
     "status": "partial",
-    "requiredAmount": -20,
-    "loadedAmount": -320,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "requiredAmount": 632,
+    "loadedAmount": 632,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 300
+    "carryOver": 0
   },
   "51211-Печенье Любятово в ассорт. 88гр.": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4581,17 +4584,17 @@
     "status": "none",
     "requiredAmount": 1,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 1
   },
   "51211-Шок.бат. Сникерс 55 гр.": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4599,19 +4602,19 @@
   },
   "51211-Снекиты/Сухарики Емеля в ассорт.": {
     "status": "partial",
-    "requiredAmount": 4,
+    "requiredAmount": 3,
     "loadedAmount": 3,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 0
   },
   "51211-Батончик Здоровый перекус 50гр": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4619,9 +4622,9 @@
   },
   "51211-Конф. Простое Чудо 40г": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4631,7 +4634,7 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4639,29 +4642,29 @@
   },
   "51211-Шоколад Беби фокс/ВАфли 40гр.": {
     "status": "partial",
-    "requiredAmount": 5,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 9,
+    "loadedAmount": 9,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 0
   },
   "51211-Шок.бат. Твикс": {
-    "status": "none",
-    "requiredAmount": 1,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "partial",
+    "requiredAmount": 4,
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 0
   },
   "51211-Шок.бат. Баунти/Натс": {
-    "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4671,47 +4674,47 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Скитлс": {
-    "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "51211-Степ/ ДаЁжь 42гр.": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Меллер/Ментос": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": -1,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 2
   },
   "51211-Дирол X-FRESH 18г": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4719,39 +4722,39 @@
   },
   "51211-Круассаны 7 дней миди ": {
     "status": "partial",
-    "requiredAmount": 5,
-    "loadedAmount": 5,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Печенье Форсайт 190гр": {
-    "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Сухарики Хрустим 40гр.": {
-    "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Печенье Mr. О, 96гр.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4761,17 +4764,17 @@
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Орион Чоко-пай/Тонди": {
-    "status": "partial",
-    "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4779,29 +4782,29 @@
   },
   "51211-Сухарики Кириешки 33г": {
     "status": "partial",
-    "requiredAmount": 6,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-05T09:15:26.466Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 2
-  },
-  "51211-Калинов морс 0,5": {
-    "status": "partial",
-    "requiredAmount": 5,
-    "loadedAmount": 5,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
+  "51211-Калинов морс 0,5": {
+    "status": "partial",
+    "requiredAmount": 2,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T11:33:13.998Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 1
+  },
   "51211-Лимонад \"Добрый\" 0,5 в ассорт.": {
     "status": "partial",
     "requiredAmount": 4,
     "loadedAmount": 4,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4811,7 +4814,7 @@
     "status": "partial",
     "requiredAmount": 1,
     "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4819,9 +4822,9 @@
   },
   "51211-Мин.Вода.НЕгаз Черноголовка /Норма жизни 0.5": {
     "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 1,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4830,18 +4833,18 @@
   "51211-Мин.вода  Газ.Черноголовка/Норма жизни 0,5": {
     "status": "partial",
     "requiredAmount": 2,
-    "loadedAmount": 2,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "loadedAmount": -2,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 4
   },
   "51211-Сок Палпи в ассорт. 0.45": {
     "status": "partial",
-    "requiredAmount": 5,
-    "loadedAmount": 5,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 1,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4850,48 +4853,48 @@
   "51211-Чай Рич 0,5": {
     "status": "partial",
     "requiredAmount": 5,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-05T09:15:26.466Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 2
-  },
-  "51211-Мал. лимон - Актив Малаховская 0.5л.": {
-    "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "loadedAmount": 4,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 1
   },
-  "51211-Сок Рич в ассорт.": {
+  "51211-Мал. лимон - Актив Малаховская 0.5л.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 5,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T11:33:13.998Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 2
+  },
+  "51211-Сок Рич в ассорт.": {
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Сок Добрый в ассорт 0.33": {
-    "status": "none",
+    "status": "partial",
     "requiredAmount": 2,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 2
+    "carryOver": 0
   },
   "51211-Лимонад \"Добрый\" ж/б 0,33 в ассорт.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -4899,39 +4902,39 @@
   },
   "51211-Лимонад Черноголовка ж/б 0.33 в ассорт.": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": -1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 4,
+    "loadedAmount": -10,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 2
+    "carryOver": 14
   },
   "51211-Рич Биттер 0,33": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Чай Фрэш 0,5л.": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "partial",
+    "requiredAmount": 3,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": 1
   },
   "51211-Добрый/Черноголовка вода+сок в ассорт. ": {
     "status": "partial",
     "requiredAmount": 1,
     "loadedAmount": 1,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -6489,13 +6492,13 @@
   },
   "33349-ваниль": {
     "status": "partial",
-    "requiredAmount": 385,
-    "loadedAmount": -385,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "requiredAmount": 970,
+    "loadedAmount": 970,
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 770
+    "carryOver": 0
   },
   "33349-стакан": {
     "status": "partial",
@@ -6509,13 +6512,13 @@
   },
   "33349-крышки": {
     "status": "none",
-    "requiredAmount": 322,
+    "requiredAmount": 366,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:53:06.836Z",
+    "timestamp": "2026-02-09T04:58:36.510Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 322
+    "carryOver": 366
   },
   "58910-стакан": {
     "status": "none",
@@ -6529,13 +6532,13 @@
   },
   "33353-ваниль": {
     "status": "none",
-    "requiredAmount": 345,
+    "requiredAmount": 485,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 345
+    "carryOver": 485
   },
   "33353-стакан": {
     "status": "partial",
@@ -6549,43 +6552,43 @@
   },
   "33353-крышки": {
     "status": "none",
-    "requiredAmount": 433,
+    "requiredAmount": 468,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T07:17:43.606Z",
+    "timestamp": "2026-02-09T08:38:02.975Z",
     "checked": true,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 433
+    "carryOver": 468
   },
   "33367-кофе": {
     "status": "none",
-    "requiredAmount": 263,
+    "requiredAmount": 548,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 263
+    "carryOver": 548
   },
   "33367-сливки": {
     "status": "none",
-    "requiredAmount": 194,
+    "requiredAmount": 420,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 194
+    "carryOver": 420
   },
   "33367-ваниль": {
     "status": "none",
-    "requiredAmount": 951,
+    "requiredAmount": 1176,
     "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
+    "timestamp": "2026-02-09T09:13:02.835Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 951
+    "carryOver": 1176
   },
   "33367-стакан": {
     "status": "none",
@@ -6599,9 +6602,9 @@
   },
   "58741-вода": {
     "status": "partial",
-    "requiredAmount": 3450,
-    "loadedAmount": 3450,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "requiredAmount": 5530,
+    "loadedAmount": 5530,
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -6609,9 +6612,9 @@
   },
   "58741-кофе": {
     "status": "partial",
-    "requiredAmount": 226,
-    "loadedAmount": 226,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "requiredAmount": 308,
+    "loadedAmount": 308,
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -6619,43 +6622,43 @@
   },
   "58741-сливки": {
     "status": "partial",
-    "requiredAmount": 286,
-    "loadedAmount": 286,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "requiredAmount": 574,
+    "loadedAmount": 574,
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "58741-шоколад": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "status": "partial",
+    "requiredAmount": 46,
+    "loadedAmount": 246,
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": -200
   },
   "58741-ваниль": {
-    "status": "none",
+    "status": "partial",
     "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "loadedAmount": 800,
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 0
+    "carryOver": -800
   },
   "58741-сахар": {
     "status": "none",
-    "requiredAmount": 45,
+    "requiredAmount": 105,
     "loadedAmount": 0,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 45
+    "carryOver": 105
   },
   "58741-стакан": {
     "status": "none",
@@ -6669,13 +6672,13 @@
   },
   "58741-крышки": {
     "status": "none",
-    "requiredAmount": 15,
+    "requiredAmount": 37,
     "loadedAmount": 0,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "timestamp": "2026-02-09T06:31:35.961Z",
     "checked": true,
-    "selectedSizes": [],
+    "selectedSizes": ["small"],
     "selectedSyrups": [],
-    "carryOver": 15
+    "carryOver": 37
   },
   "58741-размешиватель": {
     "status": "none",
@@ -6689,23 +6692,23 @@
   },
   "58741-сироп": {
     "status": "none",
-    "requiredAmount": 150,
+    "requiredAmount": 350,
     "loadedAmount": 0,
-    "timestamp": "2026-02-02T06:56:49.121Z",
+    "timestamp": "2026-02-09T06:31:35.966Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": ["banana", "vanilla", "coconut", "caramel"],
-    "carryOver": 150
+    "carryOver": 350
   },
   "51151-ваниль": {
-    "status": "partial",
-    "requiredAmount": 850,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "status": "none",
+    "requiredAmount": 145,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -150
+    "carryOver": 145
   },
   "51151-стакан": {
     "status": "none",
@@ -6719,49 +6722,49 @@
   },
   "51151-крышки": {
     "status": "none",
-    "requiredAmount": 61,
+    "requiredAmount": 134,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T08:45:03.816Z",
+    "timestamp": "2026-02-09T10:42:25.926Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 61
+    "carryOver": 134
   },
   "51211-Читос ": {
     "status": "partial",
-    "requiredAmount": 4,
-    "loadedAmount": 4,
-    "timestamp": "2026-02-05T09:15:26.465Z",
+    "requiredAmount": 3,
+    "loadedAmount": 3,
+    "timestamp": "2026-02-09T11:33:13.997Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Чипсы Лейс 37гр": {
-    "status": "partial",
-    "requiredAmount": 3,
-    "loadedAmount": 3,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.997Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "51211-Вафли Веселая тёлочка": {
-    "status": "partial",
-    "requiredAmount": 9,
-    "loadedAmount": 8,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "status": "none",
+    "requiredAmount": 2,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.997Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 1
+    "carryOver": 2
   },
   "51211-Маршмеллоу Зерфер 40гр": {
     "status": "none",
     "requiredAmount": 0,
     "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.997Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
@@ -6769,23 +6772,23 @@
   },
   "51211-Киндер буэно": {
     "status": "partial",
-    "requiredAmount": 3,
+    "requiredAmount": 2,
     "loadedAmount": 2,
-    "timestamp": "2026-02-05T09:15:26.466Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 1
-  },
-  "51211-Вафли голандские с начинкой яшкино 36гр": {
-    "status": "none",
-    "requiredAmount": 0,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
+  },
+  "51211-Вафли голандские с начинкой яшкино 36гр": {
+    "status": "none",
+    "requiredAmount": 1,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:33:13.998Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 1
   },
   "33474-стакан": {
     "status": "none",
@@ -7739,23 +7742,23 @@
   },
   "58910-Item": {
     "status": "none",
-    "requiredAmount": 11,
+    "requiredAmount": 4,
     "loadedAmount": 0,
-    "timestamp": "2026-02-04T07:11:23.154Z",
+    "timestamp": "2026-02-09T05:22:23.166Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 11
+    "carryOver": 4
   },
   "33280-ваниль": {
     "status": "none",
-    "requiredAmount": -165,
+    "requiredAmount": 70,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -165
+    "carryOver": 70
   },
   "33280-стакан": {
     "status": "partial",
@@ -7769,13 +7772,13 @@
   },
   "33280-крышки": {
     "status": "none",
-    "requiredAmount": 182,
+    "requiredAmount": 245,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:00:13.251Z",
+    "timestamp": "2026-02-09T09:46:28.502Z",
     "checked": true,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 182
+    "carryOver": 245
   },
   "37211-стакан": {
     "status": "none",
@@ -7859,13 +7862,13 @@
   },
   "51211-Пирожное basker wheels панкейк 36гр": {
     "status": "partial",
-    "requiredAmount": 1,
-    "loadedAmount": -5,
-    "timestamp": "2026-02-05T09:15:26.466Z",
+    "requiredAmount": 8,
+    "loadedAmount": 8,
+    "timestamp": "2026-02-09T11:33:13.998Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 6
+    "carryOver": 0
   },
   "58695-стакан": {
     "status": "none",
@@ -8069,73 +8072,73 @@
   },
   "40264-вода": {
     "status": "partial",
-    "requiredAmount": 25210,
-    "loadedAmount": 25210,
-    "timestamp": "2026-02-07T08:27:05.355Z",
+    "requiredAmount": 12780,
+    "loadedAmount": 12780,
+    "timestamp": "2026-02-09T05:58:26.000Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
   "40264-кофе": {
-    "status": "none",
-    "requiredAmount": 240,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:27:05.355Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 240
-  },
-  "40264-сливки": {
-    "status": "none",
-    "requiredAmount": 175,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:27:05.355Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 175
-  },
-  "40264-шоколад": {
     "status": "partial",
-    "requiredAmount": 1305,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T08:27:05.356Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 305
-  },
-  "40264-ваниль": {
-    "status": "partial",
-    "requiredAmount": 1235,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T08:27:05.356Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 235
-  },
-  "40264-банан": {
-    "status": "partial",
-    "requiredAmount": 1000,
-    "loadedAmount": 1000,
-    "timestamp": "2026-02-07T08:27:05.356Z",
+    "requiredAmount": 728,
+    "loadedAmount": 728,
+    "timestamp": "2026-02-09T05:58:26.000Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 0
   },
-  "40264-чай": {
-    "status": "none",
-    "requiredAmount": 211,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:27:05.356Z",
+  "40264-сливки": {
+    "status": "partial",
+    "requiredAmount": 516,
+    "loadedAmount": 516,
+    "timestamp": "2026-02-09T05:58:26.000Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 211
+    "carryOver": 0
+  },
+  "40264-шоколад": {
+    "status": "partial",
+    "requiredAmount": 637,
+    "loadedAmount": 637,
+    "timestamp": "2026-02-09T05:58:26.000Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
+  },
+  "40264-ваниль": {
+    "status": "none",
+    "requiredAmount": 425,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T05:58:26.000Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 425
+  },
+  "40264-банан": {
+    "status": "none",
+    "requiredAmount": 90,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T05:58:26.000Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 90
+  },
+  "40264-чай": {
+    "status": "none",
+    "requiredAmount": 232,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T05:58:26.000Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 232
   },
   "40264-стакан": {
     "status": "partial",
@@ -8149,13 +8152,13 @@
   },
   "40264-крышки": {
     "status": "none",
-    "requiredAmount": 26,
+    "requiredAmount": 80,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:27:05.356Z",
+    "timestamp": "2026-02-09T05:58:26.000Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": 26
+    "carryOver": 80
   },
   "40264-размешиватели 125": {
     "status": "partial",
@@ -8169,13 +8172,13 @@
   },
   "40264-сахар": {
     "status": "none",
-    "requiredAmount": -336,
+    "requiredAmount": -32,
     "loadedAmount": 0,
-    "timestamp": "2026-02-07T08:27:05.356Z",
+    "timestamp": "2026-02-09T05:58:26.000Z",
     "checked": false,
     "selectedSizes": [],
     "selectedSyrups": [],
-    "carryOver": -336
+    "carryOver": -32
   },
   "33343-кофе": {
     "status": "none",
@@ -8736,5 +8739,295 @@
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 48
+  },
+  "36153-вода": {
+    "status": "partial",
+    "requiredAmount": 4300,
+    "loadedAmount": 4300,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
+  },
+  "36153-кофе": {
+    "status": "partial",
+    "requiredAmount": 288,
+    "loadedAmount": 388,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": -100
+  },
+  "36153-сливки": {
+    "status": "partial",
+    "requiredAmount": 140,
+    "loadedAmount": 140,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
+  },
+  "36153-шоколад": {
+    "status": "partial",
+    "requiredAmount": 186,
+    "loadedAmount": -186,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 372
+  },
+  "36153-сахар": {
+    "status": "none",
+    "requiredAmount": 63,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 63
+  },
+  "36153-стаканы": {
+    "status": "none",
+    "requiredAmount": 26,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 26
+  },
+  "36153-крышки": {
+    "status": "none",
+    "requiredAmount": 26,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": true,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 26
+  },
+  "36153-размешиватели": {
+    "status": "none",
+    "requiredAmount": 26,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": true,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 26
+  },
+  "36153-сироп": {
+    "status": "none",
+    "requiredAmount": 260,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:27:43.460Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": ["caramel", "coconut", "vanilla", "banana"],
+    "carryOver": 260
+  },
+  "33349-стаканы": {
+    "status": "none",
+    "requiredAmount": 44,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:58:36.510Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 44
+  },
+  "33349-размешиватели": {
+    "status": "none",
+    "requiredAmount": 43,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T04:58:36.510Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 43
+  },
+  "58910-размешиватели": {
+    "status": "none",
+    "requiredAmount": 10,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T05:22:23.166Z",
+    "checked": true,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 10
+  },
+  "40264-стаканы": {
+    "status": "partial",
+    "requiredAmount": 54,
+    "loadedAmount": 50,
+    "timestamp": "2026-02-09T05:58:26.000Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 4
+  },
+  "40264-размешиватели": {
+    "status": "none",
+    "requiredAmount": 54,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T05:58:26.000Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 54
+  },
+  "58741-стаканы": {
+    "status": "none",
+    "requiredAmount": 22,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T06:31:35.961Z",
+    "checked": false,
+    "selectedSizes": ["small"],
+    "selectedSyrups": [],
+    "carryOver": 22
+  },
+  "58741-размешиватели": {
+    "status": "none",
+    "requiredAmount": 22,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T06:31:35.961Z",
+    "checked": true,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 22
+  },
+  "33354-Круассаны 7 дней миди ": {
+    "status": "partial",
+    "requiredAmount": 3,
+    "loadedAmount": 2,
+    "timestamp": "2026-02-09T08:32:08.431Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 1
+  },
+  "33354-Батончик Биокей/Матти кидс": {
+    "status": "none",
+    "requiredAmount": 0,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:32:08.432Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
+  },
+  "33354-Добрый/Черноголовка вода+сок в ассорт. ": {
+    "status": "partial",
+    "requiredAmount": 1,
+    "loadedAmount": 1,
+    "timestamp": "2026-02-09T08:32:08.432Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 0
+  },
+  "33353-стаканы": {
+    "status": "none",
+    "requiredAmount": 35,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:38:02.975Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 35
+  },
+  "33353-размешиватели": {
+    "status": "none",
+    "requiredAmount": 35,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T08:38:02.975Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 35
+  },
+  "33367-стаканы": {
+    "status": "none",
+    "requiredAmount": 59,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T09:13:02.835Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 59
+  },
+  "33367-размешиватели": {
+    "status": "none",
+    "requiredAmount": 59,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T09:13:02.835Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 59
+  },
+  "33280-стаканы": {
+    "status": "partial",
+    "requiredAmount": 63,
+    "loadedAmount": 50,
+    "timestamp": "2026-02-09T09:46:28.502Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 13
+  },
+  "33280-размешиватели": {
+    "status": "partial",
+    "requiredAmount": 63,
+    "loadedAmount": 100,
+    "timestamp": "2026-02-09T09:46:28.502Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": -37
+  },
+  "51151-стаканы": {
+    "status": "none",
+    "requiredAmount": 73,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T10:42:25.926Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 73
+  },
+  "51151-размешиватели": {
+    "status": "partial",
+    "requiredAmount": 73,
+    "loadedAmount": 100,
+    "timestamp": "2026-02-09T10:42:25.926Z",
+    "checked": false,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": -27
+  },
+  "33474-размешиватели": {
+    "status": "none",
+    "requiredAmount": 22,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T11:52:36.291Z",
+    "checked": true,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 22
+  },
+  "58695-размешиватели": {
+    "status": "none",
+    "requiredAmount": 29,
+    "loadedAmount": 0,
+    "timestamp": "2026-02-09T12:22:51.578Z",
+    "checked": true,
+    "selectedSizes": [],
+    "selectedSyrups": [],
+    "carryOver": 29
   }
 }
