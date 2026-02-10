@@ -60,12 +60,13 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { TelemetronSaleItem } from '@/types/telemetron';
+import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
+
 
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate());
-    return tomorrow;
+    const today = new Date();
+    return today;
   });
 
   const [machineIdsForDay, setMachineIdsForDay] = useState<string[]>([]);
@@ -81,7 +82,9 @@ export const TomorrowsMachines = () => {
   const [servicedMachines, setServicedMachines] = useState<
     Record<string, boolean>
   >({});
-
+  const [stockOnHand, setStockOnHand] = useState<Record<string, string>>({});
+  
+  const { scheduleCache, setScheduleCache } = useScheduleCache();
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
 
@@ -94,12 +97,7 @@ export const TomorrowsMachines = () => {
   const [calendarState, setCalendarState] = useState<{
     open: boolean;
     machineId: string | null;
-    selectedDate?: Date;
   }>({ open: false, machineId: null });
-
-  const [scheduleCache, setScheduleCache] = useState<
-    Record<string, string[] | null>
-  >({});
 
   // --- DATA FETCHING AND SAVING ---
   const loadScheduleForDate = useCallback(
@@ -248,7 +246,7 @@ export const TomorrowsMachines = () => {
         setIsLoading(false);
       }
     },
-    [toast, getMachineOverview, getSalesByProducts, scheduleCache]
+    [toast, getMachineOverview, getSalesByProducts, scheduleCache, setScheduleCache]
   );
 
   useEffect(() => {
@@ -320,7 +318,7 @@ export const TomorrowsMachines = () => {
         description: 'Не удалось сохранить расписание.',
       });
     }
-  }, [selectedDate, machineIdsForDay, toast]);
+  }, [selectedDate, machineIdsForDay, toast, setScheduleCache]);
 
   const machinesForDay = useMemo(() => {
     return allMachines
@@ -391,16 +389,14 @@ export const TomorrowsMachines = () => {
             } else {
               setCalendarState({
                 open: true,
-                machineId: machineToAdd,
-                selectedDate: undefined,
+                machineId: machineToAdd
               });
             }
           } catch (e) {
             console.error('Error fetching overview for special machine:', e);
             setCalendarState({
               open: true,
-              machineId: machineToAdd,
-              selectedDate: undefined,
+              machineId: machineToAdd
             });
           }
         }
@@ -423,8 +419,7 @@ export const TomorrowsMachines = () => {
         });
         setCalendarState({
           open: true,
-          machineId: machineToAdd,
-          selectedDate: undefined,
+          machineId: machineToAdd
         });
       }
     } catch (error) {
@@ -466,7 +461,6 @@ export const TomorrowsMachines = () => {
         setCalendarState({
           open: true,
           machineId: machineId,
-          selectedDate: undefined,
         });
       }
     }, 100);
@@ -474,9 +468,9 @@ export const TomorrowsMachines = () => {
 
   const handleCalendarSelect = async (
     date: Date | undefined,
-    machineId?: string
+    machineId: string
   ) => {
-    const currentMachineId = machineId || calendarState.machineId;
+    const currentMachineId = machineId;
 
     if (date && currentMachineId) {
       const machine = allMachines.find(m => m.id === currentMachineId);
@@ -534,6 +528,16 @@ export const TomorrowsMachines = () => {
       title: 'Изменения сброшены',
       description: 'Восстановлен последний сохраненный список.',
     });
+  };
+  
+  const handleStockChange = (itemName: string, value: string) => {
+    // Only allow numbers and limit to 2 digits
+    if (/^\d{0,2}$/.test(value)) {
+      setStockOnHand(prev => ({
+        ...prev,
+        [itemName]: value,
+      }));
+    }
   };
 
   const getFormattedDate = (date: Date) => {
@@ -663,7 +667,7 @@ export const TomorrowsMachines = () => {
                             {dateDisplay}
                           </span>
                           <Popover
-                            open={
+                           open={
                               calendarState.open &&
                               calendarState.machineId === machine.id
                             }
@@ -672,9 +676,6 @@ export const TomorrowsMachines = () => {
                                 setCalendarState({
                                   open: true,
                                   machineId: machine.id,
-                                  selectedDate: serviceDate
-                                    ? new Date(serviceDate)
-                                    : undefined,
                                 });
                               } else {
                                 setCalendarState({ open: false, machineId: null });
@@ -833,10 +834,12 @@ export const TomorrowsMachines = () => {
           {machineIdsForDay.length > 0 && (
             <div className="mt-4">
               <GroupedShoppingLists
+              key={`${selectedDate.getTime()}-${machineIdsForDay.length}`}
                 machineIds={machineIdsForDay}
                 specialMachineDates={specialMachineDates}
-                onSaveChanges={handleSaveChanges}
                 aaMachineIds={aaMachineIds}
+                stockOnHand={stockOnHand}
+                onStockChange={handleStockChange}
               />
             </div>
           )}

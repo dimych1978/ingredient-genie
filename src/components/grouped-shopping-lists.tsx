@@ -26,19 +26,14 @@ import {
   allMachines,
   getIngredientConfig,
   getMachineType,
+  GroupedShoppingListsProps,
 } from '@/lib/data';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-
-interface GroupedShoppingListsProps {
-  machineIds: string[];
-  specialMachineDates: Record<string, string>;
-  onSaveChanges: () => void;
-  aaMachineIds: Set<string>;
-}
+import { Input } from '@/components/ui/input';
 
 type CombinedListItem = {
   name: string;
@@ -51,8 +46,9 @@ type CombinedListItem = {
 export const GroupedShoppingLists = ({
   machineIds,
   specialMachineDates,
-  onSaveChanges,
   aaMachineIds,
+  stockOnHand,
+  onStockChange,
 }: GroupedShoppingListsProps) => {
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,10 +66,6 @@ export const GroupedShoppingLists = ({
     setCombinedList([]);
 
     const machineIdsToProcess = machineIds.filter(id => !aaMachineIds.has(id));
-
-    if (machineIdsToProcess.length > 0) {
-      onSaveChanges();
-    }
 
     try {
       const allDates: Record<string, string> = { ...specialMachineDates };
@@ -147,7 +139,10 @@ export const GroupedShoppingLists = ({
         if (!machine) return;
 
         // Если у продажи есть ингредиенты - это напиток. Считаем ингредиенты.
-        if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
+        if (
+          sale.planogram.ingredients &&
+          sale.planogram.ingredients.length > 0
+        ) {
           sale.planogram.ingredients.forEach(apiIngredient => {
             const config = getIngredientConfig(
               apiIngredient.name,
@@ -161,17 +156,16 @@ export const GroupedShoppingLists = ({
               };
               const amountToAdd = apiIngredient.volume * sale.number;
               current.amount += amountToAdd;
-              const machineBreakdown =
-                current.breakdown[sale.machineId] || {
-                  name: machine.name,
-                  amount: 0,
-                };
+              const machineBreakdown = current.breakdown[sale.machineId] || {
+                name: machine.name,
+                amount: 0,
+              };
               machineBreakdown.amount += amountToAdd;
               current.breakdown[sale.machineId] = machineBreakdown;
               coffeeIngredientsMap.set(config.name, current);
             }
           });
-        } 
+        }
         // Если ингредиентов нет - это снек/бутылка. Считаем как товар.
         else {
           const name = sale.planogram.name;
@@ -182,11 +176,10 @@ export const GroupedShoppingLists = ({
           };
           const amountToAdd = sale.number;
           current.amount += amountToAdd;
-          const machineBreakdown =
-            current.breakdown[sale.machineId] || {
-              name: machine.name,
-              amount: 0,
-            };
+          const machineBreakdown = current.breakdown[sale.machineId] || {
+            name: machine.name,
+            amount: 0,
+          };
           machineBreakdown.amount += amountToAdd;
           current.breakdown[sale.machineId] = machineBreakdown;
           productMap.set(name, current);
@@ -296,7 +289,6 @@ export const GroupedShoppingLists = ({
   }, [
     machineIds,
     specialMachineDates,
-    onSaveChanges,
     getMachineOverview,
     getSalesByProducts,
     showList,
@@ -352,21 +344,40 @@ export const GroupedShoppingLists = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="p-2">Название</TableHead>
-                  <TableHead className="p-2 text-right whitespace-nowrap">Количество</TableHead>
+                  <TableHead className="p-2 text-right whitespace-nowrap">
+                    Количество
+                  </TableHead>
                   <TableHead className="p-2 w-12 text-right">Инфо</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {combinedList.map(item => (
                   <TableRow key={item.name}>
-                    <TableCell className="p-2 font-medium break-words">{item.name}</TableCell>
+                    <TableCell className="p-2 font-medium">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={stockOnHand[item.name] || ''}
+                          onChange={e =>
+                            onStockChange(item.name, e.target.value)
+                          }
+                          className="h-8 w-14 text-center p-1"
+                          placeholder="0"
+                        />
+                        <span className="break-words">{item.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="p-2 text-right whitespace-nowrap">
                       {item.amount} {item.unit}
                     </TableCell>
                     <TableCell className="p-2 text-right">
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </PopoverTrigger>
@@ -381,7 +392,9 @@ export const GroupedShoppingLists = ({
                           </div>
                           <div className="mt-4 space-y-1">
                             {Object.entries(item.breakdown)
-                              .filter(([, details]) => Math.ceil(details.amount) !== 0)
+                              .filter(
+                                ([, details]) => Math.ceil(details.amount) !== 0
+                              )
                               .map(([machineId, details]) => (
                                 <div
                                   key={machineId}

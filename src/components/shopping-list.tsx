@@ -1,6 +1,6 @@
 'use client';
 
-import {
+import React, {
   useEffect,
   useState,
   useMemo,
@@ -1050,6 +1050,17 @@ export const ShoppingList = ({
                     const hasDeficit = deficit > 0;
                     const hasSurplus = deficit < 0;
 
+                    const infoParts: React.ReactNode[] = [];
+                    if (hasSales) {
+                        infoParts.push(`Продажи: ${item.salesAmount} ${item.unit}`);
+                    }
+                    if (hasDeficit) {
+                        infoParts.push(<span key="deficit" className='font-semibold text-yellow-400'>{`Недогруз: ${deficit} ${item.unit}`}</span>);
+                    }
+                    if (hasSurplus) {
+                        infoParts.push(<span key="surplus" className='font-semibold text-cyan-400'>{`Излишек: ${Math.abs(deficit)} ${item.unit}`}</span>);
+                    }
+
                     const isKreaMachine = machine?.model?.toLowerCase().includes('krea');
                     const isSpecialKreaItem = isKreaMachine && (item.name === 'стаканы' || item.name === 'крышки');
                     const isCheckboxItem = item.type === 'checkbox' && !isSpecialKreaItem;
@@ -1132,21 +1143,16 @@ export const ShoppingList = ({
                             </div>
                           ) : (
                             <>
-                              {(hasSales || hasDeficit || hasSurplus) && (
-                                <div className='text-sm text-gray-400 break-words'>
-                                  {hasSales &&
-                                    `Продажи: ${item.salesAmount} ${item.unit}`}
-                                  {hasSales &&
-                                    (hasDeficit || hasSurplus) &&
-                                    ' + '}
-                                  {hasDeficit &&
-                                    `Недогруз: ${deficit} ${item.unit}`}
-                                  {hasSurplus &&
-                                    `Излишек: ${Math.abs(deficit)} ${
-                                      item.unit
-                                    }`}
-                                </div>
-                              )}
+                              <div className='text-sm text-gray-400 break-words'>
+                                {infoParts.length > 0 ? (
+                                    infoParts.map((part, i) => (
+                                        <React.Fragment key={i}>
+                                            {part}
+                                            {i < infoParts.length - 1 ? ' + ' : ''}
+                                        </React.Fragment>
+                                    ))
+                                ) : null}
+                              </div>
                               <div
                                 className={cn(
                                   'text-base font-bold break-words',
