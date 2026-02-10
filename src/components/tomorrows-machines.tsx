@@ -82,6 +82,7 @@ export const TomorrowsMachines = () => {
   const [servicedMachines, setServicedMachines] = useState<
     Record<string, boolean>
   >({});
+  const [stockOnHand, setStockOnHand] = useState<Record<string, string>>({});
   
   const { scheduleCache, setScheduleCache } = useScheduleCache();
   const { toast } = useToast();
@@ -96,7 +97,6 @@ export const TomorrowsMachines = () => {
   const [calendarState, setCalendarState] = useState<{
     open: boolean;
     machineId: string | null;
-    selectedDate?: Date;
   }>({ open: false, machineId: null });
 
   // --- DATA FETCHING AND SAVING ---
@@ -389,16 +389,14 @@ export const TomorrowsMachines = () => {
             } else {
               setCalendarState({
                 open: true,
-                machineId: machineToAdd,
-                selectedDate: undefined,
+                machineId: machineToAdd
               });
             }
           } catch (e) {
             console.error('Error fetching overview for special machine:', e);
             setCalendarState({
               open: true,
-              machineId: machineToAdd,
-              selectedDate: undefined,
+              machineId: machineToAdd
             });
           }
         }
@@ -421,8 +419,7 @@ export const TomorrowsMachines = () => {
         });
         setCalendarState({
           open: true,
-          machineId: machineToAdd,
-          selectedDate: undefined,
+          machineId: machineToAdd
         });
       }
     } catch (error) {
@@ -464,7 +461,6 @@ export const TomorrowsMachines = () => {
         setCalendarState({
           open: true,
           machineId: machineId,
-          selectedDate: undefined,
         });
       }
     }, 100);
@@ -472,9 +468,9 @@ export const TomorrowsMachines = () => {
 
   const handleCalendarSelect = async (
     date: Date | undefined,
-    machineId?: string
+    machineId: string
   ) => {
-    const currentMachineId = machineId || calendarState.machineId;
+    const currentMachineId = machineId;
 
     if (date && currentMachineId) {
       const machine = allMachines.find(m => m.id === currentMachineId);
@@ -532,6 +528,16 @@ export const TomorrowsMachines = () => {
       title: 'Изменения сброшены',
       description: 'Восстановлен последний сохраненный список.',
     });
+  };
+  
+  const handleStockChange = (itemName: string, value: string) => {
+    // Only allow numbers and limit to 2 digits
+    if (/^\d{0,2}$/.test(value)) {
+      setStockOnHand(prev => ({
+        ...prev,
+        [itemName]: value,
+      }));
+    }
   };
 
   const getFormattedDate = (date: Date) => {
@@ -661,7 +667,7 @@ export const TomorrowsMachines = () => {
                             {dateDisplay}
                           </span>
                           <Popover
-                            open={
+                           open={
                               calendarState.open &&
                               calendarState.machineId === machine.id
                             }
@@ -670,9 +676,6 @@ export const TomorrowsMachines = () => {
                                 setCalendarState({
                                   open: true,
                                   machineId: machine.id,
-                                  selectedDate: serviceDate
-                                    ? new Date(serviceDate)
-                                    : undefined,
                                 });
                               } else {
                                 setCalendarState({ open: false, machineId: null });
@@ -834,8 +837,9 @@ export const TomorrowsMachines = () => {
               key={`${selectedDate.getTime()}-${machineIdsForDay.length}`}
                 machineIds={machineIdsForDay}
                 specialMachineDates={specialMachineDates}
-                onSaveChanges={handleSaveChanges}
                 aaMachineIds={aaMachineIds}
+                stockOnHand={stockOnHand}
+                onStockChange={handleStockChange}
               />
             </div>
           )}

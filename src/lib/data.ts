@@ -12,9 +12,10 @@ export type MachineIngredients = {
 export interface GroupedShoppingListsProps {
   machineIds: string[];
   specialMachineDates: Record<string, string>;
-  onSaveChanges: () => void;
+  aaMachineIds: Set<string>;
+  stockOnHand: Record<string, string>;
+  onStockChange: (itemName: string, value: string) => void;
 }
-
 export const allMachines: Machine[] = [
   {
     id: '58899',
@@ -1976,7 +1977,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы пластик', 'стаканы'],
 
       unit: 'шт',
       type: 'auto',
