@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -306,6 +306,11 @@ export const GroupedShoppingLists = ({
   const machineIdsToProcessCount = machineIds.filter(
     id => !aaMachineIds.has(id)
   ).length;
+
+  useEffect(() => {
+    setShowList(false);
+    setCombinedList([]);
+  }, [machineIds, specialMachineDates]);
 
   return (
     <div className="space-y-6">

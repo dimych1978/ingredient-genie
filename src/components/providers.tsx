@@ -1,10 +1,11 @@
 "use client";
 
+import { ScheduleCacheProvider } from "./context/ScheduleCacheContext";
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      {/* <TokenInitializer /> */}
+    <ScheduleCacheProvider>
       {children}
-    </>
+    </ScheduleCacheProvider>
   );
 }

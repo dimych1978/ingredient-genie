@@ -60,12 +60,13 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { TelemetronSaleItem } from '@/types/telemetron';
+import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
+
 
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate());
-    return tomorrow;
+    const today = new Date();
+    return today;
   });
 
   const [machineIdsForDay, setMachineIdsForDay] = useState<string[]>([]);
@@ -81,7 +82,8 @@ export const TomorrowsMachines = () => {
   const [servicedMachines, setServicedMachines] = useState<
     Record<string, boolean>
   >({});
-
+  
+  const { scheduleCache, setScheduleCache } = useScheduleCache();
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
 
@@ -96,10 +98,6 @@ export const TomorrowsMachines = () => {
     machineId: string | null;
     selectedDate?: Date;
   }>({ open: false, machineId: null });
-
-  const [scheduleCache, setScheduleCache] = useState<
-    Record<string, string[] | null>
-  >({});
 
   // --- DATA FETCHING AND SAVING ---
   const loadScheduleForDate = useCallback(
@@ -248,7 +246,7 @@ export const TomorrowsMachines = () => {
         setIsLoading(false);
       }
     },
-    [toast, getMachineOverview, getSalesByProducts, scheduleCache]
+    [toast, getMachineOverview, getSalesByProducts, scheduleCache, setScheduleCache]
   );
 
   useEffect(() => {
@@ -320,7 +318,7 @@ export const TomorrowsMachines = () => {
         description: 'Не удалось сохранить расписание.',
       });
     }
-  }, [selectedDate, machineIdsForDay, toast]);
+  }, [selectedDate, machineIdsForDay, toast, setScheduleCache]);
 
   const machinesForDay = useMemo(() => {
     return allMachines
@@ -833,6 +831,7 @@ export const TomorrowsMachines = () => {
           {machineIdsForDay.length > 0 && (
             <div className="mt-4">
               <GroupedShoppingLists
+              key={`${selectedDate.getTime()}-${machineIdsForDay.length}`}
                 machineIds={machineIdsForDay}
                 specialMachineDates={specialMachineDates}
                 onSaveChanges={handleSaveChanges}
