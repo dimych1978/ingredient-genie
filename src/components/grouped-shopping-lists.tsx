@@ -364,7 +364,7 @@ export const GroupedShoppingLists = ({
                           className="h-8 w-14 text-center p-1"
                           placeholder="0"
                         />
-                        <span className="break-words">{item.name}</span>
+                        <span className="min-w-0 break-words">{item.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="p-2 text-right whitespace-nowrap">

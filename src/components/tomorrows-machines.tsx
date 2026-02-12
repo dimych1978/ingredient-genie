@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -61,7 +62,7 @@ import { cn } from '@/lib/utils';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { TelemetronSaleItem } from '@/types/telemetron';
 import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
-
+import { debugLog } from '@/lib/debug-logger';
 
 export const TomorrowsMachines = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -83,7 +84,7 @@ export const TomorrowsMachines = () => {
     Record<string, boolean>
   >({});
   const [stockOnHand, setStockOnHand] = useState<Record<string, string>>({});
-  
+
   const { scheduleCache, setScheduleCache } = useScheduleCache();
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
@@ -94,10 +95,7 @@ export const TomorrowsMachines = () => {
     machineId: string | null;
     lastDate: Date | null;
   }>({ open: false, machineId: null, lastDate: null });
-  const [calendarState, setCalendarState] = useState<{
-    open: boolean;
-    machineId: string | null;
-  }>({ open: false, machineId: null });
+  const [addMachineCalendarOpen, setAddMachineCalendarOpen] = useState(false);
 
   // --- DATA FETCHING AND SAVING ---
   const loadScheduleForDate = useCallback(
@@ -341,9 +339,16 @@ export const TomorrowsMachines = () => {
     },
     [machineIdsForDay]
   );
+  
+  const handleAddButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleAddMachineClick();
+  };
 
   const handleAddMachineClick = useCallback(async () => {
+    setAddMachineCalendarOpen(false);
     if (!machineToAdd) return;
+    
     setIsLoading(true);
 
     try {
@@ -363,19 +368,21 @@ export const TomorrowsMachines = () => {
           (item: TelemetronSaleItem) => item.product_number === 'AA'
         )
       ) {
-        setAaMachineIds(prev => new Set(prev).add(machineToAdd));
-        addMachineToDay(machineToAdd);
+        setAaMachineIds(prev => new Set(prev).add(machineToAdd!));
+        addMachineToDay(machineToAdd!);
+        setIsLoading(false);
         return;
       }
 
       const machine = allMachines.find(m => m.id === machineToAdd);
       const special = isSpecialMachine(machine);
-
+      
       if (special) {
-        const lastDateString = specialMachineDates[machineToAdd];
-        const lastDate = lastDateString ? new Date(lastDateString) : null;
-        if (lastDate) {
-          setDialogState({ open: true, machineId: machineToAdd, lastDate });
+        const allSpecialDatesFromRedis = await getSpecialMachineDates();
+        const redisDateString = allSpecialDatesFromRedis[machineToAdd];
+        
+        if (redisDateString) {
+          setDialogState({ open: true, machineId: machineToAdd, lastDate: new Date(redisDateString) });
         } else {
           try {
             const overview = await getMachineOverview(machineToAdd);
@@ -387,40 +394,30 @@ export const TomorrowsMachines = () => {
                 lastDate: new Date(lastCollection),
               });
             } else {
-              setCalendarState({
-                open: true,
-                machineId: machineToAdd
-              });
+              setAddMachineCalendarOpen(true);
             }
           } catch (e) {
             console.error('Error fetching overview for special machine:', e);
-            setCalendarState({
-              open: true,
-              machineId: machineToAdd
-            });
+            setAddMachineCalendarOpen(true);
           }
         }
-        return;
-      }
-
-      const overview = await getMachineOverview(machineToAdd);
-      const lastCollection = overview.data?.cache?.last_collection_at;
-
-      if (lastCollection) {
-        setSpecialMachineDates(prev => ({
-          ...prev,
-          [machineToAdd]: lastCollection,
-        }));
-        addMachineToDay(machineToAdd);
       } else {
-        toast({
-          title: 'Требуется указать дату',
-          description: `Для аппарата #${machineToAdd} не найдена дата последней инкассации. Пожалуйста, выберите дату.`,
-        });
-        setCalendarState({
-          open: true,
-          machineId: machineToAdd
-        });
+        const overview = await getMachineOverview(machineToAdd);
+        const lastCollection = overview.data?.cache?.last_collection_at;
+
+        if (lastCollection) {
+          setSpecialMachineDates(prev => ({
+            ...prev,
+            [machineToAdd]: lastCollection,
+          }));
+          addMachineToDay(machineToAdd);
+        } else {
+          toast({
+            title: 'Требуется указать дату',
+            description: `Для аппарата #${machineToAdd} не найдена дата последней инкассации. Пожалуйста, выберите дату.`,
+          });
+          setAddMachineCalendarOpen(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching machine overview on add:', error);
@@ -434,7 +431,6 @@ export const TomorrowsMachines = () => {
     }
   }, [
     machineToAdd,
-    specialMachineDates,
     addMachineToDay,
     getMachineOverview,
     getSalesByProducts,
@@ -454,16 +450,11 @@ export const TomorrowsMachines = () => {
   };
 
   const handleDialogCancel = () => {
-    const machineId = dialogState.machineId;
+    if (dialogState.machineId) {
+      setMachineToAdd(dialogState.machineId); 
+      setAddMachineCalendarOpen(true);
+    }
     setDialogState({ open: false, machineId: null, lastDate: null });
-    setTimeout(() => {
-      if (machineId) {
-        setCalendarState({
-          open: true,
-          machineId: machineId,
-        });
-      }
-    }, 100);
   };
 
   const handleCalendarSelect = async (
@@ -511,8 +502,6 @@ export const TomorrowsMachines = () => {
         addMachineToDay(currentMachineId);
       }
     }
-
-    setCalendarState({ open: false, machineId: null });
   };
 
   const handleToggleServiced = (machineId: string) => {
@@ -666,22 +655,7 @@ export const TomorrowsMachines = () => {
                           <span className="text-sm font-medium">
                             {dateDisplay}
                           </span>
-                          <Popover
-                           open={
-                              calendarState.open &&
-                              calendarState.machineId === machine.id
-                            }
-                            onOpenChange={open => {
-                              if (open) {
-                                setCalendarState({
-                                  open: true,
-                                  machineId: machine.id,
-                                });
-                              } else {
-                                setCalendarState({ open: false, machineId: null });
-                              }
-                            }}
-                          >
+                          <Popover>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -818,23 +792,44 @@ export const TomorrowsMachines = () => {
                 </Command>
               </PopoverContent>
             </Popover>
-            <Button
-              onClick={handleAddMachineClick}
-              disabled={!machineToAdd || isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <PlusCircle className="mr-2 h-4 w-4" />
-              )}
-              Добавить
-            </Button>
+            <Popover open={addMachineCalendarOpen} onOpenChange={setAddMachineCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  onClick={handleAddButtonClick}
+                  disabled={!machineToAdd || isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Добавить
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={undefined}
+                  onSelect={(date) => {
+                    if (date && machineToAdd) {
+                      handleCalendarSelect(date, machineToAdd);
+                    }
+                    setAddMachineCalendarOpen(false);
+                  }}
+                  locale={ru}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date('2020-01-01')
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {machineIdsForDay.length > 0 && (
             <div className="mt-4">
               <GroupedShoppingLists
-              key={`${selectedDate.getTime()}-${machineIdsForDay.length}`}
+                key={`${selectedDate.toISOString()}-${machineIdsForDay.join('-')}`}
                 machineIds={machineIdsForDay}
                 specialMachineDates={specialMachineDates}
                 aaMachineIds={aaMachineIds}

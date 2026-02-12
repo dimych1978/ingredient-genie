@@ -1684,7 +1684,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', 'размешиватели 125'],
+      apiNames: ['Размешиватель', 'размешиватели 125', "размешиватели"],
       unit: 'шт',
       type: 'auto',
     },
@@ -1742,7 +1742,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель'],
+      apiNames: ['Размешиватель', "размешиватели"],
       unit: 'шт',
       type: 'checkbox',
     },
@@ -1860,7 +1860,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', 'Размешиватель, 105 мм'],
+      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', "размешиватели"],
       unit: 'шт',
       type: 'auto',
     },
@@ -1899,8 +1899,8 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'размешиватель',
-      apiNames: ['Размешиватель', 'размешиватели 105'],
+      name: 'размешиватели',
+      apiNames: ['Размешиватель', 'размешиватели 105', "размешиватель"],
       unit: 'шт',
       type: 'auto',
     },
@@ -1983,8 +1983,8 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'размешиватели 105',
-      apiNames: ['Размешиватель', 'Размешиватель, 105 мм'],
+      name: 'размешиватели',
+      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', "размешиватели 105", "размешиватель"],
       unit: 'шт',
       type: 'auto',
     },
