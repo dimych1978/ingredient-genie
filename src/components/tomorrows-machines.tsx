@@ -62,7 +62,7 @@ import { cn } from '@/lib/utils';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { TelemetronSaleItem } from '@/types/telemetron';
 import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
-import { useScheduleState } from './context/ScheduleStateContext';
+import { useScheduleState } from '@/components/context/ScheduleStateContext';
 
 export const TomorrowsMachines = () => {
   const { selectedDate, setSelectedDate, stockOnHand, setStockOnHand } = useScheduleState();

@@ -1,4 +1,5 @@
 //schedule.page.tsx
+import { ScheduleStateProvider } from '@/components/context/ScheduleStateContext';
 import { Icons } from '@/components/icons';
 import { TomorrowsMachines } from '@/components/tomorrows-machines';
 import Link from 'next/link';
@@ -19,7 +20,8 @@ export default function SchedulePage() {
       </header>
 
       <div className="space-y-8">
-        <TomorrowsMachines />
+        <ScheduleStateProvider><TomorrowsMachines /></ScheduleStateProvider>
+        
       </div>
     </main>
   );
