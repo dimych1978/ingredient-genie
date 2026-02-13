@@ -1614,11 +1614,6 @@ export const getMachineType = (
 ): 'coffee' | 'snack' | 'bottle' => {
   const model = machine.model?.toLowerCase();
   if (!model) return 'snack'; // Default
-  console.log('Определение типа аппарата:', {
-    model,
-    machineId: machine.id,
-    machineName: machine.name,
-  });
 
   if (
     ['krea', 'opera', 'kikko', 'koro', 'colibri', 'saeco', 'jetinno'].some(
