@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -63,26 +62,29 @@ import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { TelemetronSaleItem } from '@/types/telemetron';
 import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
+import { ScrollNavButtons } from './scroll-nav-buttons';
 
 export const TomorrowsMachines = () => {
-  const { selectedDate, setSelectedDate, stockOnHand, setStockOnHand } = useScheduleState();
-  
+  const { selectedDate, setSelectedDate, stockOnHand, setStockOnHand } =
+    useScheduleState();
+
   const [machineIdsForDay, setMachineIdsForDay] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [machineToAdd, setMachineToAdd] = useState<string | null>(null);
-  const [machineForCalendar, setMachineForCalendar] = useState<string | null>(null);
+  const [machineForCalendar, setMachineForCalendar] = useState<string | null>(
+    null,
+  );
   const [specialMachineDates, setSpecialMachineDates] = useState<
     Record<string, string>
   >({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [aaMachineIds, setAaMachineIds] = useState<Set<string>>(new Set());
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [addMachineCalendarOpen, setAddMachineCalendarOpen] = useState(false);
   const [calendarDayPicker, setCalendarDayPicker] = useState(false);
   const [servicedMachines, setServicedMachines] = useState<
     Record<string, boolean>
   >({});
-  
+
   const { scheduleCache, setScheduleCache } = useScheduleCache();
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
@@ -140,13 +142,13 @@ export const TomorrowsMachines = () => {
             const salesData = await getSalesByProducts(
               id,
               format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
-              format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+              format(dateTo, 'yyyy-MM-dd HH:mm:ss'),
             );
             if (
               salesData.data &&
               salesData.data.length > 0 &&
               salesData.data.every(
-                (item: TelemetronSaleItem) => item.product_number === 'AA'
+                (item: TelemetronSaleItem) => item.product_number === 'AA',
               )
             ) {
               newAaMachineIds.add(id);
@@ -177,14 +179,14 @@ export const TomorrowsMachines = () => {
                 return { id, date: lastCollection, source: 'api' };
               } else {
                 console.warn(
-                  `Для обычного аппарата #${id} не найдена дата в API`
+                  `Для обычного аппарата #${id} не найдена дата в API`,
                 );
                 return { id, date: null, source: 'api' };
               }
             } catch (e) {
               console.error(
                 `Не удалось получить overview для обычного аппарата ${id}`,
-                e
+                e,
               );
               return { id, date: null, source: 'api' };
             }
@@ -214,7 +216,7 @@ export const TomorrowsMachines = () => {
             } catch (e) {
               console.warn(
                 `Не удалось получить дату из API для специального аппарата ${id}`,
-                e
+                e,
               );
             }
 
@@ -247,7 +249,7 @@ export const TomorrowsMachines = () => {
       getSalesByProducts,
       scheduleCache,
       setScheduleCache,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -257,19 +259,10 @@ export const TomorrowsMachines = () => {
   useEffect(() => {
     const servicedKey = `serviced-machines-${format(
       selectedDate,
-      'yyyy-MM-dd'
+      'yyyy-MM-dd',
     )}`;
     localStorage.setItem(servicedKey, JSON.stringify(servicedMachines));
   }, [servicedMachines, selectedDate]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleSaveChanges = useCallback(async () => {
     const dateString = format(selectedDate, 'yyyy-MM-dd');
@@ -297,7 +290,7 @@ export const TomorrowsMachines = () => {
           title: 'Расписание сохранено',
           description: `Список аппаратов на ${format(
             selectedDate,
-            'dd.MM.yyyy'
+            'dd.MM.yyyy',
           )} сохранен. Также сохранено на ${format(nextWeek, 'dd.MM.yyyy')}.`,
         });
       } catch (error) {
@@ -306,7 +299,7 @@ export const TomorrowsMachines = () => {
           title: 'Расписание частично сохранено',
           description: `Список аппаратов на ${format(
             selectedDate,
-            'dd.MM.yyyy'
+            'dd.MM.yyyy',
           )} сохранен. На следующую неделю не удалось сохранить.`,
         });
       }
@@ -340,11 +333,11 @@ export const TomorrowsMachines = () => {
       setMachineToAdd(null);
       setComboboxOpen(false);
     },
-    [machineIdsForDay]
+    [machineIdsForDay],
   );
 
   const handleAddButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
     handleAddMachineClick();
   };
 
@@ -360,14 +353,14 @@ export const TomorrowsMachines = () => {
       const salesData = await getSalesByProducts(
         machineToAdd,
         format(dateFrom, 'yyyy-MM-dd HH:mm:ss'),
-        format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+        format(dateTo, 'yyyy-MM-dd HH:mm:ss'),
       );
 
       if (
         salesData.data &&
         salesData.data.length > 0 &&
         salesData.data.every(
-          (item: TelemetronSaleItem) => item.product_number === 'AA'
+          (item: TelemetronSaleItem) => item.product_number === 'AA',
         )
       ) {
         setAaMachineIds(prev => new Set(prev).add(machineToAdd!));
@@ -378,7 +371,7 @@ export const TomorrowsMachines = () => {
 
       const machine = allMachines.find(m => m.id === machineToAdd);
       const special = isSpecialMachine(machine);
-      
+
       let dateFound: string | null | undefined = null;
 
       if (special) {
@@ -402,7 +395,6 @@ export const TomorrowsMachines = () => {
         });
         setAddMachineCalendarOpen(true);
       }
-
     } catch (error) {
       console.error('Error fetching machine overview on add:', error);
       toast({
@@ -447,7 +439,7 @@ export const TomorrowsMachines = () => {
 
   const handleCalendarSelect = async (
     date: Date | undefined,
-    machineId: string
+    machineId: string,
   ) => {
     const currentMachineId = machineId;
 
@@ -457,7 +449,7 @@ export const TomorrowsMachines = () => {
       if (isSpecialMachine(machine)) {
         const result = await setSpecialMachineDate(
           currentMachineId,
-          date.toISOString()
+          date.toISOString(),
         );
         if (result.success) {
           setSpecialMachineDates(prev => ({
@@ -525,11 +517,11 @@ export const TomorrowsMachines = () => {
 
   return (
     <>
-      <Card className="shadow-lg">
+      <Card className='shadow-lg'>
         <CardHeader>
-          <CardTitle className="font-headline text-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-6 w-6 text-primary" />
+          <CardTitle className='font-headline text-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
+            <div className='flex items-center gap-2'>
+              <CalendarIcon className='h-6 w-6 text-primary' />
               <span>Аппараты на дату</span>
             </div>
             <Popover
@@ -538,17 +530,17 @@ export const TomorrowsMachines = () => {
             >
               <PopoverTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant='outline'
                   disabled={isLoading}
-                  className="w-full sm:w-auto"
+                  className='w-full sm:w-auto'
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className='mr-2 h-4 w-4' />
                   {getFormattedDate(selectedDate)}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
+              <PopoverContent className='w-auto p-0' align='center'>
                 <Calendar
-                  mode="single"
+                  mode='single'
                   selected={selectedDate}
                   onSelect={date => {
                     if (date) {
@@ -566,39 +558,39 @@ export const TomorrowsMachines = () => {
             изменения.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-2">
+        <CardContent className='space-y-4'>
+          <div className='flex flex-col sm:flex-row gap-2'>
             <Button
               onClick={handleSaveChanges}
               disabled={isLoading || !hasUnsavedChanges}
-              className="flex-1"
+              className='flex-1'
             >
-              <Save className="mr-2 h-4 w-4" />
+              <Save className='mr-2 h-4 w-4' />
               Сохранить изменения
               {hasUnsavedChanges && (
-                <span className="ml-2 text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full">
+                <span className='ml-2 text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full'>
                   есть изменения
                 </span>
               )}
             </Button>
             <Button
               onClick={handleResetChanges}
-              variant="outline"
+              variant='outline'
               disabled={isLoading || !hasUnsavedChanges}
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className='h-4 w-4' />
             </Button>
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-4 text-muted-foreground">
+            <div className='flex items-center justify-center py-10'>
+              <Loader2 className='h-8 w-8 animate-spin text-primary' />
+              <p className='ml-4 text-muted-foreground'>
                 Загрузка расписания...
               </p>
             </div>
           ) : machinesForDay.length > 0 ? (
-            <div className="space-y-3">
+            <div className='space-y-3'>
               {machinesForDay.map(machine => {
                 const isServiced = servicedMachines[machine.id];
                 const isAaMachine = aaMachineIds.has(machine.id);
@@ -606,7 +598,7 @@ export const TomorrowsMachines = () => {
                 const dateDisplay = serviceDate ? (
                   format(new Date(serviceDate), 'dd.MM.yyyy HH:mm')
                 ) : (
-                  <span className="text-yellow-500">Нет данных...</span>
+                  <span className='text-yellow-500'>Нет данных...</span>
                 );
 
                 return (
@@ -614,52 +606,57 @@ export const TomorrowsMachines = () => {
                     key={machine.id}
                     className={cn(
                       'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg',
-                      isServiced && 'bg-green-900/20 border-green-700'
+                      isServiced && 'bg-green-900/20 border-green-700',
                     )}
                   >
-                    <div className="flex-1 min-w-0">
+                    <div className='flex-1 min-w-0'>
                       <p
                         className={cn(
                           'font-medium truncate',
-                          isServiced && 'text-green-300'
+                          isServiced && 'text-green-300',
                         )}
                       >
                         {machine.name} (#{machine.id})
                       </p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line break-words">
+                      <p className='text-sm text-muted-foreground whitespace-pre-line break-words'>
                         {machine.location}
                       </p>
                       {isAaMachine ? (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm font-medium text-purple-400">
+                        <div className='flex items-center gap-2 mt-2'>
+                          <span className='text-sm font-medium text-purple-400'>
                             Аппарат без планограммы (AA)
                           </span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm font-medium">
+                        <div className='flex items-center gap-2 mt-2'>
+                          <span className='text-sm font-medium'>
                             {dateDisplay}
                           </span>
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                title="Изменить дату"
+                                variant='ghost'
+                                size='sm'
+                                className='h-6 w-6 p-0'
+                                title='Изменить дату'
                               >
-                                <CalendarIcon className="h-3 w-3" />
+                                <CalendarIcon className='h-3 w-3' />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className='w-auto p-0'
+                              align='start'
+                            >
                               <Calendar
                                 locale={ru}
-                                mode="single"
+                                mode='single'
                                 onSelect={date =>
                                   handleCalendarSelect(date, machine.id)
                                 }
                                 selected={
-                                  serviceDate ? new Date(serviceDate) : undefined
+                                  serviceDate
+                                    ? new Date(serviceDate)
+                                    : undefined
                                 }
                                 disabled={date =>
                                   date > new Date() ||
@@ -673,31 +670,31 @@ export const TomorrowsMachines = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                    <div className='flex items-center gap-2 self-end sm:self-center flex-shrink-0'>
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant='ghost'
+                        size='icon'
                         onClick={() => handleToggleServiced(machine.id)}
                         className={cn(
-                          isServiced && 'text-green-500 hover:text-green-400'
+                          isServiced && 'text-green-500 hover:text-green-400',
                         )}
                       >
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="sr-only">Отметить обслуженным</span>
+                        <CheckCircle className='h-4 w-4' />
+                        <span className='sr-only'>Отметить обслуженным</span>
                       </Button>
-                      <Button asChild variant="ghost" size="icon">
+                      <Button asChild variant='ghost' size='icon'>
                         <Link href={`/machines/${machine.id}`}>
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Посмотреть</span>
+                          <Eye className='h-4 w-4' />
+                          <span className='sr-only'>Посмотреть</span>
                         </Link>
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant='ghost'
+                        size='icon'
                         onClick={() => handleRemoveMachine(machine.id)}
                       >
-                        <X className="h-4 w-4 text-destructive" />
-                        <span className="sr-only">Удалить</span>
+                        <X className='h-4 w-4 text-destructive' />
+                        <span className='sr-only'>Удалить</span>
                       </Button>
                     </div>
                   </div>
@@ -705,35 +702,35 @@ export const TomorrowsMachines = () => {
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-4">
+            <p className='text-muted-foreground text-center py-4'>
               На {format(selectedDate, 'dd.MM.yyyy')} аппаратов не
               запланировано. Добавьте первый аппарат.
             </p>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-2 items-center p-2 border rounded-lg">
+          <div className='flex flex-col sm:flex-row gap-2 items-center p-2 border rounded-lg'>
             <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
               <PopoverTrigger asChild>
                 <Button
-                  variant="outline"
-                  role="combobox"
+                  variant='outline'
+                  role='combobox'
                   aria-expanded={comboboxOpen}
-                  className="w-full justify-between"
+                  className='w-full justify-between'
                   disabled={isLoading}
                 >
                   {isLoading && machineIdsForDay.length === 0 ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   ) : machineToAdd ? (
                     unselectedMachines.find(
-                      machine => machine.id === machineToAdd
+                      machine => machine.id === machineToAdd,
                     )?.name
                   ) : (
                     'Выберите аппарат для добавления...'
                   )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <PopoverContent className='w-[--radix-popover-trigger-width] p-0'>
                 <Command
                   filter={(value, search) => {
                     if (value.toLowerCase().includes(search.toLowerCase()))
@@ -741,7 +738,7 @@ export const TomorrowsMachines = () => {
                     return 0;
                   }}
                 >
-                  <CommandInput placeholder="Поиск по названию или локации..." />
+                  <CommandInput placeholder='Поиск по названию или локации...' />
                   <CommandList>
                     <CommandEmpty>Аппарат не найден.</CommandEmpty>
                     <CommandGroup>
@@ -759,14 +756,14 @@ export const TomorrowsMachines = () => {
                               'mr-2 h-4 w-4',
                               machineToAdd === machine.id
                                 ? 'opacity-100'
-                                : 'opacity-0'
+                                : 'opacity-0',
                             )}
                           />
                           <div>
                             <p>
                               {machine.name} (#{machine.id})
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className='text-xs text-muted-foreground'>
                               {machine.location}
                             </p>
                           </div>
@@ -787,20 +784,23 @@ export const TomorrowsMachines = () => {
                   disabled={!machineToAdd || isLoading}
                 >
                   {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   ) : (
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                    <PlusCircle className='mr-2 h-4 w-4' />
                   )}
                   Добавить
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className='w-auto p-0'>
                 <Calendar
-                  mode="single"
+                  mode='single'
                   selected={undefined}
                   onSelect={date => {
                     if (date && (machineToAdd || machineForCalendar)) {
-                      handleCalendarSelect(date, (machineToAdd || machineForCalendar)!);
+                      handleCalendarSelect(
+                        date,
+                        (machineToAdd || machineForCalendar)!,
+                      );
                     }
                     setAddMachineCalendarOpen(false);
                   }}
@@ -815,10 +815,10 @@ export const TomorrowsMachines = () => {
           </div>
 
           {machineIdsForDay.length > 0 && (
-            <div className="mt-4">
+            <div className='mt-4'>
               <GroupedShoppingLists
                 key={`${selectedDate.toISOString()}-${machineIdsForDay.join(
-                  '-'
+                  '-',
                 )}`}
                 machineIds={machineIdsForDay}
                 specialMachineDates={specialMachineDates}
@@ -862,29 +862,7 @@ export const TomorrowsMachines = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className={cn(
-            'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
-            'flex items-center justify-center z-50',
-            'md:hidden'
-          )}
-          aria-label="Наверх"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-        </button>
-      )}
+      <ScrollNavButtons />
     </>
   );
 };

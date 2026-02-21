@@ -62,6 +62,7 @@ import {
   isSpecialMachine,
 } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
+import { ScrollNavButtons } from './scroll-nav-buttons';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -285,7 +286,6 @@ export const ShoppingList = ({
 }: ShoppingListProps) => {
   const [state, dispatch] = useReducer(shoppingListReducer, initialState);
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [isPlanogramDataReady, setPlanogramDataReady] = useState(false);
 
   const {
@@ -388,16 +388,6 @@ export const ShoppingList = ({
       isMounted = false;
     };
   }, [machineIds.join('-'), stableLoadPlanogramData]);
-
-  // Кнопка для поднятия наверх
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const loadShoppingList = useCallback(async () => {
     // ТОЛЬКО проверка на machineIds
@@ -1447,29 +1437,7 @@ export const ShoppingList = ({
           </div>
         )}{' '}
       </Card>
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className={cn(
-            'fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-300',
-            'flex items-center justify-center z-50',
-            'md:hidden'
-          )}
-          aria-label='Наверх'
-        >
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            width='24'
-            height='24'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-          >
-            <path d='M12 19V5M5 12l7-7 7 7' />
-          </svg>
-        </button>
-      )}
+      <ScrollNavButtons />
     </>
   );
 };
