@@ -353,18 +353,18 @@ export const GroupedShoppingLists = ({
               <TableBody>
                 {combinedList.map(item => (
                   <TableRow key={item.name}>
-                    <TableCell className="p-2 font-medium">
-                      <div className="flex items-center gap-2">
+                    <TableCell className="p-2 font-medium min-w-0">
+                      <div className="flex items-center gap-2 min-w-0`">
                         <Input
                           type="number"
                           value={stockOnHand[item.name] || ''}
                           onChange={e =>
                             onStockChange(item.name, e.target.value)
                           }
-                          className="h-8 w-14 text-center p-1"
+                          className="h-8 w-14 text-center p-1 flex-shrink-0"
                           placeholder="0"
                         />
-                        <span className="min-w-0 break-words">{item.name}</span>
+                        <span className="min-w-0 break-words line-clamp-2">{item.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="p-2 text-right whitespace-nowrap">

@@ -108,7 +108,7 @@ export const TomorrowsMachines = () => {
 
         let scheduleIds: string[] | null;
 
-        if (dateKey in scheduleCache && scheduleCache[dateKey] !== null) {
+        if (dateKey in scheduleCache) {
           scheduleIds = scheduleCache[dateKey];
         } else {
           scheduleIds = await getDailySchedule(dateKey);
