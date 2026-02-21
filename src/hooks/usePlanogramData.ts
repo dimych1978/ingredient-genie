@@ -346,14 +346,8 @@ function generatePlanogramFromSalesData(
     };
   }
 
-  // 1. Собираем все записи
-  const itemsByProductNumber = new Map<
-    string,
-    Array<{
-      originalName: string;
-      totalSales: number;
-    }>
-  >();
+  // 1. Собираем записи, выбирая товар с максимальным ID для каждой ячейки
+  const bestEntryByProductNumber = new Map<string, { name: string; id: number }>();
 
   salesData.data.forEach(item => {
     if (!item.product_number || !item.planogram?.name) return;
@@ -366,6 +360,7 @@ function generatePlanogramFromSalesData(
 
     const productNumber = item.product_number;
     const originalName = item.planogram.name;
+    const planogramId = item.planogram.id || 0;
 
     if (
       originalName === 'пр' ||
@@ -374,40 +369,26 @@ function generatePlanogramFromSalesData(
     )
       return;
 
-    if (!itemsByProductNumber.has(productNumber)) {
-      itemsByProductNumber.set(productNumber, []);
-    }
-
-    const items = itemsByProductNumber.get(productNumber)!;
-    const existingItem = items.find(i => i.originalName === originalName);
-
-    if (existingItem) {
-      existingItem.totalSales += item.number;
-    } else {
-      items.push({
-        originalName: originalName,
-        totalSales: item.number,
+    const existing = bestEntryByProductNumber.get(productNumber);
+    
+    // Если для этой ячейки еще нет записи ИЛИ текущий ID больше (товар свежее) - обновляем
+    if (!existing || planogramId > existing.id) {
+      bestEntryByProductNumber.set(productNumber, {
+        name: originalName,
+        id: planogramId
       });
     }
   });
 
-  // 2. Выбираем лучший вариант
-  const bestNames = new Map<string, string>();
-
-  itemsByProductNumber.forEach((items, productNumber) => {
-    if (items.length === 0) return;
-    bestNames.set(productNumber, items[0].originalName);
-  });
-
-  // 3. Генерируем полную планограмму в правильном порядке
+  // 2. Генерируем полную планограмму в правильном порядке
   const fullPlanogram: string[] = [];
 
   // ПОЛКА 0: 01-09
   for (let i = 1; i <= 9; i++) {
     const key = `${i}`;
-    const bestName = bestNames.get(key);
-    if (bestName) {
-      fullPlanogram.push(`0${i}. ${bestName}`);
+    const bestEntry = bestEntryByProductNumber.get(key);
+    if (bestEntry) {
+      fullPlanogram.push(`0${i}. ${bestEntry.name}`);
     }
   }
 
@@ -416,22 +397,20 @@ function generatePlanogramFromSalesData(
     // Цифровые ячейки: 10-19, 20-29, ...
     for (let i = 0; i <= 9; i++) {
       const key = `${shelf}${i}`;
-      const bestName = bestNames.get(key);
-      if (bestName) fullPlanogram.push(`${key}. ${bestName}`);
+      const bestEntry = bestEntryByProductNumber.get(key);
+      if (bestEntry) fullPlanogram.push(`${key}. ${bestEntry.name}`);
     }
 
     // Буквенные ячейки: 1A, 1B, 2A, 2B, ...
-    const bestNameA = bestNames.get(`${shelf}A`);
-    if (bestNameA) fullPlanogram.push(`${shelf}A. ${bestNameA}`);
+    const bestEntryA = bestEntryByProductNumber.get(`${shelf}A`);
+    if (bestEntryA) fullPlanogram.push(`${shelf}A. ${bestEntryA.name}`);
 
-    const bestNameB = bestNames.get(`${shelf}B`);
-    if (bestNameB) fullPlanogram.push(`${shelf}B. ${bestNameB}`);
+    const bestEntryB = bestEntryByProductNumber.get(`${shelf}B`);
+    if (bestEntryB) fullPlanogram.push(`${shelf}B. ${bestEntryB.name}`);
   }
 
-  // 4. Сортируем
-  console.log('до сортировки', fullPlanogram);
+  // 3. Сортируем
   const sorted = sortPlanogramStrings(fullPlanogram);
-  console.log('после сортировки', sorted);
   console.log('Итоговая планограмма:', sorted.length, 'элементов');
 
   return {

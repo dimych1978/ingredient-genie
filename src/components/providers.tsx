@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { ScheduleCacheProvider } from "./context/ScheduleCacheContext";
+import { ScheduleCacheProvider } from './context/ScheduleCacheContext';
+import { ScheduleStateProvider } from './context/ScheduleStateContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ScheduleCacheProvider>
-      {children}
-    </ScheduleCacheProvider>
+    <ScheduleStateProvider>
+      <ScheduleCacheProvider>{children}</ScheduleCacheProvider>
+    </ScheduleStateProvider>
   );
 }
