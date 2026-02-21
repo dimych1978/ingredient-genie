@@ -138,7 +138,6 @@ export const GroupedShoppingLists = ({
         const machine = allMachines.find(m => m.id === sale.machineId);
         if (!machine) return;
 
-        // Если у продажи есть ингредиенты - это напиток. Считаем ингредиенты.
         if (
           sale.planogram.ingredients &&
           sale.planogram.ingredients.length > 0
@@ -166,7 +165,6 @@ export const GroupedShoppingLists = ({
             }
           });
         }
-        // Если ингредиентов нет - это снек/бутылка. Считаем как товар.
         else {
           const name = sale.planogram.name;
           const current = productMap.get(name) || {
@@ -197,7 +195,6 @@ export const GroupedShoppingLists = ({
           const machine = allMachines.find(m => m.id === machineIdFromFile);
           if (!machine) continue;
 
-          // Для 'вода' в кофейных аппаратах игнорируем излишки (отрицательный carryOver)
           if (
             name.toLowerCase() === 'вода' &&
             getMachineType(machine) === 'coffee' &&
@@ -339,38 +336,40 @@ export const GroupedShoppingLists = ({
               {machineIdsToProcessCount} апп.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-1 sm:px-2">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="p-2">Название</TableHead>
-                  <TableHead className="p-2 text-right whitespace-nowrap">
-                    Количество
+                  <TableHead className="px-1 py-2 sm:px-2">Название</TableHead>
+                  <TableHead className="px-1 py-2 sm:px-2 text-right whitespace-nowrap">
+                    Кол-во
                   </TableHead>
-                  <TableHead className="p-2 w-12 text-right">Инфо</TableHead>
+                  <TableHead className="px-1 py-2 sm:px-2 w-10 text-right">Инфо</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {combinedList.map(item => (
                   <TableRow key={item.name}>
-                    <TableCell className="p-2 font-medium min-w-0">
-                      <div className="flex items-center gap-2 min-w-0`">
+                    <TableCell className="px-1 py-2 sm:px-2 font-medium min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         <Input
                           type="number"
                           value={stockOnHand[item.name] || ''}
                           onChange={e =>
                             onStockChange(item.name, e.target.value)
                           }
-                          className="h-8 w-14 text-center p-1 flex-shrink-0"
+                          className="h-8 w-12 sm:w-14 text-center p-1 flex-shrink-0"
                           placeholder="0"
                         />
-                        <span className="min-w-0 break-words line-clamp-2">{item.name}</span>
+                        <span className="min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm">
+                          {item.name}
+                        </span>
                       </div>
                     </TableCell>
-                    <TableCell className="p-2 text-right whitespace-nowrap">
+                    <TableCell className="px-1 py-2 sm:px-2 text-right whitespace-nowrap text-xs sm:text-sm">
                       {item.amount} {item.unit}
                     </TableCell>
-                    <TableCell className="p-2 text-right">
+                    <TableCell className="px-1 py-2 sm:px-2 text-right">
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
