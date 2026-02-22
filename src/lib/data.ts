@@ -396,7 +396,7 @@ export const allMachines: Machine[] = [
     model: 'Necta Colibri',
   },
   {
-    id: '41913',
+    id: '40264',
     name: 'Главный ТЦ',
     location: 'Главный ТЦ\nМелентьевой ул., 28',
     model: 'Necta Opera',
@@ -954,9 +954,9 @@ export const allMachines: Machine[] = [
     model: 'Unicum FoodBox',
   },
   {
-    id: '40264',
-    name: 'Офис (из Речное училище учеб. корпус) кофе',
-    location: 'Речное училище (учеб. корпус) кофе\nКалинина, 37',
+    id: '41913',
+    name: 'Офис (из Главный ТЦ)',
+    location: '',
     model: 'Necta Opera',
   },
   {
@@ -1604,20 +1604,20 @@ export const productReplacements: Record<string, string[]> = {
 };
 
 export const alternativeDisplayNames: Record<string, string> = {
-  'Батончик Смарт Формула, 40гр': 'Батончик Смарт Формула, 40гр || Протеин',
+  'Круассаны Яшкино 45г': 'Круассаны Яшкино 45г || Степ',
   'Пирожное basker wheels панкейк 36гр':
     'Пирожное basker wheels || Орион Чоко-пай',
 };
 
 export const getMachineType = (
-  machine: Machine
+  machine: Machine,
 ): 'coffee' | 'snack' | 'bottle' => {
   const model = machine.model?.toLowerCase();
   if (!model) return 'snack'; // Default
 
   if (
     ['krea', 'opera', 'kikko', 'koro', 'colibri', 'saeco', 'jetinno'].some(
-      type => model.includes(type)
+      type => model.includes(type),
     )
   ) {
     return 'coffee';
@@ -1679,7 +1679,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', 'размешиватели 125', "размешиватели"],
+      apiNames: ['Размешиватель', 'размешиватели 125', 'размешиватели'],
       unit: 'шт',
       type: 'auto',
     },
@@ -1737,7 +1737,77 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', "размешиватели"],
+      apiNames: ['Размешиватель', 'размешиватели'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    // Селектор для сиропа
+    {
+      name: 'сироп',
+      apiNames: ['Сироп'],
+      unit: 'мл',
+      type: 'select',
+      syrupOptions: [
+        { id: 'banana', name: 'банан', selected: false },
+        { id: 'vanilla', name: 'ваниль', selected: false },
+        { id: 'coconut', name: 'кокос', selected: false },
+        { id: 'caramel', name: 'карамель', selected: false },
+      ],
+    },
+  ],
+  jetinno: [
+    {
+      name: 'вода',
+      apiNames: ['Вода'],
+      unit: 'мл',
+      type: 'auto',
+    },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой, кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'шоколад',
+      apiNames: ['Шоколад'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'клубника',
+      apiNames: ['клубника', 'раф клубника'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сахар',
+      apiNames: ['Сахар'],
+      unit: 'г',
+      type: 'checkbox',
+    },
+    // Чекбоксы
+    {
+      name: 'стаканы',
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышка', 'крышки 80'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'размешиватели',
+      apiNames: ['Размешиватель', 'размешиватели'],
       unit: 'шт',
       type: 'checkbox',
     },
@@ -1855,7 +1925,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', "размешиватели"],
+      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', 'размешиватели'],
       unit: 'шт',
       type: 'auto',
     },
@@ -1895,7 +1965,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', 'размешиватели 105', "размешиватель"],
+      apiNames: ['Размешиватель', 'размешиватели 105', 'размешиватель'],
       unit: 'шт',
       type: 'auto',
     },
@@ -1972,14 +2042,25 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы пластик', 'стаканы'],
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы пластик',
+        'Стакан пластиковый',
+        'стаканы',
+      ],
 
       unit: 'шт',
       type: 'auto',
     },
     {
       name: 'размешиватели',
-      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', "размешиватели 105", "размешиватель"],
+      apiNames: [
+        'Размешиватель',
+        'Размешиватель, 105 мм',
+        'размешиватели 105',
+        'размешиватель',
+      ],
       unit: 'шт',
       type: 'auto',
     },
@@ -1998,7 +2079,15 @@ export const weeklySchedule: { [key: number]: string[] } = {
   6: [], // Saturday
 };
 
-const SPECIAL_MODELS = ['krea', 'tcn', 'unicum', 'fas', 'koro', 'phedra'];
+const SPECIAL_MODELS = [
+  'krea',
+  'tcn',
+  'unicum',
+  'fas',
+  'koro',
+  'phedra',
+  'jetinno',
+];
 
 export const isSpecialMachine = (machine: Machine | undefined): boolean => {
   if (!machine || !machine.model) return false;
@@ -2008,7 +2097,7 @@ export const isSpecialMachine = (machine: Machine | undefined): boolean => {
 
 export const getIngredientConfig = (
   apiName: string,
-  machineModel?: string
+  machineModel?: string,
 ): Ingredient | undefined => {
   // Нормализуем название из API
   const normalizedApiName = apiName.toLowerCase().trim();
@@ -2016,14 +2105,14 @@ export const getIngredientConfig = (
   // Ищем модель в первую очередь
   if (machineModel) {
     const modelKey = Object.keys(machineIngredients).find(model =>
-      machineModel.toLowerCase().includes(model.toLowerCase())
+      machineModel.toLowerCase().includes(model.toLowerCase()),
     );
 
     if (modelKey) {
       const found = machineIngredients[modelKey].find(ingredient =>
         ingredient.apiNames.some(
-          name => name.toLowerCase().trim() === normalizedApiName
-        )
+          name => name.toLowerCase().trim() === normalizedApiName,
+        ),
       );
       if (found) return found;
     }
@@ -2033,8 +2122,8 @@ export const getIngredientConfig = (
   for (const modelKey in machineIngredients) {
     const found = machineIngredients[modelKey].find(ingredient =>
       ingredient.apiNames.some(
-        name => name.toLowerCase().trim() === normalizedApiName
-      )
+        name => name.toLowerCase().trim() === normalizedApiName,
+      ),
     );
     if (found) return found;
   }
