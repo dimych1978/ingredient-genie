@@ -11,10 +11,6 @@ const DATES_KEY = 'special-machine-dates';
 const TELEMETRON_PRESS_KEY_PREFIX = 'telemetron-press:';
 const LAST_SAVE_KEY_PREFIX = 'last-save:';
 
-// --- Функции для работы с планограммами ---
-
-const PLANOGRAM_KEY_PREFIX = 'planogram:';
-
 // Сохраняем время нажатия Telemetron
 export async function saveTelemetronPress(
   machineId: string,

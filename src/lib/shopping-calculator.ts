@@ -15,11 +15,6 @@ import {
 
 export type SortType = 'grouped' | 'alphabetical';
 
-export function normalizeForPlanogramComparison(name: string): string {
-  if (!name) return '';
-  return name.toLowerCase().replace(/\s+/g, ' ').trim();
-}
-
 function normalizeApiCellNumber(cellNumber: string): string {
   // Если число без буквы (1, 2, 3...), добавляем ведущий 0 для 1-9
   const match = cellNumber.match(/^(\d+)([A-Za-z]*)$/);
@@ -36,20 +31,6 @@ function normalizeApiCellNumber(cellNumber: string): string {
   // Остальные оставляем как есть: 10, 11, 1A, 1B...
   return cellNumber;
 }
-
-const getDisplayUnit = (
-  apiAmount: number,
-  configUnit: 'г' | 'кг' | 'мл' | 'л' | 'шт'
-): { unit: string; displayAmount: number } => {
-  if (configUnit === 'л' && apiAmount >= 1000) {
-    return { unit: 'л', displayAmount: apiAmount / 1000 };
-  }
-  if (configUnit === 'кг' && apiAmount >= 1000) {
-    return { unit: 'кг', displayAmount: apiAmount / 1000 };
-  }
-  return { unit: configUnit, displayAmount: apiAmount };
-};
-
 export const calculateShoppingList = (
   salesData: { data: TelemetronSaleItem[] },
   sort: SortType = 'grouped',
@@ -288,30 +269,4 @@ function calculateBottleShoppingList(
     });
   });
   return result;
-}
-
-function normalizeBottleName(apiName: string): string | null {
-  const cleanApiName = apiName
-    .replace(/["«»]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-
-  for (const hardcodedName of planogramsHardCode.bottle) {
-    const cleanHardcoded = hardcodedName
-      .replace(/["«»]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-
-    const hardcodedWords = cleanHardcoded.split(' ');
-    const matches = hardcodedWords.filter(
-      word => word.length > 2 && cleanApiName.includes(word)
-    );
-
-    if (matches.length >= Math.max(1, hardcodedWords.length / 2)) {
-      return hardcodedName;
-    }
-  }
-  return null;
 }

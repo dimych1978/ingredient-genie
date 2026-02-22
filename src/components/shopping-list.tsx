@@ -11,7 +11,6 @@ import React, {
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import {
   calculateShoppingList,
-  normalizeForPlanogramComparison,
   type SortType,
 } from '@/lib/shopping-calculator';
 import type {
@@ -239,6 +238,12 @@ function shoppingListReducer(
       return state;
   }
 }
+
+function normalizeForPlanogramComparison(name: string): string {
+  if (!name) return '';
+  return name.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 
 export const ShoppingList = ({
   machineIds: initialMachineIds,
