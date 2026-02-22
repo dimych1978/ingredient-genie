@@ -59,12 +59,10 @@ export const calculateShoppingList = (
   machineModel?: string,
   salesThisPeriod?: Map<string, number>,
   coffeeProductNumbers?: string[],
-  isSavedPlanogram?: boolean
 ): ShoppingListItem[] => {
   console.log('🚀 ~ calculateShoppingList ~ planogram:', planogram);
   const machine = allMachines.find(m => m.id === machineId);
   const machineType = machine ? getMachineType(machine) : 'snack';
-  console.log('isSavedPlanogram в калькуляторе:', isSavedPlanogram);
 
   // 1. ОБРАБОТКА БУТМАТОВ
   if (machineType === 'bottle') {
@@ -81,92 +79,8 @@ export const calculateShoppingList = (
   const modelKey = matchingKeys.length > 0 ? matchingKeys[0] : undefined;
   const coreIngredientConfigs = modelKey ? machineIngredients[modelKey] : [];
 
-// 2. Логика для сохраненной планограммы
-if (isSavedPlanogram && planogram && planogram.length > 0) {
-  const itemsMap = new Map<string, ShoppingListItem>();
-
-    // 2.1 ДОБАВЛЯЕМ КОФЕЙНЫЕ ИНГРЕДИЕНТЫ И ДЛЯ СОХРАНЕННОЙ ПЛАНОГРАММЫ!
-  coreIngredientConfigs.forEach(config => {
-    const key = config.name;
-    if (!Array.from(itemsMap.values()).some(item => item.name === key)) {
-      itemsMap.set(key, {
-        name: config.name,
-        planogramName: config.name,
-        amount: 0,
-        unit: config.unit,
-        salesAmount: 0,
-        previousDeficit: 0,
-        isCore: true,
-        type: config.type,
-        syrupOptions: config.syrupOptions,
-        status: 'none',
-      });
-    }
-  });
-
-  // 2.2 Создаем "карту аппарата" из сохраненной планограммы
-  planogram.forEach(entry => {
-    const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-    if (match) {
-      const productNumber = match[1];
-      const name = match[2];
-      itemsMap.set(productNumber, {
-        name: name,
-        productNumber: productNumber,
-        planogramName: entry,
-        amount: 0,
-        unit: 'шт',
-        salesAmount: 0,
-        previousDeficit: 0,
-        isCore: false,
-        type: 'auto',
-        status: 'none',
-      });
-    }
-  });
-
-
-  // 2.3 Накладываем продажи
-  salesData.data.forEach(sale => {
-    if (sale.product_number) {
-      const normalizedNumber = normalizeApiCellNumber(sale.product_number);
-      if (itemsMap.has(normalizedNumber)) {
-        const item = itemsMap.get(normalizedNumber)!;
-        item.salesAmount = (item.salesAmount || 0) + sale.number;
-      }
-    }
-    
-    // ТАКЖЕ ОБРАБАТЫВАЕМ КОФЕЙНЫЕ ИНГРЕДИЕНТЫ!
-    if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
-      sale.planogram.ingredients.forEach(apiIngredient => {
-        const config = getIngredientConfig(apiIngredient.name, machineModel);
-        if (config) {
-          const item = Array.from(itemsMap.values()).find(
-            i => i.name === config.name
-          );
-          if (item) {
-            item.salesAmount =
-              (item.salesAmount || 0) + apiIngredient.volume * sale.number;
-          }
-        }
-      });
-    }
-  });
-
-    // 2.4 Финальный расчет и возврат
-    const result: ShoppingListItem[] = [];
-    itemsMap.forEach(item => {
-      item.amount = Math.ceil(
-        Math.max((item.salesAmount || 0) + (item.previousDeficit || 0))
-      );
-      result.push(item);
-    });
-
-    return result;
-  }
-
-  // 3. Логика, если НЕТ сохраненной планограммы (isSavedPlanogram: false)
-  if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
+   // 2. Построение планограммы
+   if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
     console.log(
       "🚀 ~ calculateShoppingList ~ planogram[0].startsWith('AA'):",
       planogram[0].startsWith('AA')
@@ -206,7 +120,7 @@ if (isSavedPlanogram && planogram && planogram.length > 0) {
 
   const itemMap = new Map<string, ShoppingListItem>();
 
-  // 3.1. Создаем "карту" из 365-дневной планограммы, если она есть
+  // 2.1 Создаем "карту" из 30-дневной планограммы, если она есть
   if (planogram && planogram.length > 0) {
     planogram.forEach(entry => {
       const match = entry.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
@@ -234,7 +148,7 @@ if (isSavedPlanogram && planogram && planogram.length > 0) {
     });
   }
 
-  // 3.2. Добавляем в карту кофейные ингредиенты, которых там может не быть
+  // 2.2. Добавляем в карту кофейные ингредиенты, которых там может не быть
   coreIngredientConfigs.forEach(config => {
     // Ключ для кофейных - их имя
     const key = config.name;
@@ -254,42 +168,8 @@ if (isSavedPlanogram && planogram && planogram.length > 0) {
     }
   });
 
-  // 3.3. Накладываем продажи
+  // 2.3. Накладываем продажи
   // Для аппаратов без планограммы
-  if (planogram && planogram.length === 1 && planogram[0].startsWith('AA')) {
-    // 1. Название из API
-    const apiName = salesData.data[0]?.planogram?.name || 'Товар';
-
-    // 2. Сумма всех продаж
-    let totalSales = 0;
-    salesData.data.forEach(sale => {
-      totalSales += sale.number;
-    });
-
-    // 3. Остатки из overrides
-    let carryOver = 0;
-    Object.entries(overrides).forEach(([key, override]) => {
-      if (key.includes(apiName) || key.includes(machineId)) {
-        carryOver = override.carryOver || 0;
-      }
-    });
-
-    // 4. Возвращаем ОДИН товар
-    return [
-      {
-        name: apiName, 
-        productNumber: 'AA',
-        planogramName: planogram[0],
-        amount: Math.ceil(Math.max(0, totalSales + carryOver)),
-        unit: 'шт',
-        salesAmount: totalSales,
-        previousDeficit: carryOver,
-        isCore: false,
-        type: 'auto',
-        status: 'none',
-      },
-    ];
-  }
 
   salesData.data.forEach(sale => {
     if (!sale.planogram?.name) return;
@@ -322,7 +202,7 @@ if (isSavedPlanogram && planogram && planogram.length > 0) {
   });
   console.log('🚀 ~ calculateShoppingList ~ overrides:', overrides);
 
-  // 3.4. Накладываем остатки из Redis
+  // 2.4. Накладываем остатки из Redis
   Object.entries(overrides).forEach(([key, override]) => {
     const itemName = key.replace(`${machineId}-`, '');
     for (const item of itemMap.values()) {
@@ -333,8 +213,7 @@ if (isSavedPlanogram && planogram && planogram.length > 0) {
     }
   });
 
-  // 3.5. Финальный расчет и сортировка
-  // 3.5. Финальный расчет и сортировка
+  // 2.5. Финальный расчет и сортировка
   const result: ShoppingListItem[] = [];
 
   itemMap.forEach(item => {
