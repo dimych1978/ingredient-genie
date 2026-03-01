@@ -11,7 +11,6 @@ import React, {
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import {
   calculateShoppingList,
-  normalizeForPlanogramComparison,
   type SortType,
 } from '@/lib/shopping-calculator';
 import type {
@@ -22,11 +21,9 @@ import type {
   ShoppingListItem,
 } from '@/types/telemetron';
 import {
-  deleteSavedPlanogram,
   getLoadingOverrides,
   saveLastSaveTime,
   saveLoadingOverrides,
-  savePlanogram,
   saveTelemetronPress,
   setSpecialMachineDate,
 } from '@/app/actions';
@@ -97,13 +94,7 @@ type ShoppingListState = {
   planogram: string[];
   coffeeProductNumbers: string[];
   salesThisPeriod: Map<string, number>;
-  savingPlanogram: boolean;
-  deletingPlanogram: boolean;
-  showPlanogramDialog: boolean;
-  planogramDialogType: 'save' | 'delete' | null;
   hasLoaded: boolean;
-  isSavedPlanogram: boolean;
-  isDeletedPlanogram: boolean;
 };
 
 type ShoppingListAction =
@@ -117,14 +108,7 @@ type ShoppingListAction =
         planogram: string[];
         salesThisPeriod: Map<string, number>;
         coffeeProductNumbers: string[];
-        isSavedPlanogram: boolean;
       };
-    }
-  | { type: 'SET_SAVING_PLANOGRAM'; payload: boolean }
-  | { type: 'SET_DELETING_PLANOGRAM'; payload: boolean }
-  | {
-      type: 'SET_SHOW_PLANOGRAM_DIALOG';
-      payload: { show: boolean; type: 'save' | 'delete' | null };
     }
   | { type: 'SET_HAS_LOADED'; payload: boolean }
   | { type: 'UPDATE_LOADED_AMOUNTS'; payload: number[] }
@@ -162,18 +146,12 @@ const initialState: ShoppingListState = {
   planogram: [],
   coffeeProductNumbers: [],
   salesThisPeriod: new Map(),
-  savingPlanogram: false,
-  deletingPlanogram: false,
-  showPlanogramDialog: false,
-  planogramDialogType: null,
   hasLoaded: false,
-  isSavedPlanogram: false,
-  isDeletedPlanogram: false,
 };
 
 function shoppingListReducer(
   state: ShoppingListState,
-  action: ShoppingListAction
+  action: ShoppingListAction,
 ): ShoppingListState {
   switch (action.type) {
     case 'SET_LOADING':
@@ -184,7 +162,7 @@ function shoppingListReducer(
       return { ...state, deleting: action.payload };
     case 'SET_SHOPPING_LIST': {
       const loadedAmounts = action.payload.map(
-        item => item.loadedAmount ?? item.amount
+        item => item.loadedAmount ?? item.amount,
       );
       return {
         ...state,
@@ -200,17 +178,6 @@ function shoppingListReducer(
         planogram: action.payload.planogram,
         salesThisPeriod: action.payload.salesThisPeriod,
         coffeeProductNumbers: action.payload.coffeeProductNumbers,
-        isSavedPlanogram: action.payload.isSavedPlanogram,
-      };
-    case 'SET_SAVING_PLANOGRAM':
-      return { ...state, savingPlanogram: action.payload };
-    case 'SET_DELETING_PLANOGRAM':
-      return { ...state, deletingPlanogram: action.payload };
-    case 'SET_SHOW_PLANOGRAM_DIALOG':
-      return {
-        ...state,
-        showPlanogramDialog: action.payload.show,
-        planogramDialogType: action.payload.type,
       };
     case 'SET_HAS_LOADED':
       return { ...state, hasLoaded: action.payload };
@@ -272,6 +239,12 @@ function shoppingListReducer(
   }
 }
 
+function normalizeForPlanogramComparison(name: string): string {
+  if (!name) return '';
+  return name.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+
 export const ShoppingList = ({
   machineIds: initialMachineIds,
   title = 'Shopping List',
@@ -296,11 +269,7 @@ export const ShoppingList = ({
     planogram,
     coffeeProductNumbers,
     salesThisPeriod,
-    savingPlanogram,
-    showPlanogramDialog,
-    planogramDialogType,
     hasLoaded,
-    isSavedPlanogram,
   } = state;
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
@@ -311,9 +280,14 @@ export const ShoppingList = ({
   const { getSalesByProducts } = useTelemetronApi();
   const { loadPlanogramData } = usePlanogramData();
   const { toast } = useToast();
-  
-  const machine = useMemo(() => (machineIds.length === 1 ? allMachines.find((m) => m.id === machineIds[0]) : undefined), [machineIds]);
 
+  const machine = useMemo(
+    () =>
+      machineIds.length === 1
+        ? allMachines.find(m => m.id === machineIds[0])
+        : undefined,
+    [machineIds],
+  );
 
   const planogramCache = useRef<{
     machineId: string;
@@ -321,7 +295,6 @@ export const ShoppingList = ({
       planogram: string[];
       salesThisPeriod: Map<string, number>;
       coffeeProductNumbers: string[];
-      isSavedPlanogram: boolean;
     };
     timestamp: number;
   } | null>(null);
@@ -356,7 +329,10 @@ export const ShoppingList = ({
         Date.now() - planogramCache.current.timestamp < CACHE_TTL
       ) {
         if (isMounted) {
-          dispatch({ type: 'SET_PLANOGRAM_DATA', payload: planogramCache.current.data });
+          dispatch({
+            type: 'SET_PLANOGRAM_DATA',
+            payload: planogramCache.current.data,
+          });
           setPlanogramDataReady(true);
         }
         return;
@@ -413,7 +389,7 @@ export const ShoppingList = ({
           : {};
 
       const machineData = allMachines.find(
-        m => m.id === machineIdsRef.current[0]
+        m => m.id === machineIdsRef.current[0],
       );
 
       for (const vmId of machineIdsRef.current) {
@@ -425,9 +401,9 @@ export const ShoppingList = ({
                 dateFrom instanceof Date && !isNaN(dateFrom.getTime())
                   ? dateFrom
                   : new Date(0),
-                'yyyy-MM-dd HH:mm:ss'
+                'yyyy-MM-dd HH:mm:ss',
               ),
-              format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+              format(dateTo, 'yyyy-MM-dd HH:mm:ss'),
             );
 
           if (salesData?.data) allSales.push(...salesData.data);
@@ -445,7 +421,6 @@ export const ShoppingList = ({
         machineData?.model,
         salesThisPeriod,
         coffeeProductNumbers,
-        isSavedPlanogram
       );
 
       // Определяем начальное состояние на основе ТЕКУЩИХ данных
@@ -469,7 +444,7 @@ export const ShoppingList = ({
             selectedSyrups: override?.selectedSyrups || [],
             selectedSizes: override?.selectedSizes || [],
           };
-        }
+        },
       );
 
       dispatch({ type: 'SET_SHOPPING_LIST', payload: listWithStatus });
@@ -496,7 +471,6 @@ export const ShoppingList = ({
     dateFrom,
     sort,
     forceLoad,
-    isSavedPlanogram,
     coffeeProductNumbers,
     salesThisPeriod,
     stableGetSalesByProducts,
@@ -581,7 +555,7 @@ export const ShoppingList = ({
     // loadedAmount = item.amount (продажи + недогруз/излишек)
     // При переходе на крестик (status: 'none') loadedAmount = 0
     const loadedAmount =
-      status === 'partial' ? shoppingList[index]?.amount ?? 0 : 0;
+      status === 'partial' ? (shoppingList[index]?.amount ?? 0) : 0;
 
     dispatch({
       type: 'UPDATE_ITEM_STATUS',
@@ -688,156 +662,13 @@ export const ShoppingList = ({
     }
   };
 
-  const handleSavePlanogram = () => {
-    if (machineIds.length !== 1 || planogram.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description:
-          'Для сохранения планограммы выберите один аппарат и дождитесь загрузки планограммы.',
-      });
-      return;
-    }
-
-    dispatch({
-      type: 'SET_SHOW_PLANOGRAM_DIALOG',
-      payload: { show: true, type: 'save' },
-    });
-  };
-
-  const handleDeletePlanogram = () => {
-    if (machineIds.length !== 1 || planogram.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description:
-          'Для удаления планограммы выберите один аппарат и дождитесь загрузки планограммы.',
-      });
-      return;
-    }
-
-    dispatch({
-      type: 'SET_SHOW_PLANOGRAM_DIALOG',
-      payload: { show: true, type: 'delete' },
-    });
-  };
-
-  const confirmSavePlanogram = async () => {
-    const machineId = machineIds[0];
-
-    dispatch({ type: 'SET_SAVING_PLANOGRAM', payload: true });
-
-    try {
-      const planogramObject: Record<string, string> = {};
-
-      planogram.forEach(item => {
-        const match = item.match(/^(\d+[A-Za-z]?)\.\s*(.+)$/);
-        if (match) {
-          const productNumber = match[1];
-          const name = match[2].trim();
-          planogramObject[productNumber] = name;
-        }
-      });
-
-      const result = await savePlanogram(machineId, planogramObject);
-
-      if (result.success) {
-        toast({
-          title: 'Планограмма сохранена',
-          description: 'Текущая планограмма сохранена как эталонная.',
-        });
-        // Обновляем кеш
-        planogramCache.current = {
-          machineId,
-          data: {
-            planogram,
-            salesThisPeriod,
-            coffeeProductNumbers,
-            isSavedPlanogram,
-          },
-          timestamp: Date.now(),
-        };
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не удалось сохранить планограмму.',
-        });
-      }
-    } catch (error) {
-      console.error('Ошибка сохранения планограммы:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Произошла ошибка при сохранении планограммы.',
-      });
-    } finally {
-      dispatch({ type: 'SET_SAVING_PLANOGRAM', payload: false });
-      dispatch({
-        type: 'SET_SHOW_PLANOGRAM_DIALOG',
-        payload: { show: false, type: null },
-      });
-    }
-  };
-
-  const confirmDeletePlanogram = async () => {
-    const machineId = machineIds[0];
-    console.log('🚀 ~ confirmDeletePlanogram ~ machineId:', machineId);
-
-    dispatch({ type: 'SET_DELETING_PLANOGRAM', payload: true });
-
-    try {
-      const planogramObject: Record<string, string> = {};
-
-      const result = await deleteSavedPlanogram(machineId);
-      console.log('🚀 ~ confirmDeletePlanogram ~ result:', result);
-
-      if (result.success) {
-        toast({
-          title: 'Планограмма удалена',
-          description: 'Текущая планограмма удалена',
-        });
-        // Обновляем кеш
-        planogramCache.current = {
-          machineId,
-          data: {
-            planogram,
-            salesThisPeriod,
-            coffeeProductNumbers,
-            isSavedPlanogram,
-          },
-          timestamp: Date.now(),
-        };
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Ошибка',
-          description: 'Не удалось удалить планограмму.',
-        });
-      }
-    } catch (error) {
-      console.error('Ошибка удаления планограммы:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Произошла ошибка при удалении планограммы.',
-      });
-    } finally {
-      dispatch({ type: 'SET_DELETING_PLANOGRAM', payload: false });
-      dispatch({
-        type: 'SET_SHOW_PLANOGRAM_DIALOG',
-        payload: { show: false, type: null },
-      });
-    }
-  };
-
   const downloadList = () => {
     const periodStr = `${format(dateFrom, 'dd.MM.yyyy HH:mm')}-Сейчас`;
     const header = `${title}\nПериод: ${periodStr}\nАппараты: ${machineIdsString}\n\n`;
     const itemsText = shoppingList
       .map(
         (item, index) =>
-          `${index + 1}. ${item.name}: ${item.amount} ${item.unit}`
+          `${index + 1}. ${item.name}: ${item.amount} ${item.unit}`,
       )
       .join('\n');
     const fileContent = header + itemsText;
@@ -854,7 +685,7 @@ export const ShoppingList = ({
 
   const extractProductName = (
     planogramName: string | null,
-    itemName: string
+    itemName: string,
   ): string => {
     if (!planogramName) return itemName;
 
@@ -961,37 +792,6 @@ export const ShoppingList = ({
             </div>
           )}
 
-          {machineIds.length === 1 && planogram.length > 0 && (
-            <div className='flex flex-col sm:flex-row sm:justify-between gap-2'>
-              <Button
-                onClick={handleSavePlanogram}
-                variant='outline'
-                className='border-purple-600 text-purple-300 hover:bg-purple-900/50'
-                disabled={savingPlanogram}
-              >
-                {savingPlanogram ? (
-                  <Loader2 className='animate-spin mr-2 h-4 w-4' />
-                ) : (
-                  <Bookmark className='mr-2 h-4 w-4' />
-                )}
-                Сохранить планограмму
-              </Button>
-              <Button
-                onClick={handleDeletePlanogram}
-                variant='outline'
-                className='border-red-600 text-red-300 hover:bg-red-900/50'
-                disabled={savingPlanogram}
-              >
-                {savingPlanogram ? (
-                  <Loader2 className='animate-spin mr-2 h-4 w-4' />
-                ) : (
-                  <Bookmark className='mr-2 h-4 w-4' />
-                )}
-                Удалить планограмму
-              </Button>
-            </div>
-          )}
-
           {loading && (
             <div className='text-center py-8'>
               <Loader2 className='animate-spin h-8 w-8 text-yellow-400 mx-auto mb-3' />
@@ -1042,18 +842,35 @@ export const ShoppingList = ({
 
                     const infoParts: React.ReactNode[] = [];
                     if (hasSales) {
-                        infoParts.push(`Продажи: ${item.salesAmount} ${item.unit}`);
+                      infoParts.push(
+                        `Продажи: ${item.salesAmount} ${item.unit}`,
+                      );
                     }
                     if (hasDeficit) {
-                        infoParts.push(<span key="deficit" className='font-semibold text-yellow-400'>{`Недогруз: ${deficit} ${item.unit}`}</span>);
+                      infoParts.push(
+                        <span
+                          key='deficit'
+                          className='font-semibold text-yellow-400'
+                        >{`Недогруз: ${deficit} ${item.unit}`}</span>,
+                      );
                     }
                     if (hasSurplus) {
-                        infoParts.push(<span key="surplus" className='font-semibold text-cyan-400'>{`Излишек: ${Math.abs(deficit)} ${item.unit}`}</span>);
+                      infoParts.push(
+                        <span
+                          key='surplus'
+                          className='font-semibold text-cyan-400'
+                        >{`Излишек: ${Math.abs(deficit)} ${item.unit}`}</span>,
+                      );
                     }
 
-                    const isKreaMachine = machine?.model?.toLowerCase().includes('krea');
-                    const isSpecialKreaItem = isKreaMachine && (item.name === 'стаканы' || item.name === 'крышки');
-                    const isCheckboxItem = item.type === 'checkbox' && !isSpecialKreaItem;
+                    const isKreaMachine = machine?.model
+                      ?.toLowerCase()
+                      .includes('krea');
+                    const isSpecialKreaItem =
+                      isKreaMachine &&
+                      (item.name === 'стаканы' || item.name === 'крышки');
+                    const isCheckboxItem =
+                      item.type === 'checkbox' && !isSpecialKreaItem;
                     const isSyrupItem = item.type === 'select';
 
                     return (
@@ -1064,8 +881,8 @@ export const ShoppingList = ({
                           isFullyReplenished
                             ? 'bg-green-900/20 border-green-600 text-green-300'
                             : item.status === 'none'
-                            ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
-                            : 'bg-blue-900/20 border-blue-600 text-blue-300'
+                              ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
+                              : 'bg-blue-900/20 border-blue-600 text-blue-300',
                         )}
                       >
                         {/* Левый блок - информация о товаре */}
@@ -1074,12 +891,12 @@ export const ShoppingList = ({
                             <div className='flex items-center gap-2 flex-wrap'>
                               {extractProductName(
                                 item.planogramName,
-                                item.name
+                                item.name,
                               )}
                               {item.planogramName &&
                                 extractProductName(
                                   item.planogramName,
-                                  item.name
+                                  item.name,
                                 ) !== item.name && (
                                   <Tooltip>
                                     <TooltipTrigger>
@@ -1091,17 +908,17 @@ export const ShoppingList = ({
                                         В планограмме:{' '}
                                         {extractProductName(
                                           item.planogramName,
-                                          item.name
+                                          item.name,
                                         )}
                                       </p>
                                       {item.planogramName.match(
-                                        /^\d+[A-Za-z]?\./
+                                        /^\d+[A-Za-z]?\./,
                                       ) && (
                                         <p className='text-xs text-gray-500 mt-1'>
                                           Ячейка:{' '}
                                           {
                                             item.planogramName.match(
-                                              /^(\d+[A-Za-z]?)\./
+                                              /^(\d+[A-Za-z]?)\./,
                                             )?.[1]
                                           }
                                         </p>
@@ -1113,18 +930,18 @@ export const ShoppingList = ({
                             {item.planogramName &&
                               extractProductName(
                                 item.planogramName,
-                                item.name
+                                item.name,
                               ) !== item.name && (
                                 <div className='text-sm text-gray-400 mt-1 break-words'>
                                   Фактически: {item.name}
                                 </div>
                               )}
                           </div>
-                          
+
                           {isSpecialKreaItem ? (
-                             <div className='text-sm text-gray-400 break-words'>
-                                {`Продажи: ${item.salesAmount || 0} ${item.unit}`}
-                             </div>
+                            <div className='text-sm text-gray-400 break-words'>
+                              {`Продажи: ${item.salesAmount || 0} ${item.unit}`}
+                            </div>
                           ) : isSyrupItem || isCheckboxItem ? (
                             <div className='text-sm text-gray-400 break-words'>
                               {hasSales
@@ -1134,27 +951,27 @@ export const ShoppingList = ({
                           ) : (
                             <>
                               <div className='text-sm text-gray-400 break-words'>
-                                {infoParts.length > 0 ? (
-                                    infoParts.map((part, i) => (
-                                        <React.Fragment key={i}>
-                                            {part}
-                                            {i < infoParts.length - 1 ? ' + ' : ''}
-                                        </React.Fragment>
+                                {infoParts.length > 0
+                                  ? infoParts.map((part, i) => (
+                                      <React.Fragment key={i}>
+                                        {part}
+                                        {i < infoParts.length - 1 ? ' + ' : ''}
+                                      </React.Fragment>
                                     ))
-                                ) : null}
+                                  : null}
                               </div>
                               <div
                                 className={cn(
                                   'text-base font-bold break-words',
                                   isFullyReplenished
                                     ? 'text-green-400'
-                                    : 'text-white'
+                                    : 'text-white',
                                 )}
                               >
                                 {isFullyReplenished
                                   ? 'Пополнено'
                                   : `Нужно: ${item.amount.toLocaleString(
-                                      'ru-RU'
+                                      'ru-RU',
                                     )} ${item.unit}`}
                               </div>
                             </>
@@ -1182,7 +999,7 @@ export const ShoppingList = ({
                                           item.selectedSyrups || [];
                                         const newSelected = isSelected
                                           ? selectedSyrups.filter(
-                                              id => id !== syrup.id
+                                              id => id !== syrup.id,
                                             )
                                           : [...selectedSyrups, syrup.id];
                                         handleSyrupChange(index, newSelected);
@@ -1194,7 +1011,7 @@ export const ShoppingList = ({
                                             'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
                                             isSelected
                                               ? 'border-green-500 bg-green-500/10'
-                                              : 'border-gray-400 hover:border-gray-300'
+                                              : 'border-gray-400 hover:border-gray-300',
                                           )}
                                         >
                                           {isSelected && (
@@ -1206,7 +1023,7 @@ export const ShoppingList = ({
                                             'text-sm truncate',
                                             isSelected
                                               ? 'text-green-300'
-                                              : 'text-gray-300'
+                                              : 'text-gray-300',
                                           )}
                                         >
                                           {syrup.name}
@@ -1226,34 +1043,52 @@ export const ShoppingList = ({
                                 })}
                               </div>
                             </div>
-                           ) : isSpecialKreaItem ? (
-                                <div className='flex flex-col gap-2 w-full sm:w-40'>
-                                    {(['big', 'small'] as const).map(size => {
-                                        const isSelected = item.selectedSizes?.includes(size);
-                                        return (
-                                            <div
-                                                key={size}
-                                                className='flex items-center justify-between cursor-pointer'
-                                                onClick={() => handleCupLidChange(index, size)}
-                                            >
-                                                <div className='flex items-center gap-2 min-w-0'>
-                                                    <div className={cn(
-                                                        'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
-                                                        isSelected ? 'border-green-500 bg-green-500/10' : 'border-gray-400 hover:border-gray-300'
-                                                    )}>
-                                                        {isSelected && <CircleCheckBig className='h-3 w-3 text-green-500' />}
-                                                    </div>
-                                                    <span className={cn('text-sm truncate', isSelected ? 'text-green-300' : 'text-gray-300')}>
-                                                        {size === 'big' ? 'Большие' : 'Малые'}
-                                                    </span>
-                                                </div>
-                                                <span className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${isSelected ? 'text-green-500' : 'text-yellow-200'}`}>
-                                                    {isSelected ? 'Не надо' : 'Нужно'}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                          ) : isSpecialKreaItem ? (
+                            <div className='flex flex-col gap-2 w-full sm:w-40'>
+                              {(['big', 'small'] as const).map(size => {
+                                const isSelected =
+                                  item.selectedSizes?.includes(size);
+                                return (
+                                  <div
+                                    key={size}
+                                    className='flex items-center justify-between cursor-pointer'
+                                    onClick={() =>
+                                      handleCupLidChange(index, size)
+                                    }
+                                  >
+                                    <div className='flex items-center gap-2 min-w-0'>
+                                      <div
+                                        className={cn(
+                                          'flex items-center justify-center h-5 w-5 rounded-full border-2 flex-shrink-0',
+                                          isSelected
+                                            ? 'border-green-500 bg-green-500/10'
+                                            : 'border-gray-400 hover:border-gray-300',
+                                        )}
+                                      >
+                                        {isSelected && (
+                                          <CircleCheckBig className='h-3 w-3 text-green-500' />
+                                        )}
+                                      </div>
+                                      <span
+                                        className={cn(
+                                          'text-sm truncate',
+                                          isSelected
+                                            ? 'text-green-300'
+                                            : 'text-gray-300',
+                                        )}
+                                      >
+                                        {size === 'big' ? 'Большие' : 'Малые'}
+                                      </span>
+                                    </div>
+                                    <span
+                                      className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${isSelected ? 'text-green-500' : 'text-yellow-200'}`}
+                                    >
+                                      {isSelected ? 'Не надо' : 'Нужно'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           ) : isCheckboxItem ? (
                             <div className='flex items-center gap-2'>
                               <button
@@ -1285,7 +1120,7 @@ export const ShoppingList = ({
                                       className={cn(
                                         'rounded-full flex-shrink-0',
                                         item.status === 'none' &&
-                                          'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                          'bg-red-500/20 text-red-400 hover:bg-red-500/30',
                                       )}
                                       onClick={() =>
                                         handleStatusChange(index, 'none')
@@ -1307,7 +1142,7 @@ export const ShoppingList = ({
                                       className={cn(
                                         'rounded-full flex-shrink-0',
                                         item.status === 'partial' &&
-                                          'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                          'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
                                       )}
                                       onClick={() =>
                                         handleStatusChange(index, 'partial')
@@ -1333,7 +1168,7 @@ export const ShoppingList = ({
                                             loadedAmounts[index] ?? 0;
                                           handleAmountChange(
                                             index,
-                                            (current - 1).toString()
+                                            (current - 1).toString(),
                                           );
                                         }}
                                       >
@@ -1349,7 +1184,7 @@ export const ShoppingList = ({
                                           onChange={e =>
                                             handleAmountChange(
                                               index,
-                                              e.target.value
+                                              e.target.value,
                                             )
                                           }
                                           placeholder={item.amount?.toString()}
@@ -1367,7 +1202,7 @@ export const ShoppingList = ({
                                             loadedAmounts[index] ?? 0;
                                           handleAmountChange(
                                             index,
-                                            (current + 1).toString()
+                                            (current + 1).toString(),
                                           );
                                         }}
                                       >
@@ -1388,54 +1223,6 @@ export const ShoppingList = ({
             </div>
           )}
         </CardContent>
-        {showPlanogramDialog && (
-          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-            <div className='bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4'>
-              <h3 className='text-lg font-semibold text-white mb-4'>
-                {planogramDialogType === 'save'
-                  ? 'Сохранить планограмму'
-                  : 'Удалить планограмму'}
-              </h3>
-              <p className='text-gray-300 mb-6'>
-                {planogramDialogType === 'save'
-                  ? 'Вы уверены, что хотите сохранить текущую планограмму как эталонную? Существующая сохранённая планограмма будет перезаписана.'
-                  : 'Вы уверены, что хотите удалить сохранённую планограмму? После удаления планограмма будет генерироваться из продаж.'}
-              </p>
-              <div className='flex justify-end gap-3'>
-                <Button
-                  variant='outline'
-                  onClick={() =>
-                    dispatch({
-                      type: 'SET_SHOW_PLANOGRAM_DIALOG',
-                      payload: { show: false, type: null },
-                    })
-                  }
-                  className='border-gray-600 text-gray-300'
-                >
-                  Отмена
-                </Button>
-                <Button
-                  onClick={
-                    planogramDialogType === 'save'
-                      ? confirmSavePlanogram
-                      : confirmDeletePlanogram
-                  }
-                  className={
-                    planogramDialogType === 'save'
-                      ? 'bg-purple-600 hover:bg-purple-700'
-                      : 'bg-red-600 hover:bg-red-700'
-                  }
-                  disabled={savingPlanogram}
-                >
-                  {savingPlanogram ? (
-                    <Loader2 className='animate-spin mr-2 h-4 w-4' />
-                  ) : null}
-                  {planogramDialogType === 'save' ? 'Сохранить' : 'Удалить'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}{' '}
       </Card>
       <ScrollNavButtons />
     </>
