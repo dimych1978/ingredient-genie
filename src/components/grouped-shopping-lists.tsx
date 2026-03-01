@@ -196,8 +196,8 @@ export const GroupedShoppingLists = ({
           if (!machine) continue;
 
           if (
-            name.toLowerCase() === 'вода' &&
-            getMachineType(machine) === 'coffee' &&
+            // name.toLowerCase() === 'вода' &&
+            // getMachineType(machine) === 'coffee' &&
             carryOver < 0
           ) {
             carryOver = 0;
