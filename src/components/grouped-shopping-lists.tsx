@@ -25,7 +25,6 @@ import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
   allMachines,
   getIngredientConfig,
-  getMachineType,
   GroupedShoppingListsProps,
 } from '@/lib/data';
 import {
@@ -95,14 +94,14 @@ export const GroupedShoppingLists = ({
             const salesData = await getSalesByProducts(
               id,
               format(new Date(dateFrom), 'yyyy-MM-dd HH:mm:ss'),
-              format(dateTo, 'yyyy-MM-dd HH:mm:ss')
+              format(dateTo, 'yyyy-MM-dd HH:mm:ss'),
             );
             if (salesData.data) {
               const machineSales = salesData.data.map(
                 (sale: TelemetronSaleItem) => ({
                   ...sale,
                   machineId: id,
-                })
+                }),
               );
               allSales.push(...machineSales);
             }
@@ -145,7 +144,7 @@ export const GroupedShoppingLists = ({
           sale.planogram.ingredients.forEach(apiIngredient => {
             const config = getIngredientConfig(
               apiIngredient.name,
-              machine?.model
+              machine?.model,
             );
             if (config) {
               const current = coffeeIngredientsMap.get(config.name) || {
@@ -164,8 +163,7 @@ export const GroupedShoppingLists = ({
               coffeeIngredientsMap.set(config.name, current);
             }
           });
-        }
-        else {
+        } else {
           const name = sale.planogram.name;
           const current = productMap.get(name) || {
             amount: 0,
@@ -190,18 +188,10 @@ export const GroupedShoppingLists = ({
 
         if (machineIdsToProcess.includes(machineIdFromFile)) {
           const name = key.substring(machineIdFromFile.length + 1);
-          let carryOver = override.carryOver || 0;
+          const carryOver = Math.max(0, override.carryOver || 0);
 
           const machine = allMachines.find(m => m.id === machineIdFromFile);
           if (!machine) continue;
-
-          if (
-            // name.toLowerCase() === 'вода' &&
-            // getMachineType(machine) === 'coffee' &&
-            carryOver < 0
-          ) {
-            carryOver = 0;
-          }
 
           const ingredientConfig = getIngredientConfig(name, machine?.model);
           if (ingredientConfig) {
@@ -211,11 +201,10 @@ export const GroupedShoppingLists = ({
               breakdown: {},
             };
             current.amount += carryOver;
-            const machineBreakdown =
-              current.breakdown[machineIdFromFile] || {
-                name: machine.name,
-                amount: 0,
-              };
+            const machineBreakdown = current.breakdown[machineIdFromFile] || {
+              name: machine.name,
+              amount: 0,
+            };
             machineBreakdown.amount += carryOver;
             current.breakdown[machineIdFromFile] = machineBreakdown;
             coffeeIngredientsMap.set(ingredientConfig.name, current);
@@ -226,11 +215,10 @@ export const GroupedShoppingLists = ({
               breakdown: {},
             };
             current.amount += carryOver;
-            const machineBreakdown =
-              current.breakdown[machineIdFromFile] || {
-                name: machine.name,
-                amount: 0,
-              };
+            const machineBreakdown = current.breakdown[machineIdFromFile] || {
+              name: machine.name,
+              amount: 0,
+            };
             machineBreakdown.amount += carryOver;
             current.breakdown[machineIdFromFile] = machineBreakdown;
             productMap.set(name, current);
@@ -293,12 +281,12 @@ export const GroupedShoppingLists = ({
   ]);
 
   const machineIdsToProcessCount = machineIds.filter(
-    id => !aaMachineIds.has(id)
+    id => !aaMachineIds.has(id),
   ).length;
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-muted/20">
+    <div className='space-y-6'>
+      <Card className='bg-muted/20'>
         <CardHeader>
           <CardTitle>Формирование общего заказа</CardTitle>
           <CardDescription>
@@ -310,12 +298,12 @@ export const GroupedShoppingLists = ({
         <CardContent>
           <Button
             onClick={handleGenerateClick}
-            className="w-full"
+            className='w-full'
             disabled={machineIdsToProcessCount === 0 || loading}
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                 Формирование...
               </>
             ) : showList ? (
@@ -336,73 +324,76 @@ export const GroupedShoppingLists = ({
               {machineIdsToProcessCount} апп.
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-1 sm:px-2">
+          <CardContent className='px-1 sm:px-2'>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="px-1 py-2 sm:px-2">Название</TableHead>
-                  <TableHead className="px-1 py-2 sm:px-2 text-right whitespace-nowrap">
+                  <TableHead className='px-1 py-2 sm:px-2'>Название</TableHead>
+                  <TableHead className='px-1 py-2 sm:px-2 text-right whitespace-nowrap'>
                     Кол-во
                   </TableHead>
-                  <TableHead className="px-1 py-2 sm:px-2 w-10 text-right">Инфо</TableHead>
+                  <TableHead className='px-1 py-2 sm:px-2 w-10 text-right'>
+                    Инфо
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {combinedList.map(item => (
                   <TableRow key={item.name}>
-                    <TableCell className="px-1 py-2 sm:px-2 font-medium min-w-0">
-                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
+                      <div className='flex items-center gap-1.5 sm:gap-2 min-w-0'>
                         <Input
-                          type="number"
+                          type='number'
                           value={stockOnHand[item.name] || ''}
                           onChange={e =>
                             onStockChange(item.name, e.target.value)
                           }
-                          className="h-8 w-12 sm:w-14 text-center p-1 flex-shrink-0"
-                          placeholder="0"
+                          className='h-8 w-12 sm:w-14 text-center p-1 flex-shrink-0'
+                          placeholder='0'
                         />
-                        <span className="min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm">
+                        <span className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm'>
                           {item.name}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-1 py-2 sm:px-2 text-right whitespace-nowrap text-xs sm:text-sm">
+                    <TableCell className='px-1 py-2 sm:px-2 text-right whitespace-nowrap text-xs sm:text-sm'>
                       {item.amount} {item.unit}
                     </TableCell>
-                    <TableCell className="px-1 py-2 sm:px-2 text-right">
+                    <TableCell className='px-1 py-2 sm:px-2 text-right'>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8'
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className='h-4 w-4' />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="space-y-2">
-                            <h4 className="font-medium leading-none">
+                        <PopoverContent className='w-80'>
+                          <div className='space-y-2'>
+                            <h4 className='font-medium leading-none'>
                               Детализация
                             </h4>
-                            <p className="text-sm text-muted-foreground">
+                            <p className='text-sm text-muted-foreground'>
                               Разбивка для: <strong>{item.name}</strong>
                             </p>
                           </div>
-                          <div className="mt-4 space-y-1">
+                          <div className='mt-4 space-y-1'>
                             {Object.entries(item.breakdown)
                               .filter(
-                                ([, details]) => Math.ceil(details.amount) !== 0
+                                ([, details]) =>
+                                  Math.ceil(details.amount) !== 0,
                               )
                               .map(([machineId, details]) => (
                                 <div
                                   key={machineId}
-                                  className="flex justify-between items-center text-sm"
+                                  className='flex justify-between items-center text-sm'
                                 >
-                                  <span className="truncate pr-2">
+                                  <span className='truncate pr-2'>
                                     {details.name} (#{machineId})
                                   </span>
-                                  <span className="font-mono text-right flex-shrink-0">
+                                  <span className='font-mono text-right flex-shrink-0'>
                                     {Math.ceil(details.amount)} {item.unit}
                                   </span>
                                 </div>
@@ -419,7 +410,7 @@ export const GroupedShoppingLists = ({
         </Card>
       )}
       {showList && !loading && combinedList.length === 0 && (
-        <p className="text-muted-foreground text-center py-4">
+        <p className='text-muted-foreground text-center py-4'>
           Нет товаров для заказа за выбранные периоды.
         </p>
       )}
