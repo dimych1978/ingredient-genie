@@ -1606,7 +1606,7 @@ export const productReplacements: Record<string, string[]> = {
 export const alternativeDisplayNames: Record<string, string> = {
   'Круассаны Яшкино 45г': 'Круассаны Яшкино 45г || Степ',
   'Пирожное basker wheels панкейк 36гр':
-    'Пирожное basker wheels || Орион Чоко-пай',
+    'Пирожное basker wheels панкейк 36гр || Орион Чоко-пай',
 };
 
 export const getMachineType = (
@@ -1616,9 +1616,16 @@ export const getMachineType = (
   if (!model) return 'snack'; // Default
 
   if (
-    ['krea', 'opera', 'kikko', 'koro', 'colibri', 'saeco', 'jetinno'].some(
-      type => model.includes(type),
-    )
+    [
+      'krea',
+      'opera',
+      'kikko',
+      'koro',
+      'phedra',
+      'colibri',
+      'saeco',
+      'jetinno',
+    ].some(type => model.includes(type))
   ) {
     return 'coffee';
   }
@@ -1872,6 +1879,76 @@ export const machineIngredients: MachineIngredients = {
     {
       name: 'размешиватели',
       apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    // Селектор для сиропа
+    {
+      name: 'сироп',
+      apiNames: ['Сироп'],
+      unit: 'мл',
+      type: 'select',
+      syrupOptions: [
+        { id: 'banana', name: 'банан', selected: false },
+        { id: 'vanilla', name: 'ваниль', selected: false },
+        { id: 'coconut', name: 'кокос', selected: false },
+        { id: 'caramel', name: 'карамель', selected: false },
+      ],
+    },
+  ],
+  phedra: [
+    {
+      name: 'вода',
+      apiNames: ['Вода'],
+      unit: 'мл',
+      type: 'auto',
+    },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'шоколад',
+      apiNames: ['Шоколад'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'ваниль',
+      apiNames: ['ваниль "Капучино Ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сахар',
+      apiNames: ['Сахар'],
+      unit: 'г',
+      type: 'checkbox',
+    },
+    // Чекбоксы
+    {
+      name: 'стаканы',
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышка', 'крышки 80'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'размешиватели',
+      apiNames: ['Размешиватель', 'размешиватели'],
       unit: 'шт',
       type: 'checkbox',
     },
