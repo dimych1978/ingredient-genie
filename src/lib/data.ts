@@ -1673,7 +1673,7 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'стаканы',
+      name: 'стаканы opera',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
@@ -1685,7 +1685,7 @@ export const machineIngredients: MachineIngredients = {
       type: 'checkbox',
     },
     {
-      name: 'размешиватели',
+      name: 'размешиватели 125',
       apiNames: ['Размешиватель', 'размешиватели 125', 'размешиватели'],
       unit: 'шт',
       type: 'auto',
@@ -1995,13 +1995,13 @@ export const machineIngredients: MachineIngredients = {
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
     {
-      name: 'стаканы',
+      name: 'стаканы 150',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
     {
-      name: 'размешиватели',
+      name: 'размешиватели 105',
       apiNames: ['Размешиватель', 'Размешиватель, 105 мм', 'размешиватели'],
       unit: 'шт',
       type: 'auto',
@@ -2035,20 +2035,20 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'стаканы',
+      name: 'стаканы 150',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
     {
-      name: 'размешиватели',
+      name: 'размешиватели 105',
       apiNames: ['Размешиватель', 'размешиватели 105', 'размешиватель'],
       unit: 'шт',
       type: 'auto',
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
-  'saeco-max': [
+  'Saeco Cristallo 600': [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
       name: 'кофе',
@@ -2069,7 +2069,6 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'auto',
     },
-    { name: 'кисель', apiNames: ['Кисель'], unit: 'г', type: 'auto' },
     {
       name: 'чай',
       apiNames: ['Чай', 'чай фруктовый'],
@@ -2077,7 +2076,7 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'стаканы',
+      name: 'стаканы opera',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
@@ -2089,7 +2088,7 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'размешиватели 105',
+      name: 'размешиватели 125',
       apiNames: ['Размешиватель'],
       unit: 'шт',
       type: 'auto',
@@ -2113,12 +2112,12 @@ export const machineIngredients: MachineIngredients = {
     { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
     {
       name: 'чай',
-      apiNames: ['Чай', 'чай фруктовый'],
+      apiNames: ['Чай', 'чай фруктовый', 'Чай лимонный'],
       unit: 'г',
       type: 'auto',
     },
     {
-      name: 'стаканы',
+      name: 'стаканы пластик',
       apiNames: [
         'Стаканчик',
         'Стакан',
@@ -2131,7 +2130,7 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
     },
     {
-      name: 'размешиватели',
+      name: 'размешиватели 105',
       apiNames: [
         'Размешиватель',
         'Размешиватель, 105 мм',
