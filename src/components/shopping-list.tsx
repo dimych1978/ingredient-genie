@@ -244,7 +244,6 @@ function normalizeForPlanogramComparison(name: string): string {
   return name.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-
 export const ShoppingList = ({
   machineIds: initialMachineIds,
   title = 'Shopping List',
@@ -938,15 +937,11 @@ export const ShoppingList = ({
                               )}
                           </div>
 
-                          {isSpecialKreaItem ? (
+                          {isSpecialKreaItem ||
+                          isSyrupItem ||
+                          isCheckboxItem ? (
                             <div className='text-sm text-gray-400 break-words'>
                               {`Продажи: ${item.salesAmount || 0} ${item.unit}`}
-                            </div>
-                          ) : isSyrupItem || isCheckboxItem ? (
-                            <div className='text-sm text-gray-400 break-words'>
-                              {hasSales
-                                ? `Продажи: ${item.salesAmount} ${item.unit}`
-                                : 'Расходные материалы'}
                             </div>
                           ) : (
                             <>
