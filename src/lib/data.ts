@@ -2085,7 +2085,7 @@ export const machineIngredients: MachineIngredients = {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
-      type: 'auto',
+      type: 'checkbox',
     },
     {
       name: 'размешиватели 125',
