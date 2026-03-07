@@ -19,13 +19,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Eye, Search, X } from 'lucide-react';
+import { Loader2, Eye, Search, X, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
   allMachines,
   getIngredientConfig,
   GroupedShoppingListsProps,
+  PRODUCT_GROUPS,
 } from '@/lib/data';
 import {
   Popover,
@@ -33,6 +34,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 type CombinedListItem = {
   name: string;
@@ -189,7 +191,8 @@ export const GroupedShoppingLists = ({
 
         if (machineIdsToProcess.includes(machineIdFromFile)) {
           const name = key.substring(machineIdFromFile.length + 1);
-          const carryOver = Math.max(0, override.carryOver || 0);
+          let carryOver = override.carryOver || 0;
+          if (carryOver < 0) carryOver = 0; // Игнорируем излишки в общей заявке
 
           const machine = allMachines.find(m => m.id === machineIdFromFile);
           if (!machine) continue;
@@ -288,6 +291,22 @@ export const GroupedShoppingLists = ({
     );
   }, [combinedList, searchQuery]);
 
+  const getGroupTotal = (groupName: string) => {
+    const constituents = PRODUCT_GROUPS[groupName];
+    if (!constituents) return stockOnHand[groupName] || '';
+    
+    return constituents.reduce(
+      (sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0),
+      0
+    ).toString();
+  };
+
+  const handleGroupStockChange = (constituentName: string, value: string) => {
+    if (/^\d{0,2}$/.test(value)) {
+      onStockChange(constituentName, value);
+    }
+  };
+
   const machineIdsToProcessCount = machineIds.filter(
     id => !aaMachineIds.has(id),
   ).length;
@@ -366,72 +385,115 @@ export const GroupedShoppingLists = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredList.map(item => (
-                  <TableRow key={item.name}>
-                    <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
-                      <div className='flex items-center gap-1.5 sm:gap-2 min-w-0'>
-                        <Input
-                          type='number'
-                          value={stockOnHand[item.name] || ''}
-                          onChange={e =>
-                            onStockChange(item.name, e.target.value)
-                          }
-                          className='h-8 w-12 sm:w-14 text-center p-1 flex-shrink-0'
-                          placeholder='0'
-                        />
-                        <span className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm'>
-                          {item.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className='px-1 py-2 sm:px-2 text-right whitespace-nowrap text-xs sm:text-sm'>
-                      {item.amount} {item.unit}
-                    </TableCell>
-                    <TableCell className='px-1 py-2 sm:px-2 text-right'>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-8 w-8'
-                          >
-                            <Eye className='h-4 w-4' />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className='w-80'>
-                          <div className='space-y-2'>
-                            <h4 className='font-medium leading-none'>
-                              Детализация
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              Разбивка для: <strong>{item.name}</strong>
-                            </p>
-                          </div>
-                          <div className='mt-4 space-y-1'>
-                            {Object.entries(item.breakdown)
-                              .filter(
-                                ([, details]) =>
-                                  Math.ceil(details.amount) !== 0,
-                              )
-                              .map(([machineId, details]) => (
-                                <div
-                                  key={machineId}
-                                  className='flex justify-between items-center text-sm'
-                                >
-                                  <span className='truncate pr-2'>
-                                    {details.name} (#{machineId})
-                                  </span>
-                                  <span className='font-mono text-right flex-shrink-0'>
-                                    {Math.ceil(details.amount)} {item.unit}
-                                  </span>
+                {filteredList.map(item => {
+                  const isGroup = !!PRODUCT_GROUPS[item.name];
+                  
+                  return (
+                    <TableRow key={item.name} className={cn(isGroup && 'bg-primary/5')}>
+                      <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
+                        <div className='flex items-center gap-1.5 sm:gap-2 min-w-0'>
+                          {isGroup ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <div className='relative cursor-pointer flex-shrink-0'>
+                                  <Input
+                                    value={getGroupTotal(item.name)}
+                                    readOnly
+                                    className='h-8 w-12 sm:w-14 text-center p-1 font-bold border-primary/30 bg-primary/10'
+                                  />
                                 </div>
-                              ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                              </PopoverTrigger>
+                              <PopoverContent className='w-80'>
+                                <div className='space-y-3'>
+                                  <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center gap-2'>
+                                    {item.name}
+                                    <Info className='h-3 w-3 text-primary' />
+                                  </h4>
+                                  <div className='grid gap-3'>
+                                    {PRODUCT_GROUPS[item.name].map(constituent => (
+                                      <div key={constituent} className='flex items-center justify-between gap-4'>
+                                        <span className='text-xs text-muted-foreground leading-tight'>
+                                          {constituent}
+                                        </span>
+                                        <Input
+                                          type='number'
+                                          value={stockOnHand[constituent] || ''}
+                                          onChange={e => handleGroupStockChange(constituent, e.target.value)}
+                                          placeholder='0'
+                                          className='h-8 w-16 text-center text-xs'
+                                          inputMode='numeric'
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <Input
+                              type='number'
+                              value={stockOnHand[item.name] || ''}
+                              onChange={e =>
+                                onStockChange(item.name, e.target.value)
+                              }
+                              className='h-8 w-12 sm:w-14 text-center p-1 flex-shrink-0'
+                              placeholder='0'
+                            />
+                          )}
+                          <span className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm'>
+                            {item.name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className='px-1 py-2 sm:px-2 text-right whitespace-nowrap text-xs sm:text-sm'>
+                        {item.amount} {item.unit}
+                      </TableCell>
+                      <TableCell className='px-1 py-2 sm:px-2 text-right'>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8'
+                            >
+                              <Eye className='h-4 w-4' />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-80'>
+                            <div className='space-y-2'>
+                              <h4 className='font-medium leading-none'>
+                                Детализация
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                Разбивка для: <strong>{item.name}</strong>
+                              </p>
+                            </div>
+                            <div className='mt-4 space-y-1'>
+                              {Object.entries(item.breakdown)
+                                .filter(
+                                  ([, details]) =>
+                                    Math.ceil(details.amount) !== 0,
+                                )
+                                .map(([machineId, details]) => (
+                                  <div
+                                    key={machineId}
+                                    className='flex justify-between items-center text-sm'
+                                  >
+                                    <span className='truncate pr-2'>
+                                      {details.name} (#{machineId})
+                                    </span>
+                                    <span className='font-mono text-right flex-shrink-0'>
+                                      {Math.ceil(details.amount)} {item.unit}
+                                    </span>
+                                  </div>
+                                ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             {filteredList.length === 0 && (

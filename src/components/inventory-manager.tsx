@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { MASTER_MACHINE_IDS, planogramsHardCode } from '@/lib/data';
+import { MASTER_MACHINE_IDS, planogramsHardCode, PRODUCT_GROUPS } from '@/lib/data';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Search, RefreshCcw, X } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Loader2, Search, RefreshCcw, X, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
+
+const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+const ALL_CONSTITUENTS_NORMALIZED = new Set(
+  Object.values(PRODUCT_GROUPS).flat().map(normalize)
+);
 
 export const InventoryManager = () => {
   const { stockOnHand, setStockOnHand } = useScheduleState();
@@ -50,6 +60,9 @@ export const InventoryManager = () => {
 
         // Добавляем захардкоженные бутылочные товары
         planogramsHardCode.bottle.forEach(item => allProductNames.add(item));
+
+        // Добавляем названия групп
+        Object.keys(PRODUCT_GROUPS).forEach(groupName => allProductNames.add(groupName));
 
         // Загружаем продажи из мастер-аппаратов
         const promises = MASTER_MACHINE_IDS.map(async id => {
@@ -99,15 +112,46 @@ export const InventoryManager = () => {
   }, [loadMasterCatalog]);
 
   const filteredCatalog = useMemo(() => {
-    return catalog.filter(item =>
-      item.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    return catalog.filter(item => {
+      const matchesSearch = item.toLowerCase().includes(searchQuery.toLowerCase());
+      if (searchQuery) return matchesSearch;
+      
+      const isGroupParent = !!PRODUCT_GROUPS[item];
+      const isConstituent = ALL_CONSTITUENTS_NORMALIZED.has(normalize(item));
+      
+      return isGroupParent || !isConstituent;
+    });
   }, [catalog, searchQuery]);
 
   const handleStockChange = (itemName: string, value: string) => {
     if (/^\d{0,2}$/.test(value)) {
-      setStockOnHand(prev => ({ ...prev, [itemName]: value }));
+      setStockOnHand(prev => {
+        const next = { ...prev, [itemName]: value };
+        
+        // Пересчитываем все группы, в которые входит этот товар
+        Object.entries(PRODUCT_GROUPS).forEach(([groupName, constituents]) => {
+          if (constituents.includes(itemName)) {
+            const sum = constituents.reduce(
+              (acc, c) => acc + (parseInt(next[c] || '0') || 0),
+              0
+            );
+            next[groupName] = sum.toString();
+          }
+        });
+        
+        return next;
+      });
     }
+  };
+
+  const getGroupTotal = (groupName: string) => {
+    const constituents = PRODUCT_GROUPS[groupName];
+    if (!constituents) return stockOnHand[groupName] || '';
+    
+    return constituents.reduce(
+      (sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0),
+      0
+    ).toString();
   };
 
   return (
@@ -118,8 +162,7 @@ export const InventoryManager = () => {
             <div>
               <CardTitle>Склад / Остатки в руках</CardTitle>
               <CardDescription>
-                Редактируйте количество товара, которое у вас с собой. Изменения
-                сразу попадут в заявку.
+                Редактируйте количество товара. Изменения в группах сразу попадут в заявку.
               </CardDescription>
             </div>
             <button
@@ -142,7 +185,7 @@ export const InventoryManager = () => {
               placeholder='Поиск по каталогу...'
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className='pl-9 h-9'
+              className='pl-9 pr-8 h-9'
             />
             {searchQuery && (
               <button
@@ -170,25 +213,70 @@ export const InventoryManager = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCatalog.map(item => (
-                    <TableRow key={item}>
-                      <TableCell className='text-sm font-medium'>
-                        {item}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type='number'
-                          value={stockOnHand[item] || ''}
-                          onChange={e =>
-                            handleStockChange(item, e.target.value)
-                          }
-                          placeholder='0'
-                          className='h-8 text-center'
-                          inputMode='numeric'
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredCatalog.map(item => {
+                    const isGroup = !!PRODUCT_GROUPS[item];
+                    const isConstituent = ALL_CONSTITUENTS_NORMALIZED.has(normalize(item));
+                    
+                    return (
+                      <TableRow key={item} className={cn(isGroup && 'bg-primary/5')}>
+                        <TableCell className='text-sm font-medium'>
+                          <div className='flex items-center gap-2'>
+                            {item}
+                            {isGroup && <Info className='h-3 w-3 text-primary opacity-50' />}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {isGroup ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <div className='relative cursor-pointer'>
+                                  <Input
+                                    value={getGroupTotal(item)}
+                                    readOnly
+                                    className='h-8 text-center bg-muted/50 font-bold border-primary/20'
+                                  />
+                                </div>
+                              </PopoverTrigger>
+                              <PopoverContent className='w-80'>
+                                <div className='space-y-3'>
+                                  <h4 className='font-medium text-sm leading-none border-b pb-2'>
+                                    {item}
+                                  </h4>
+                                  <div className='grid gap-3'>
+                                    {PRODUCT_GROUPS[item].map(constituent => (
+                                      <div key={constituent} className='flex items-center justify-between gap-4'>
+                                        <span className='text-xs text-muted-foreground leading-tight'>
+                                          {constituent}
+                                        </span>
+                                        <Input
+                                          type='number'
+                                          value={stockOnHand[constituent] || ''}
+                                          onChange={e => handleStockChange(constituent, e.target.value)}
+                                          placeholder='0'
+                                          className='h-8 w-16 text-center text-xs'
+                                          inputMode='numeric'
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <Input
+                              type='number'
+                              value={stockOnHand[item] || ''}
+                              onChange={e => handleStockChange(item, e.target.value)}
+                              placeholder='0'
+                              className='h-8 text-center'
+                              inputMode='numeric'
+                              disabled={isConstituent && !searchQuery}
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {filteredCatalog.length === 0 && (
                     <TableRow>
                       <TableCell
