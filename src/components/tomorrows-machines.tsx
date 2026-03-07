@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GroupedShoppingLists } from '@/components/grouped-shopping-lists';
+import { InventoryManager } from '@/components/inventory-manager';
 import {
   Calendar as CalendarIcon,
   X,
@@ -22,6 +23,8 @@ import {
   Save,
   RotateCcw,
   CheckCircle,
+  ClipboardList,
+  Package,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -63,6 +66,7 @@ import { TelemetronSaleItem } from '@/types/telemetron';
 import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
 import { ScrollNavButtons } from './scroll-nav-buttons';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const TomorrowsMachines = () => {
   const { selectedDate, setSelectedDate, stockOnHand, setStockOnHand } =
@@ -516,320 +520,339 @@ export const TomorrowsMachines = () => {
   };
 
   return (
-    <>
-      <Card className='shadow-lg'>
-        <CardHeader>
-          <CardTitle className='font-headline text-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
-            <div className='flex items-center gap-2'>
-              <CalendarIcon className='h-6 w-6 text-primary' />
-              <span>Аппараты на дату</span>
-            </div>
-            <Popover
-              open={calendarDayPicker}
-              onOpenChange={setCalendarDayPicker}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant='outline'
-                  disabled={isLoading}
-                  className='w-full sm:w-auto'
+    <div className='space-y-6'>
+      <Tabs defaultValue='schedule' className='w-full'>
+        <TabsList className='grid w-full grid-cols-2 h-12 mb-4'>
+          <TabsTrigger value='schedule' className='flex items-center gap-2 text-base'>
+            <ClipboardList className='h-5 w-5' />
+            <span>Заявка</span>
+          </TabsTrigger>
+          <TabsTrigger value='inventory' className='flex items-center gap-2 text-base'>
+            <Package className='h-5 w-5' />
+            <span>Склад / Остатки</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value='schedule' className='space-y-6'>
+          <Card className='shadow-lg'>
+            <CardHeader>
+              <CardTitle className='font-headline text-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
+                <div className='flex items-center gap-2'>
+                  <CalendarIcon className='h-6 w-6 text-primary' />
+                  <span>Аппараты на дату</span>
+                </div>
+                <Popover
+                  open={calendarDayPicker}
+                  onOpenChange={setCalendarDayPicker}
                 >
-                  <CalendarIcon className='mr-2 h-4 w-4' />
-                  {getFormattedDate(selectedDate)}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-auto p-0' align='center'>
-                <Calendar
-                  mode='single'
-                  selected={selectedDate}
-                  onSelect={date => {
-                    if (date) {
-                      setSelectedDate(date);
-                      setCalendarDayPicker(false);
-                    }
-                  }}
-                  locale={ru}
-                />
-              </PopoverContent>
-            </Popover>
-          </CardTitle>
-          <CardDescription>
-            Добавляйте и удаляйте аппараты из списка. Не забудьте сохранить
-            изменения.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <div className='flex flex-col sm:flex-row gap-2'>
-            <Button
-              onClick={handleSaveChanges}
-              disabled={isLoading || !hasUnsavedChanges}
-              className='flex-1'
-            >
-              <Save className='mr-2 h-4 w-4' />
-              Сохранить изменения
-              {hasUnsavedChanges && (
-                <span className='ml-2 text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full'>
-                  есть изменения
-                </span>
-              )}
-            </Button>
-            <Button
-              onClick={handleResetChanges}
-              variant='outline'
-              disabled={isLoading || !hasUnsavedChanges}
-            >
-              <RotateCcw className='h-4 w-4' />
-            </Button>
-          </div>
-
-          {isLoading ? (
-            <div className='flex items-center justify-center py-10'>
-              <Loader2 className='h-8 w-8 animate-spin text-primary' />
-              <p className='ml-4 text-muted-foreground'>
-                Загрузка расписания...
-              </p>
-            </div>
-          ) : machinesForDay.length > 0 ? (
-            <div className='space-y-3'>
-              {machinesForDay.map(machine => {
-                const isServiced = servicedMachines[machine.id];
-                const isAaMachine = aaMachineIds.has(machine.id);
-                const serviceDate = specialMachineDates[machine.id];
-                const dateDisplay = serviceDate ? (
-                  format(new Date(serviceDate), 'dd.MM.yyyy HH:mm')
-                ) : (
-                  <span className='text-yellow-500'>Нет данных...</span>
-                );
-
-                return (
-                  <div
-                    key={machine.id}
-                    className={cn(
-                      'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg',
-                      isServiced && 'bg-green-900/20 border-green-700',
-                    )}
-                  >
-                    <div className='flex-1 min-w-0'>
-                      <p
-                        className={cn(
-                          'font-medium truncate',
-                          isServiced && 'text-green-300',
-                        )}
-                      >
-                        {machine.name} (#{machine.id})
-                      </p>
-                      <p className='text-sm text-muted-foreground whitespace-pre-line break-words'>
-                        {machine.location}
-                      </p>
-                      {isAaMachine ? (
-                        <div className='flex items-center gap-2 mt-2'>
-                          <span className='text-sm font-medium text-purple-400'>
-                            Аппарат без планограммы (AA)
-                          </span>
-                        </div>
-                      ) : (
-                        <div className='flex items-center gap-2 mt-2'>
-                          <span className='text-sm font-medium'>
-                            {dateDisplay}
-                          </span>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant='ghost'
-                                size='sm'
-                                className='h-6 w-6 p-0'
-                                title='Изменить дату'
-                              >
-                                <CalendarIcon className='h-3 w-3' />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className='w-auto p-0'
-                              align='start'
-                            >
-                              <Calendar
-                                locale={ru}
-                                mode='single'
-                                onSelect={date =>
-                                  handleCalendarSelect(date, machine.id)
-                                }
-                                selected={
-                                  serviceDate
-                                    ? new Date(serviceDate)
-                                    : undefined
-                                }
-                                disabled={date =>
-                                  date > new Date() ||
-                                  date < new Date('2020-01-01')
-                                }
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className='flex items-center gap-2 self-end sm:self-center flex-shrink-0'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        onClick={() => handleToggleServiced(machine.id)}
-                        className={cn(
-                          isServiced && 'text-green-500 hover:text-green-400',
-                        )}
-                      >
-                        <CheckCircle className='h-4 w-4' />
-                        <span className='sr-only'>Отметить обслуженным</span>
-                      </Button>
-                      <Button asChild variant='ghost' size='icon'>
-                        <Link href={`/machines/${machine.id}`}>
-                          <Eye className='h-4 w-4' />
-                          <span className='sr-only'>Посмотреть</span>
-                        </Link>
-                      </Button>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        onClick={() => handleRemoveMachine(machine.id)}
-                      >
-                        <X className='h-4 w-4 text-destructive' />
-                        <span className='sr-only'>Удалить</span>
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className='text-muted-foreground text-center py-4'>
-              На {format(selectedDate, 'dd.MM.yyyy')} аппаратов не
-              запланировано. Добавьте первый аппарат.
-            </p>
-          )}
-
-          <div className='flex flex-col sm:flex-row gap-2 items-center p-2 border rounded-lg'>
-            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-              <PopoverTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      disabled={isLoading}
+                      className='w-full sm:w-auto'
+                    >
+                      <CalendarIcon className='mr-2 h-4 w-4' />
+                      {getFormattedDate(selectedDate)}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-auto p-0' align='center'>
+                    <Calendar
+                      mode='single'
+                      selected={selectedDate}
+                      onSelect={date => {
+                        if (date) {
+                          setSelectedDate(date);
+                          setCalendarDayPicker(false);
+                        }
+                      }}
+                      locale={ru}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </CardTitle>
+              <CardDescription>
+                Добавляйте и удаляйте аппараты из списка. Не забудьте сохранить
+                изменения.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='flex flex-col sm:flex-row gap-2'>
                 <Button
-                  variant='outline'
-                  role='combobox'
-                  aria-expanded={comboboxOpen}
-                  className='w-full justify-between'
-                  disabled={isLoading}
+                  onClick={handleSaveChanges}
+                  disabled={isLoading || !hasUnsavedChanges}
+                  className='flex-1'
                 >
-                  {isLoading && machineIdsForDay.length === 0 ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  ) : machineToAdd ? (
-                    unselectedMachines.find(
-                      machine => machine.id === machineToAdd,
-                    )?.name
-                  ) : (
-                    'Выберите аппарат для добавления...'
+                  <Save className='mr-2 h-4 w-4' />
+                  Сохранить изменения
+                  {hasUnsavedChanges && (
+                    <span className='ml-2 text-xs bg-yellow-500 text-white px-1.5 py-0.5 rounded-full'>
+                      есть изменения
+                    </span>
                   )}
-                  <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-[--radix-popover-trigger-width] p-0'>
-                <Command
-                  filter={(value, search) => {
-                    if (value.toLowerCase().includes(search.toLowerCase()))
-                      return 1;
-                    return 0;
-                  }}
+                <Button
+                  onClick={handleResetChanges}
+                  variant='outline'
+                  disabled={isLoading || !hasUnsavedChanges}
                 >
-                  <CommandInput placeholder='Поиск по названию или локации...' />
-                  <CommandList>
-                    <CommandEmpty>Аппарат не найден.</CommandEmpty>
-                    <CommandGroup>
-                      {unselectedMachines.map(machine => (
-                        <CommandItem
-                          key={machine.id}
-                          value={`${machine.name} ${machine.location} ${machine.id}`}
-                          onSelect={() => {
-                            setMachineToAdd(machine.id);
-                            setComboboxOpen(false);
-                          }}
-                        >
-                          <Check
+                  <RotateCcw className='h-4 w-4' />
+                </Button>
+              </div>
+
+              {isLoading ? (
+                <div className='flex items-center justify-center py-10'>
+                  <Loader2 className='h-8 w-8 animate-spin text-primary' />
+                  <p className='ml-4 text-muted-foreground'>
+                    Загрузка расписания...
+                  </p>
+                </div>
+              ) : machinesForDay.length > 0 ? (
+                <div className='space-y-3'>
+                  {machinesForDay.map(machine => {
+                    const isServiced = servicedMachines[machine.id];
+                    const isAaMachine = aaMachineIds.has(machine.id);
+                    const serviceDate = specialMachineDates[machine.id];
+                    const dateDisplay = serviceDate ? (
+                      format(new Date(serviceDate), 'dd.MM.yyyy HH:mm')
+                    ) : (
+                      <span className='text-yellow-500'>Нет данных...</span>
+                    );
+
+                    return (
+                      <div
+                        key={machine.id}
+                        className={cn(
+                          'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg',
+                          isServiced && 'bg-green-900/20 border-green-700',
+                        )}
+                      >
+                        <div className='flex-1 min-w-0'>
+                          <p
                             className={cn(
-                              'mr-2 h-4 w-4',
-                              machineToAdd === machine.id
-                                ? 'opacity-100'
-                                : 'opacity-0',
+                              'font-medium truncate',
+                              isServiced && 'text-green-300',
                             )}
-                          />
-                          <div>
-                            <p>
-                              {machine.name} (#{machine.id})
-                            </p>
-                            <p className='text-xs text-muted-foreground'>
-                              {machine.location}
-                            </p>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Popover
-              open={addMachineCalendarOpen}
-              onOpenChange={setAddMachineCalendarOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  onClick={handleAddButtonClick}
-                  disabled={!machineToAdd || isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  ) : (
-                    <PlusCircle className='mr-2 h-4 w-4' />
-                  )}
-                  Добавить
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className='w-auto p-0'>
-                <Calendar
-                  mode='single'
-                  selected={undefined}
-                  onSelect={date => {
-                    if (date && (machineToAdd || machineForCalendar)) {
-                      handleCalendarSelect(
-                        date,
-                        (machineToAdd || machineForCalendar)!,
-                      );
-                    }
-                    setAddMachineCalendarOpen(false);
-                  }}
-                  locale={ru}
-                  disabled={date =>
-                    date > new Date() || date < new Date('2020-01-01')
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+                          >
+                            {machine.name} (#{machine.id})
+                          </p>
+                          <p className='text-sm text-muted-foreground whitespace-pre-line break-words'>
+                            {machine.location}
+                          </p>
+                          {isAaMachine ? (
+                            <div className='flex items-center gap-2 mt-2'>
+                              <span className='text-sm font-medium text-purple-400'>
+                                Аппарат без планограммы (AA)
+                              </span>
+                            </div>
+                          ) : (
+                            <div className='flex items-center gap-2 mt-2'>
+                              <span className='text-sm font-medium'>
+                                {dateDisplay}
+                              </span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    className='h-6 w-6 p-0'
+                                    title='Изменить дату'
+                                  >
+                                    <CalendarIcon className='h-3 w-3' />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className='w-auto p-0'
+                                  align='start'
+                                >
+                                  <Calendar
+                                    locale={ru}
+                                    mode='single'
+                                    onSelect={date =>
+                                      handleCalendarSelect(date, machine.id)
+                                    }
+                                    selected={
+                                      serviceDate
+                                        ? new Date(serviceDate)
+                                        : undefined
+                                    }
+                                    disabled={date =>
+                                      date > new Date() ||
+                                      date < new Date('2020-01-01')
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          )}
+                        </div>
 
-          {machineIdsForDay.length > 0 && (
-            <div className='mt-4'>
-              <GroupedShoppingLists
-                key={`${selectedDate.toISOString()}-${machineIdsForDay.join(
-                  '-',
-                )}`}
-                machineIds={machineIdsForDay}
-                specialMachineDates={specialMachineDates}
-                aaMachineIds={aaMachineIds}
-                stockOnHand={stockOnHand}
-                onStockChange={handleStockChange}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                        <div className='flex items-center gap-2 self-end sm:self-center flex-shrink-0'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => handleToggleServiced(machine.id)}
+                            className={cn(
+                              isServiced && 'text-green-500 hover:text-green-400',
+                            )}
+                          >
+                            <CheckCircle className='h-4 w-4' />
+                            <span className='sr-only'>Отметить обслуженным</span>
+                          </Button>
+                          <Button asChild variant='ghost' size='icon'>
+                            <Link href={`/machines/${machine.id}`}>
+                              <Eye className='h-4 w-4' />
+                              <span className='sr-only'>Посмотреть</span>
+                            </Link>
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => handleRemoveMachine(machine.id)}
+                          >
+                            <X className='h-4 w-4 text-destructive' />
+                            <span className='sr-only'>Удалить</span>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className='text-muted-foreground text-center py-4'>
+                  На {format(selectedDate, 'dd.MM.yyyy')} аппаратов не
+                  запланировано. Добавьте первый аппарат.
+                </p>
+              )}
+
+              <div className='flex flex-col sm:flex-row gap-2 items-center p-2 border rounded-lg'>
+                <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      role='combobox'
+                      aria-expanded={comboboxOpen}
+                      className='w-full justify-between'
+                      disabled={isLoading}
+                    >
+                      {isLoading && machineIdsForDay.length === 0 ? (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      ) : machineToAdd ? (
+                        unselectedMachines.find(
+                          machine => machine.id === machineToAdd,
+                        )?.name
+                      ) : (
+                        'Выберите аппарат для добавления...'
+                      )}
+                      <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-[--radix-popover-trigger-width] p-0'>
+                    <Command
+                      filter={(value, search) => {
+                        if (value.toLowerCase().includes(search.toLowerCase()))
+                          return 1;
+                        return 0;
+                      }}
+                    >
+                      <CommandInput placeholder='Поиск по названию или локации...' />
+                      <CommandList>
+                        <CommandEmpty>Аппарат не найден.</CommandEmpty>
+                        <CommandGroup>
+                          {unselectedMachines.map(machine => (
+                            <CommandItem
+                              key={machine.id}
+                              value={`${machine.name} ${machine.location} ${machine.id}`}
+                              onSelect={() => {
+                                setMachineToAdd(machine.id);
+                                setComboboxOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  machineToAdd === machine.id
+                                    ? 'opacity-100'
+                                    : 'opacity-0',
+                                )}
+                              />
+                              <div>
+                                <p>
+                                  {machine.name} (#{machine.id})
+                                </p>
+                                <p className='text-xs text-muted-foreground'>
+                                  {machine.location}
+                                </p>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Popover
+                  open={addMachineCalendarOpen}
+                  onOpenChange={setAddMachineCalendarOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      onClick={handleAddButtonClick}
+                      disabled={!machineToAdd || isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      ) : (
+                        <PlusCircle className='mr-2 h-4 w-4' />
+                      )}
+                      Добавить
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-auto p-0'>
+                    <Calendar
+                      mode='single'
+                      selected={undefined}
+                      onSelect={date => {
+                        if (date && (machineToAdd || machineForCalendar)) {
+                          handleCalendarSelect(
+                            date,
+                            (machineToAdd || machineForCalendar)!,
+                          );
+                        }
+                        setAddMachineCalendarOpen(false);
+                      }}
+                      locale={ru}
+                      disabled={date =>
+                        date > new Date() || date < new Date('2020-01-01')
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {machineIdsForDay.length > 0 && (
+                <div className='mt-4'>
+                  <GroupedShoppingLists
+                    key={`${selectedDate.toISOString()}-${machineIdsForDay.join(
+                      '-',
+                    )}`}
+                    machineIds={machineIdsForDay}
+                    specialMachineDates={specialMachineDates}
+                    aaMachineIds={aaMachineIds}
+                    stockOnHand={stockOnHand}
+                    onStockChange={handleStockChange}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value='inventory'>
+          <InventoryManager />
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog
         open={dialogState.open}
@@ -863,6 +886,6 @@ export const TomorrowsMachines = () => {
       </AlertDialog>
 
       <ScrollNavButtons />
-    </>
+    </div>
   );
 };

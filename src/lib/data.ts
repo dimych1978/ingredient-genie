@@ -16,6 +16,7 @@ export interface GroupedShoppingListsProps {
   stockOnHand: Record<string, string>;
   onStockChange: (itemName: string, value: string) => void;
 }
+
 export const allMachines: Machine[] = [
   {
     id: '58899',
@@ -273,7 +274,7 @@ export const allMachines: Machine[] = [
     id: '53359',
     name: 'Алло Такси',
     location: 'Алло Такси\nул. Лизы Чайкиной, 14, корп. 1',
-    model: 'Necta Colibri',
+    model: 'Saeco Phedra EVO Espresso',
   },
   {
     id: '58734',
@@ -384,6 +385,12 @@ export const allMachines: Machine[] = [
     model: 'Necta Krea Touch',
   },
   {
+    id: '47710',
+    name: 'Автосалон Волна',
+    location: 'Автосалон Волна корнер,\n ул. Новосулажгорская, д.30',
+    model: 'Necta Krea Touch',
+  },
+  {
     id: '43928',
     name: 'Визовый центр корнер колибрик 121',
     location: 'Визовый центр корнер колибрик\nул. Гоголя, д. 5',
@@ -474,10 +481,16 @@ export const allMachines: Machine[] = [
     model: 'Crane Crane 167',
   },
   {
-    id: '33501',
-    name: 'Дом Бокса 125/6',
-    location: 'Дом Бокса 125/6\nул. Шотмана, д. 38А',
-    model: 'Necta Kikko ES6',
+    id: '66696',
+    name: 'Дом Бокса кофе',
+    location: 'Дом Бокса\nул. Шотмана, д. 38А',
+    model: 'Jetinno, JL28',
+  },
+  {
+    id: '66693',
+    name: 'Дом Бокса снек',
+    location: 'Дом Бокса\nул. Шотмана, д. 38А',
+    model: 'LE Vending, LE205B',
   },
   {
     id: '52135',
@@ -862,6 +875,12 @@ export const allMachines: Machine[] = [
     name: 'Мэрия Прионежская корнер',
     location: 'Мэрия Прионежская корнер\nул. Правды, д.14',
     model: 'Necta Krea Touch',
+  },
+  {
+    id: '65869',
+    name: 'Мэрия Прионежская снэк',
+    location: 'Мэрия Прионежская снэк\nул. Правды, д.14',
+    model: 'TCN, CSC-10G',
   },
   {
     id: '52490',
@@ -1309,12 +1328,6 @@ export const allMachines: Machine[] = [
     model: 'Sanden Vendo SVE DR9',
   },
   {
-    id: '58770',
-    name: 'Стекло Центр',
-    location: 'Стекло Центр\nул. Коммунистов, д.50, стр.1',
-    model: 'Necta Kikko ES6',
-  },
-  {
     id: '41516',
     name: 'Субару корнер 245',
     location: 'Субару корнер 245\nул. Маршала Мерецкого, д. 30',
@@ -1402,16 +1415,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Colibri',
   },
   {
-    id: '40412',
+    id: '66777',
     name: 'Травмпункт 89',
     location: 'Травмпункт 89\nул. Антикайнена 3',
-    model: 'Necta Colibri',
-  },
-  {
-    id: '47710',
-    name: 'Триатлон центр "Трилаб" корнер',
-    location: 'Триатлон центр "Трилаб" корнер\nул. Ровио, д.3',
-    model: 'Necta Krea Touch',
+    model: 'Jetinno, JL28',
   },
   {
     id: '33343',
@@ -1424,6 +1431,18 @@ export const allMachines: Machine[] = [
     name: 'Турхолдинг Карелия',
     location: 'Турхолдинг Карелия\nнаб. Гюллинга, 2',
     model: 'Necta Kikko ES6',
+  },
+  {
+    id: '65645',
+    name: 'Турхолдинг Карелия корнер',
+    location: 'Турхолдинг Карелия корнер\nнаб. Гюллинга, 2',
+    model: 'Jetinno, JL28',
+  },
+  {
+    id: '65646',
+    name: 'Турхолдинг Карелия снэк',
+    location: 'Турхолдинг Карелия снэк\nнаб. Гюллинга, 2',
+    model: 'TCN, CSC-10G',
   },
   {
     id: '46059',
@@ -1456,10 +1475,10 @@ export const allMachines: Machine[] = [
     model: 'Unicum FoodBox',
   },
   {
-    id: '33489',
+    id: '66641',
     name: 'Хоровая школа кофе195',
     location: 'Хоровая школа кофе195\nПервомайский просп., 4А',
-    model: 'Saeco Cristallo 600',
+    model: 'Jetinno, JL300',
   },
   {
     id: '33492',
@@ -1517,9 +1536,15 @@ export const allMachines: Machine[] = [
   },
   {
     id: '33357',
+    name: 'ТЦ Неглинка',
+    location: 'ТЦ Неглинка\Лососинское шоссе, дом 50)',
+    model: 'Jetinno, JL300',
+  },
+  {
+    id: '58770',
     name: 'Шиномонтаж Ругозерский на горке 38',
     location: 'Шиномонтаж Ругозерский на горке\nпереулок Ругозерский, д.34',
-    model: 'Necta Brio',
+    model: 'Necta Kikko ES6',
   },
   {
     id: '48888',
@@ -1563,6 +1588,16 @@ export const allMachines: Machine[] = [
     location: 'Ямка (деловой центр) корнер\nЛитейная площадь, д. 3',
     model: 'Necta Krea Touch',
   },
+];
+
+export const MASTER_MACHINE_IDS = [
+  '33354',
+  '56881',
+  '33350',
+  '51211',
+  '33400',
+  '34148',
+  '66693',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -1787,6 +1822,7 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'auto',
     },
+    { name: 'Пломбир', apiNames: ['раф сливки'], unit: 'г', type: 'auto' },
     {
       name: 'клубника',
       apiNames: ['клубника', 'раф клубника'],
