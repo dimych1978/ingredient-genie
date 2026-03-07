@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Eye } from 'lucide-react';
+import { Loader2, Eye, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
@@ -52,6 +52,7 @@ export const GroupedShoppingLists = ({
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
 
@@ -280,6 +281,13 @@ export const GroupedShoppingLists = ({
     aaMachineIds,
   ]);
 
+  const filteredList = useMemo(() => {
+    if (!searchQuery.trim()) return combinedList;
+    return combinedList.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [combinedList, searchQuery]);
+
   const machineIdsToProcessCount = machineIds.filter(
     id => !aaMachineIds.has(id),
   ).length;
@@ -316,13 +324,33 @@ export const GroupedShoppingLists = ({
       </Card>
 
       {showList && combinedList.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Общий заказ</CardTitle>
-            <CardDescription>
-              Сводный список на основе продаж и остатков для{' '}
-              {machineIdsToProcessCount} апп.
-            </CardDescription>
+        <Card className='relative'>
+          <CardHeader className='sticky top-0 z-20 bg-background/95 backdrop-blur border-b pb-4'>
+            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+              <div>
+                <CardTitle>Общий заказ</CardTitle>
+                <CardDescription>
+                  Сводный список для {machineIdsToProcessCount} апп.
+                </CardDescription>
+              </div>
+              <div className='relative w-full sm:w-64'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                <Input
+                  placeholder='Поиск в заявке...'
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className='pl-9 pr-8 h-9'
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
+                  >
+                    <X className='w-4 h-4'/>
+                  </button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className='px-1 sm:px-2'>
             <Table>
@@ -338,7 +366,7 @@ export const GroupedShoppingLists = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {combinedList.map(item => (
+                {filteredList.map(item => (
                   <TableRow key={item.name}>
                     <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
                       <div className='flex items-center gap-1.5 sm:gap-2 min-w-0'>
@@ -406,6 +434,11 @@ export const GroupedShoppingLists = ({
                 ))}
               </TableBody>
             </Table>
+            {filteredList.length === 0 && (
+              <p className='text-muted-foreground text-center py-8'>
+                Ничего не найдено по запросу "{searchQuery}"
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
