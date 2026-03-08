@@ -103,9 +103,44 @@
     transform: translateX(calc(-100% + var(--radix-popover-trigger-width))) !important;
   }
 
- /* Calendar fixes - добавляем только это */
-/* Calendar fixes - обновляем CSS */
-/* Оставьте только это, если нужно */
 .rdp-day:hover {
-  border-radius: 0.375rem; /* rounded-md */
+  border-radius: 0.375rem;
 }}
+
+@keyframes dashMove {
+  to {
+    background-position: 20px 0, -20px 100%, 0 -20px, 100% 20px;
+  }
+}
+
+.animated-dash-full {
+  position: relative;
+  border: 1px solid transparent !important;
+  background-image: 
+    linear-gradient(90deg, #60a5fa 50%, transparent 50%), 
+    linear-gradient(90deg, #60a5fa 50%, transparent 50%), 
+    linear-gradient(0deg, #60a5fa 50%, transparent 50%), 
+    linear-gradient(0deg, #60a5fa 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  animation: dashMove 2s infinite linear;
+}
+
+.holy-glow {
+  position: relative;
+  border: 2px solid rgb(96, 165, 250);
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.5), inset 0 0 10px rgba(96, 165, 250, 0.2);
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.5), inset 0 0 10px rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(96, 165, 250, 0.8), inset 0 0 15px rgba(96, 165, 250, 0.4);
+    border-color: rgba(147, 197, 253, 1);
+  }
+}
