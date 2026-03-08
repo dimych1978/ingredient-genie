@@ -1709,7 +1709,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы opera',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300','стаканы opera', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
@@ -2032,13 +2032,13 @@ export const machineIngredients: MachineIngredients = {
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
     {
       name: 'стаканы 150',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300','стаканы 150', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
     {
       name: 'размешиватели 105',
-      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', 'размешиватели'],
+      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', 'размешиватели 105', 'размешиватели'],
       unit: 'шт',
       type: 'auto',
     },
@@ -2072,7 +2072,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы 150',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 150', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
@@ -2113,7 +2113,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы opera',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300','стаканы opera', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
