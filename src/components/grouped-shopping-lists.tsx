@@ -286,19 +286,32 @@ export const GroupedShoppingLists = ({
 
   const filteredList = useMemo(() => {
     if (!searchQuery.trim()) return combinedList;
-    return combinedList.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    const lowerQuery = searchQuery.toLowerCase();
+
+    return combinedList.filter(item => {
+      // 1. Проверяем само название в списке (группу или товар)
+      if (item.name.toLowerCase().includes(lowerQuery)) return true;
+
+      // 2. Если это группа, проверяем её составляющие
+      const constituents = PRODUCT_GROUPS[item.name];
+      if (
+        constituents &&
+        constituents.some(c => c.toLowerCase().includes(lowerQuery))
+      ) {
+        return true;
+      }
+
+      return false;
+    });
   }, [combinedList, searchQuery]);
 
   const getGroupTotal = (groupName: string) => {
     const constituents = PRODUCT_GROUPS[groupName];
     if (!constituents) return stockOnHand[groupName] || '';
-    
-    return constituents.reduce(
-      (sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0),
-      0
-    ).toString();
+
+    return constituents
+      .reduce((sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0), 0)
+      .toString();
   };
 
   const handleGroupStockChange = (constituentName: string, value: string) => {
@@ -365,7 +378,7 @@ export const GroupedShoppingLists = ({
                     onClick={() => setSearchQuery('')}
                     className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
                   >
-                    <X className='w-4 h-4'/>
+                    <X className='w-4 h-4' />
                   </button>
                 )}
               </div>
@@ -387,9 +400,12 @@ export const GroupedShoppingLists = ({
               <TableBody>
                 {filteredList.map(item => {
                   const isGroup = !!PRODUCT_GROUPS[item.name];
-                  
+
                   return (
-                    <TableRow key={item.name} className={cn(isGroup && 'bg-primary/5')}>
+                    <TableRow
+                      key={item.name}
+                      className={cn(isGroup && 'bg-primary/5')}
+                    >
                       <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
                         <div className='flex items-center gap-1.5 sm:gap-2 min-w-0'>
                           {isGroup ? (
@@ -410,21 +426,33 @@ export const GroupedShoppingLists = ({
                                     <Info className='h-3 w-3 text-primary' />
                                   </h4>
                                   <div className='grid gap-3'>
-                                    {PRODUCT_GROUPS[item.name].map(constituent => (
-                                      <div key={constituent} className='flex items-center justify-between gap-4'>
-                                        <span className='text-xs text-muted-foreground leading-tight'>
-                                          {constituent}
-                                        </span>
-                                        <Input
-                                          type='number'
-                                          value={stockOnHand[constituent] || ''}
-                                          onChange={e => handleGroupStockChange(constituent, e.target.value)}
-                                          placeholder='0'
-                                          className='h-8 w-16 text-center text-xs'
-                                          inputMode='numeric'
-                                        />
-                                      </div>
-                                    ))}
+                                    {PRODUCT_GROUPS[item.name].map(
+                                      constituent => (
+                                        <div
+                                          key={constituent}
+                                          className='flex items-center justify-between gap-4'
+                                        >
+                                          <span className='text-xs text-muted-foreground leading-tight'>
+                                            {constituent}
+                                          </span>
+                                          <Input
+                                            type='number'
+                                            value={
+                                              stockOnHand[constituent] || ''
+                                            }
+                                            onChange={e =>
+                                              handleGroupStockChange(
+                                                constituent,
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder='0'
+                                            className='h-8 w-16 text-center text-xs'
+                                            inputMode='numeric'
+                                          />
+                                        </div>
+                                      ),
+                                    )}
                                   </div>
                                 </div>
                               </PopoverContent>
