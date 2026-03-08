@@ -299,6 +299,18 @@ export const ShoppingList = ({
   } | null>(null);
   const CACHE_TTL = 300000; // 5 минут
 
+  // Анализ дубликатов для визуальной подсветки
+  const duplicateInfo = useMemo(() => {
+    const counts = new Map<string, number>();
+    const lasts = new Map<string, number>();
+    shoppingList.forEach((item, idx) => {
+      const name = item.name.toLowerCase().trim();
+      counts.set(name, (counts.get(name) || 0) + 1);
+      lasts.set(name, idx);
+    });
+    return { counts, lasts };
+  }, [shoppingList]);
+
   // Стабильные функции
   const stableToast = useRef(toast).current;
   const stableGetSalesByProducts = useRef(getSalesByProducts).current;
@@ -833,6 +845,10 @@ export const ShoppingList = ({
                   {shoppingList.map((item, index) => {
                     if (item.name.toLowerCase() === 'item') return null;
 
+                    const nameLower = item.name.toLowerCase().trim();
+                    const isDuplicate = (duplicateInfo.counts.get(nameLower) || 0) > 1;
+                    const isLastDuplicate = duplicateInfo.lasts.get(nameLower) === index;
+
                     const isFullyReplenished = item.amount <= 0;
                     const hasSales = item.salesAmount && item.salesAmount > 0;
                     const deficit = item.previousDeficit || 0;
@@ -876,12 +892,15 @@ export const ShoppingList = ({
                       <div
                         key={index}
                         className={cn(
-                          'flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 border rounded-lg gap-3',
+                          'flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 border rounded-lg gap-3 transition-all duration-200',
                           isFullyReplenished
                             ? 'bg-green-900/20 border-green-600 text-green-300'
                             : item.status === 'none'
                               ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
                               : 'bg-blue-900/20 border-blue-600 text-blue-300',
+                          // Подсветка дубликатов
+                          isDuplicate && !isLastDuplicate &&  'border-2 border-dashed border-blue-400/70 shadow-[inset_0_0_8px_rgba(96,165,250,0.15)]',
+                          isDuplicate && isLastDuplicate && 'border-blue-400 border-2 ring-1 ring-blue-400/30 shadow-[0_0_8px_rgba(96,165,250,0.2)]'
                         )}
                       >
                         {/* Левый блок - информация о товаре */}
@@ -891,6 +910,17 @@ export const ShoppingList = ({
                               {extractProductName(
                                 item.planogramName,
                                 item.name,
+                              )}
+                              {isDuplicate && isLastDuplicate && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Bookmark className='h-4 w-4 text-blue-400 fill-blue-400/20' />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Это последняя ячейка данного товара.</p>
+                                    <p>Используйте её для ввода общего недогруза.</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               )}
                               {item.planogramName &&
                                 extractProductName(
@@ -1070,156 +1100,156 @@ export const ShoppingList = ({
                                           isSelected
                                             ? 'text-green-300'
                                             : 'text-gray-300',
-                                        )}
+                                          )}
+                                        >
+                                          {size === 'big' ? 'Большие' : 'Малые'}
+                                        </span>
+                                      </div>
+                                      <span
+                                        className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${isSelected ? 'text-green-500' : 'text-yellow-200'}`}
                                       >
-                                        {size === 'big' ? 'Большие' : 'Малые'}
+                                        {isSelected ? 'Не надо' : 'Нужно'}
                                       </span>
                                     </div>
-                                    <span
-                                      className={`text-sm whitespace-nowrap flex-shrink-0 ml-2 ${isSelected ? 'text-green-500' : 'text-yellow-200'}`}
-                                    >
-                                      {isSelected ? 'Не надо' : 'Нужно'}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : isCheckboxItem ? (
-                            <div className='flex items-center gap-2'>
-                              <button
-                                onClick={() => handleCheckboxChange(index)}
-                                className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
-                              >
-                                {item.checked && (
-                                  <CircleCheckBig className='h-4 w-4 text-green-500' />
-                                )}
-                              </button>
-                              <span
-                                className={`text-sm whitespace-nowrap ${
-                                  item.checked
-                                    ? 'text-green-500'
-                                    : 'text-yellow-200'
-                                }`}
-                              >
-                                {item.checked ? 'Не надо' : 'Нужно'}
-                              </span>
-                            </div>
-                          ) : (
-                            <>
-                              <div className='flex items-center gap-2 flex-wrap'>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant='ghost'
-                                      size='icon'
-                                      className={cn(
-                                        'rounded-full flex-shrink-0',
-                                        item.status === 'none' &&
-                                          'bg-red-500/20 text-red-400 hover:bg-red-500/30',
-                                      )}
-                                      onClick={() =>
-                                        handleStatusChange(index, 'none')
-                                      }
-                                    >
-                                      <X className='h-5 w-5' />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Не пополнено</p>
-                                  </TooltipContent>
-                                </Tooltip>
-
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant='ghost'
-                                      size='icon'
-                                      className={cn(
-                                        'rounded-full flex-shrink-0',
-                                        item.status === 'partial' &&
-                                          'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
-                                      )}
-                                      onClick={() =>
-                                        handleStatusChange(index, 'partial')
-                                      }
-                                    >
-                                      <Pencil className='h-5 w-5' />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Пополнено частично</p>
-                                  </TooltipContent>
-                                </Tooltip>
-
-                                {item.status === 'partial' && (
-                                  <div className='ml-2'>
-                                    <div className='flex items-center gap-1 flex-wrap'>
+                                  );
+                                })}
+                              </div>
+                            ) : isCheckboxItem ? (
+                              <div className='flex items-center gap-2'>
+                                <button
+                                  onClick={() => handleCheckboxChange(index)}
+                                  className='flex items-center justify-center h-6 w-6 rounded-full border-2 border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex-shrink-0'
+                                >
+                                  {item.checked && (
+                                    <CircleCheckBig className='h-4 w-4 text-green-500' />
+                                  )}
+                                </button>
+                                <span
+                                  className={`text-sm whitespace-nowrap ${
+                                    item.checked
+                                      ? 'text-green-500'
+                                      : 'text-yellow-200'
+                                  }`}
+                                >
+                                  {item.checked ? 'Не надо' : 'Нужно'}
+                                </span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className='flex items-center gap-2 flex-wrap'>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
                                       <Button
-                                        variant='outline'
+                                        variant='ghost'
                                         size='icon'
-                                        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
-                                        onClick={() => {
-                                          const current =
-                                            loadedAmounts[index] ?? 0;
-                                          handleAmountChange(
-                                            index,
-                                            (current - 1).toString(),
-                                          );
-                                        }}
+                                        className={cn(
+                                          'rounded-full flex-shrink-0',
+                                          item.status === 'none' &&
+                                            'bg-red-500/20 text-red-400 hover:bg-red-500/30',
+                                        )}
+                                        onClick={() =>
+                                          handleStatusChange(index, 'none')
+                                        }
                                       >
-                                        -
+                                        <X className='h-5 w-5' />
                                       </Button>
-                                      <div className='w-20 min-w-20'>
-                                        <Input
-                                          type='number'
-                                          value={
-                                            loadedAmounts[index]?.toString() ??
-                                            '0'
-                                          }
-                                          onChange={e =>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Не пополнено</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+  
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        className={cn(
+                                          'rounded-full flex-shrink-0',
+                                          item.status === 'partial' &&
+                                            'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
+                                        )}
+                                        onClick={() =>
+                                          handleStatusChange(index, 'partial')
+                                        }
+                                      >
+                                        <Pencil className='h-5 w-5' />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Пополнено частично</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+  
+                                  {item.status === 'partial' && (
+                                    <div className='ml-2'>
+                                      <div className='flex items-center gap-1 flex-wrap'>
+                                        <Button
+                                          variant='outline'
+                                          size='icon'
+                                          className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                          onClick={() => {
+                                            const current =
+                                              loadedAmounts[index] ?? 0;
                                             handleAmountChange(
                                               index,
-                                              e.target.value,
-                                            )
-                                          }
-                                          placeholder={item.amount?.toString()}
-                                          className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
-                                          inputMode='numeric'
-                                          autoComplete='off'
-                                        />
+                                              (current - 1).toString(),
+                                            );
+                                          }}
+                                        >
+                                          -
+                                        </Button>
+                                        <div className='w-20 min-w-20'>
+                                          <Input
+                                            type='number'
+                                            value={
+                                              loadedAmounts[index]?.toString() ??
+                                              '0'
+                                            }
+                                            onChange={e =>
+                                              handleAmountChange(
+                                                index,
+                                                e.target.value,
+                                              )
+                                            }
+                                            placeholder={item.amount?.toString()}
+                                            className='bg-gray-700 border-gray-600 text-white h-9 text-center text-lg w-full'
+                                            inputMode='numeric'
+                                            autoComplete='off'
+                                          />
+                                        </div>
+                                        <Button
+                                          variant='outline'
+                                          size='icon'
+                                          className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                          onClick={() => {
+                                            const current =
+                                              loadedAmounts[index] ?? 0;
+                                            handleAmountChange(
+                                              index,
+                                              (current + 1).toString(),
+                                            );
+                                          }}
+                                        >
+                                          +
+                                        </Button>
                                       </div>
-                                      <Button
-                                        variant='outline'
-                                        size='icon'
-                                        className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
-                                        onClick={() => {
-                                          const current =
-                                            loadedAmounts[index] ?? 0;
-                                          handleAmountChange(
-                                            index,
-                                            (current + 1).toString(),
-                                          );
-                                        }}
-                                      >
-                                        +
-                                      </Button>
                                     </div>
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </TooltipProvider>
+                      );
+                    })}
+                  </TooltipProvider>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <ScrollNavButtons />
-    </>
-  );
-};
+            )}
+          </CardContent>
+        </Card>
+        <ScrollNavButtons />
+      </>
+    );
+  };
