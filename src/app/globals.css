@@ -125,6 +125,12 @@
   background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   animation: dashMove 2s infinite linear;
+  
+  /* Аппаратное ускорение */
+  will-change: background-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .holy-glow {
@@ -132,6 +138,12 @@
   border: 2px solid rgb(96, 165, 250);
   box-shadow: 0 0 15px rgba(96, 165, 250, 0.5), inset 0 0 10px rgba(96, 165, 250, 0.2);
   animation: glowPulse 3s ease-in-out infinite;
+  
+  /* Аппаратное ускорение */
+  will-change: box-shadow, border-color;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 @keyframes glowPulse {
@@ -142,5 +154,35 @@
   50% {
     box-shadow: 0 0 30px rgba(96, 165, 250, 0.8), inset 0 0 15px rgba(96, 165, 250, 0.4);
     border-color: rgba(147, 197, 253, 1);
+  }
+}
+
+/* Оптимизация для мобильных устройств */
+@media (max-width: 768px) {
+  .animated-dash-full {
+    /* Упрощаем анимацию на мобилках */
+    animation-duration: 3s; /* Делаем медленнее = меньше нагрузки */
+  }
+  
+  .holy-glow {
+    animation-duration: 4s; /* Растягиваем пульсацию */
+  }
+}
+
+/* Для очень слабых устройств - отключаем анимацию совсем */
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .animated-dash-full,
+  .holy-glow {
+    animation: none;
+  }
+  
+  .animated-dash-full {
+    border: 2px dashed rgba(96, 165, 250, 0.5) !important;
+    background: none;
+  }
+  
+  .holy-glow {
+    border: 2px solid rgb(96, 165, 250);
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
   }
 }
