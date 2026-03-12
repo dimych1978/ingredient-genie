@@ -103,6 +103,12 @@ export const allMachines: Machine[] = [
     model: 'Necta Colibri',
   },
   {
+    id: '66937',
+    name: 'Автолайн корнер',
+    location: 'Автолайн 29\nул. Лососссинская, д.14',
+    model: 'Jetinno, JL28',
+  },
+  {
     id: '58689',
     name: 'Автомойка Автобаня 91',
     location: 'Автомойка Автобаня\nКомсомольский пр., д. 6 к. 2',
@@ -637,10 +643,10 @@ export const allMachines: Machine[] = [
     model: 'Unicum Rosso',
   },
   {
-    id: '49443',
-    name: 'Консерватория холл кофе 2 стакана',
-    location: 'Консерватория холл кофе 2 стакана\nул. Ленинградская, д. 16',
-    model: 'Necta Opera',
+    id: '66261',
+    name: 'Консерватория холл кофе ',
+    location: 'Консерватория холл кофе \nул. Ленинградская, д. 16',
+    model: 'Jetinno, JL300',
   },
   {
     id: '51198',
@@ -827,6 +833,12 @@ export const allMachines: Machine[] = [
     name: 'Луми снэк 44',
     location: 'Луми снэк 44\nНеглинская наб., 52',
     model: 'Unicum FoodBox',
+  },
+  {
+    id: '66411',
+    name: 'Луми корнер',
+    location: 'Луми корнер 44\nНеглинская наб., 52',
+    model: 'Jetinno, JL28',
   },
   {
     id: '33356',
@@ -1598,6 +1610,7 @@ export const MASTER_MACHINE_IDS = [
   '33400',
   '34148',
   '66693',
+  '54842',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -1610,7 +1623,7 @@ export const planogramsHardCode: Record<string, string[]> = {
     'Сок Палпи Вишня 0,45',
     'Чай Рич/Черноголовка Черный 0,5',
     'Чай Рич/Черноголовка Зеленый 0,5',
-    'Лимонад "Добрый Кола Зеро" 0,5',
+    'Лимонад "Добрый  Кола Зеро" 0,5',
     'Лимонад "Добрый Кола" 0,5',
     'Лимонад "Добрый Кола Малина" 0,5',
     'Лимонад "Добрый Фанта" 0,5',
@@ -1709,7 +1722,13 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы opera',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300','стаканы opera', 'стаканы'],
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы 300',
+        'стаканы opera',
+        'стаканы',
+      ],
       unit: 'шт',
       type: 'auto',
     },
@@ -2032,13 +2051,24 @@ export const machineIngredients: MachineIngredients = {
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
     {
       name: 'стаканы 150',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300','стаканы 150', 'стаканы'],
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы 300',
+        'стаканы 150',
+        'стаканы',
+      ],
       unit: 'шт',
       type: 'auto',
     },
     {
       name: 'размешиватели 105',
-      apiNames: ['Размешиватель', 'Размешиватель, 105 мм', 'размешиватели 105', 'размешиватели'],
+      apiNames: [
+        'Размешиватель',
+        'Размешиватель, 105 мм',
+        'размешиватели 105',
+        'размешиватели',
+      ],
       unit: 'шт',
       type: 'auto',
     },
@@ -2072,7 +2102,13 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы 150',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 150', 'стаканы 300', 'стаканы'],
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы 150',
+        'стаканы 300',
+        'стаканы',
+      ],
       unit: 'шт',
       type: 'auto',
     },
@@ -2113,7 +2149,13 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы opera',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300','стаканы opera', 'стаканы'],
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы 300',
+        'стаканы opera',
+        'стаканы',
+      ],
       unit: 'шт',
       type: 'auto',
     },
