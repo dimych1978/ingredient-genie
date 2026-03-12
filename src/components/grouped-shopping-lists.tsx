@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Eye, Search, X, Info } from 'lucide-react';
+import { Loader2, Eye, Search, X, Info, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
@@ -59,7 +59,6 @@ export const GroupedShoppingLists = ({
 
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
 
-  // Фильтруем входящие ID, чтобы считать только реально существующие и уникальные аппараты
   const validMachineIds = useMemo(() => {
     const uniqueIds = Array.from(new Set(machineIds));
     return uniqueIds.filter(id => allMachines.some(m => m.id === id));
@@ -299,10 +298,8 @@ export const GroupedShoppingLists = ({
     const lowerQuery = searchQuery.toLowerCase();
 
     return combinedList.filter(item => {
-      // 1. Проверяем само название в списке (группу или товар)
       if (item.name.toLowerCase().includes(lowerQuery)) return true;
 
-      // 2. Если это группа, проверяем её составляющие
       const constituents = PRODUCT_GROUPS[item.name];
       if (
         constituents &&
@@ -325,14 +322,20 @@ export const GroupedShoppingLists = ({
   };
 
   const handleGroupStockChange = (constituentName: string, value: string) => {
-    if (/^\d{0,2}$/.test(value)) {
+    if (/^\d{0,3}$/.test(value)) {
       onStockChange(constituentName, value);
     }
   };
 
+  const handleStep = (name: string, delta: number) => {
+    const current = parseInt(stockOnHand[name] || '0') || 0;
+    const next = Math.max(0, current + delta);
+    onStockChange(name, next.toString());
+  };
+
   const clearSearch = () => {
     setSearchQuery('');
-    inputRef.current?.focus();
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   return (
@@ -420,7 +423,7 @@ export const GroupedShoppingLists = ({
                       className={cn(isGroup && 'bg-primary/5')}
                     >
                       <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
-                        <div className='flex items-center gap-1.5 sm:gap-2 min-w-0'>
+                        <div className='flex items-center gap-1 sm:gap-2 min-w-0'>
                           {isGroup ? (
                             <Popover>
                               <PopoverTrigger asChild>
@@ -428,7 +431,7 @@ export const GroupedShoppingLists = ({
                                   <Input
                                     value={getGroupTotal(item.name)}
                                     readOnly
-                                    className='h-8 w-12 sm:w-14 text-center p-1 font-bold border-primary/30 bg-primary/10'
+                                    className='h-8 w-10 sm:w-12 text-center p-1 font-bold border-primary/30 bg-primary/10'
                                   />
                                 </div>
                               </PopoverTrigger>
@@ -443,26 +446,48 @@ export const GroupedShoppingLists = ({
                                       constituent => (
                                         <div
                                           key={constituent}
-                                          className='flex items-center justify-between gap-4'
+                                          className='flex items-center justify-between gap-2'
                                         >
-                                          <span className='text-xs text-muted-foreground leading-tight'>
+                                          <span className='text-xs text-muted-foreground leading-tight flex-1'>
                                             {constituent}
                                           </span>
-                                          <Input
-                                            type='number'
-                                            value={
-                                              stockOnHand[constituent] || ''
-                                            }
-                                            onChange={e =>
-                                              handleGroupStockChange(
-                                                constituent,
-                                                e.target.value,
-                                              )
-                                            }
-                                            placeholder='0'
-                                            className='h-8 w-16 text-center text-xs'
-                                            inputMode='numeric'
-                                          />
+                                          <div className='flex items-center gap-1'>
+                                            <Button
+                                              variant='outline'
+                                              size='icon'
+                                              className='h-7 w-7 rounded-full'
+                                              onClick={() =>
+                                                handleStep(constituent, -1)
+                                              }
+                                            >
+                                              <Minus className='h-3 w-3' />
+                                            </Button>
+                                            <Input
+                                              type='number'
+                                              value={
+                                                stockOnHand[constituent] || ''
+                                              }
+                                              onChange={e =>
+                                                handleGroupStockChange(
+                                                  constituent,
+                                                  e.target.value,
+                                                )
+                                              }
+                                              placeholder='0'
+                                              className='h-8 w-12 text-center text-xs'
+                                              inputMode='numeric'
+                                            />
+                                            <Button
+                                              variant='outline'
+                                              size='icon'
+                                              className='h-7 w-7 rounded-full'
+                                              onClick={() =>
+                                                handleStep(constituent, 1)
+                                              }
+                                            >
+                                              <Plus className='h-3 w-3' />
+                                            </Button>
+                                          </div>
                                         </div>
                                       ),
                                     )}
@@ -471,17 +496,35 @@ export const GroupedShoppingLists = ({
                               </PopoverContent>
                             </Popover>
                           ) : (
-                            <Input
-                              type='number'
-                              value={stockOnHand[item.name] || ''}
-                              onChange={e =>
-                                onStockChange(item.name, e.target.value)
-                              }
-                              className='h-8 w-12 sm:w-14 text-center p-1 flex-shrink-0'
-                              placeholder='0'
-                            />
+                            <div className='flex items-center gap-1 flex-shrink-0'>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground md:hidden'
+                                onClick={() => handleStep(item.name, -1)}
+                              >
+                                <Minus className='h-3 w-3' />
+                              </Button>
+                              <Input
+                                type='number'
+                                value={stockOnHand[item.name] || ''}
+                                onChange={e =>
+                                  onStockChange(item.name, e.target.value)
+                                }
+                                className='h-8 w-10 sm:w-12 text-center p-1'
+                                placeholder='0'
+                              />
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground md:hidden'
+                                onClick={() => handleStep(item.name, 1)}
+                              >
+                                <Plus className='h-3 w-3' />
+                              </Button>
+                            </div>
                           )}
-                          <span className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm'>
+                          <span className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm leading-tight'>
                             {item.name}
                           </span>
                         </div>
@@ -538,7 +581,7 @@ export const GroupedShoppingLists = ({
               </TableBody>
             </Table>
             {filteredList.length === 0 && (
-              <p className='text-muted-foreground text-center py-8'>
+              <p className='text-muted-foreground text-center py-8 text-sm'>
                 Ничего не найдено по запросу "{searchQuery}"
               </p>
             )}
@@ -546,7 +589,7 @@ export const GroupedShoppingLists = ({
         </Card>
       )}
       {showList && !loading && combinedList.length === 0 && (
-        <p className='text-muted-foreground text-center py-4'>
+        <p className='text-muted-foreground text-center py-4 text-sm'>
           Нет товаров для заказа за выбранные периоды.
         </p>
       )}

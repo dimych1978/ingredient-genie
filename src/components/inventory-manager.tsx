@@ -6,6 +6,7 @@ import { MASTER_MACHINE_IDS, planogramsHardCode, PRODUCT_GROUPS, machineIngredie
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -26,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Loader2, Search, RefreshCcw, X, Info, ChevronUp, ChevronDown } from 'lucide-react';
+import { Loader2, Search, RefreshCcw, X, Info, ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 
@@ -61,17 +62,14 @@ export const InventoryManager = () => {
         const ingredientsSet = new Set<string>();
         const snacksSet = new Set<string>();
 
-        // 1. Собираем все ингредиенты и расходники из конфигурации аппаратов
         Object.values(machineIngredients).forEach(modelIngredients => {
           modelIngredients.forEach(ing => {
-            // Исключаем воду, её обычно не учитывают как товар "в руках"
             if (ing.name.toLowerCase() !== 'вода') {
               ingredientsSet.add(ing.name);
             }
           });
         });
 
-        // 2. Загружаем продажи из мастер-аппаратов для снеков и бутылок
         const promises = MASTER_MACHINE_IDS.map(async id => {
           try {
             const salesData = await getSalesByProducts(
@@ -83,11 +81,9 @@ export const InventoryManager = () => {
               salesData.data.forEach((sale: TelemetronSaleItem) => {
                 if (!sale.planogram?.name) return;
 
-                // Если у товара есть ингредиенты - это кофейный напиток (Моккачино и т.д.), пропускаем
                 const isDrink = sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
                 if (isDrink) return;
 
-                // Извлекаем название товара без номера ячейки
                 const match = sale.planogram.name.match(
                   /^\d+[A-Za-z]?\.\s*(.+)$/,
                 );
@@ -105,11 +101,9 @@ export const InventoryManager = () => {
 
         await Promise.all(promises);
 
-        // 3. Добавляем захардкоженные бутылочные товары и названия групп к снекам
         planogramsHardCode.bottle.forEach(item => snacksSet.add(item));
         Object.keys(PRODUCT_GROUPS).forEach(groupName => snacksSet.add(groupName));
 
-        // 4. Формируем финальный список: Сначала Ингредиенты, потом Снеки
         const sortedIngredients = Array.from(ingredientsSet).sort((a, b) =>
           a.localeCompare(b, 'ru'),
         );
@@ -187,6 +181,12 @@ export const InventoryManager = () => {
         return next;
       });
     }
+  };
+
+  const handleStep = (itemName: string, delta: number) => {
+    const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
+    const newValue = Math.max(0, currentValue + delta);
+    handleStockChange(itemName, newValue.toString());
   };
 
   const getGroupTotal = (groupName: string) => {
@@ -287,12 +287,12 @@ export const InventoryManager = () => {
               <p>Загрузка каталога товаров...</p>
             </div>
           ) : (
-            <div className='border rounded-md'>
+            <div className='border rounded-md overflow-hidden'>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Название товара</TableHead>
-                    <TableHead className='w-24 text-center'>Остаток</TableHead>
+                    <TableHead className='w-32 sm:w-40 text-center'>Остаток</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -341,14 +341,32 @@ export const InventoryManager = () => {
                                         <span className='text-xs text-muted-foreground leading-tight'>
                                           {constituent}
                                         </span>
-                                        <Input
-                                          type='number'
-                                          value={stockOnHand[constituent] || ''}
-                                          onChange={e => handleStockChange(constituent, e.target.value)}
-                                          placeholder='0'
-                                          className='h-8 w-16 text-center text-xs'
-                                          inputMode='numeric'
-                                        />
+                                        <div className='flex items-center gap-1'>
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7 rounded-full"
+                                            onClick={() => handleStep(constituent, -1)}
+                                          >
+                                            <Minus className="h-3 w-3" />
+                                          </Button>
+                                          <Input
+                                            type='number'
+                                            value={stockOnHand[constituent] || ''}
+                                            onChange={e => handleStockChange(constituent, e.target.value)}
+                                            placeholder='0'
+                                            className='h-8 w-14 text-center text-xs'
+                                            inputMode='numeric'
+                                          />
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7 rounded-full"
+                                            onClick={() => handleStep(constituent, 1)}
+                                          >
+                                            <Plus className="h-3 w-3" />
+                                          </Button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -356,15 +374,35 @@ export const InventoryManager = () => {
                               </PopoverContent>
                             </Popover>
                           ) : (
-                            <Input
-                              type='number'
-                              value={stockOnHand[item] || ''}
-                              onChange={e => handleStockChange(item, e.target.value)}
-                              placeholder='0'
-                              className='h-8 text-center'
-                              inputMode='numeric'
-                              disabled={isConstituent && !searchQuery}
-                            />
+                            <div className='flex items-center gap-1 sm:gap-2 justify-center'>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex-shrink-0"
+                                onClick={() => handleStep(item, -1)}
+                                disabled={isConstituent && !searchQuery}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <Input
+                                type='number'
+                                value={stockOnHand[item] || ''}
+                                onChange={e => handleStockChange(item, e.target.value)}
+                                placeholder='0'
+                                className='h-8 w-12 sm:w-14 text-center p-1'
+                                inputMode='numeric'
+                                disabled={isConstituent && !searchQuery}
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex-shrink-0"
+                                onClick={() => handleStep(item, 1)}
+                                disabled={isConstituent && !searchQuery}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>

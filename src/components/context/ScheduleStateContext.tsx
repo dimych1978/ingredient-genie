@@ -10,13 +10,17 @@ type ScheduleStateContextType = {
   setStockOnHand: Dispatch<SetStateAction<Record<string, string>>>;
 };
 
-const ScheduleStateContext = createContext<ScheduleStateContextType | undefined>(
-  undefined
-);
+const ScheduleStateContext = createContext<
+  ScheduleStateContextType | undefined
+>(undefined);
 
 const STORAGE_KEY = 'telemetron_stock_on_hand';
 
-export const ScheduleStateProvider = ({ children }: { children: ReactNode }) => {
+export const ScheduleStateProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [stockOnHand, setStockOnHand] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,6 +45,30 @@ export const ScheduleStateProvider = ({ children }: { children: ReactNode }) => 
     }
   }, [stockOnHand, isInitialized]);
 
+  // 3. СИНХРОНИЗАЦИЯ МЕЖДУ ВКЛАДКАМИ
+  // Слушаем изменения localStorage, сделанные в других вкладках
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const newData = JSON.parse(e.newValue);
+          // Обновляем состояние только если данные реально отличаются
+          if (JSON.stringify(newData) !== JSON.stringify(stockOnHand)) {
+            setStockOnHand(newData);
+          }
+        } catch (error) {
+          console.error(
+            'Ошибка синхронизации остатков между вкладками:',
+            error,
+          );
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [stockOnHand]);
+
   return (
     <ScheduleStateContext.Provider
       value={{
@@ -59,7 +87,7 @@ export const useScheduleState = () => {
   const context = useContext(ScheduleStateContext);
   if (context === undefined) {
     throw new Error(
-      'useScheduleState must be used within a ScheduleStateProvider'
+      'useScheduleState must be used within a ScheduleStateProvider',
     );
   }
   return context;
