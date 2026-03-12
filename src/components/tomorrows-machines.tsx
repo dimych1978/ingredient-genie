@@ -104,6 +104,9 @@ export const TomorrowsMachines = () => {
   const loadScheduleForDate = useCallback(
     async (date: Date) => {
       setIsLoading(true);
+      // Сбрасываем AA статусы при смене даты, чтобы не было старых данных при расчете счетчика
+      setAaMachineIds(new Set());
+      
       try {
         const dateKey = format(date, 'yyyy-MM-dd');
 
@@ -122,7 +125,13 @@ export const TomorrowsMachines = () => {
         }
 
         const initialSpecialDates = await getSpecialMachineDates();
-        const loadedIds = scheduleIds || [];
+        
+        // Очищаем ID от дубликатов и несуществующих в справочнике аппаратов
+        const rawIds = scheduleIds || [];
+        const loadedIds = Array.from(new Set(rawIds)).filter(id => 
+          allMachines.some(m => m.id === id)
+        );
+        
         const finalDates: Record<string, string> = {};
         const newAaMachineIds = new Set<string>();
 
@@ -155,7 +164,6 @@ export const TomorrowsMachines = () => {
                 (item: TelemetronSaleItem) => item.product_number === 'AA',
               )
             ) {
-              newAaMachineIds.add(id);
               return { id, isAA: true };
             }
           } catch (e) {
@@ -171,8 +179,6 @@ export const TomorrowsMachines = () => {
           }
         });
 
-        setAaMachineIds(newAaMachineIds);
-
         const normalMachinePromises = normalMachines
           .filter(id => !newAaMachineIds.has(id))
           .map(async id => {
@@ -182,9 +188,6 @@ export const TomorrowsMachines = () => {
               if (lastCollection) {
                 return { id, date: lastCollection, source: 'api' };
               } else {
-                console.warn(
-                  `Для обычного аппарата #${id} не найдена дата в API`,
-                );
                 return { id, date: null, source: 'api' };
               }
             } catch (e) {
@@ -235,6 +238,7 @@ export const TomorrowsMachines = () => {
         });
 
         setSpecialMachineDates(finalDates);
+        setAaMachineIds(newAaMachineIds);
         setMachineIdsForDay(loadedIds);
         setHasUnsavedChanges(false);
       } catch (error) {
@@ -853,37 +857,6 @@ export const TomorrowsMachines = () => {
           <InventoryManager />
         </TabsContent>
       </Tabs>
-
-      <AlertDialog
-        open={dialogState.open}
-        onOpenChange={open =>
-          !open &&
-          setDialogState({ open: false, machineId: null, lastDate: null })
-        }
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Подтверждение даты</AlertDialogTitle>
-            <AlertDialogDescription>
-              Последний заказ для этого аппарата был создан{' '}
-              {dialogState.lastDate
-                ? format(dialogState.lastDate, 'dd MMMM yyyy г.', {
-                    locale: ru,
-                  })
-                : ''}
-              . Использовать эту дату как начальную?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDialogCancel}>
-              Нет, выбрать другую
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDialogConfirm}>
-              Да, использовать
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <ScrollNavButtons />
     </div>

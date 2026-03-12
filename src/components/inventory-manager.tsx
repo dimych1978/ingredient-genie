@@ -1,8 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { MASTER_MACHINE_IDS, planogramsHardCode, PRODUCT_GROUPS } from '@/lib/data';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { MASTER_MACHINE_IDS, planogramsHardCode, PRODUCT_GROUPS, machineIngredients } from '@/lib/data';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Loader2, Search, RefreshCcw, X, Info } from 'lucide-react';
+import { Loader2, Search, RefreshCcw, X, Info, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 
@@ -40,6 +40,8 @@ export const InventoryManager = () => {
   const [catalog, setCatalog] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [matchIndex, setMatchIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { getSalesByProducts } = useTelemetronApi();
 
   const loadMasterCatalog = useCallback(
@@ -56,15 +58,20 @@ export const InventoryManager = () => {
         const dateFrom = new Date();
         dateFrom.setDate(dateTo.getDate() - 30);
 
-        const allProductNames = new Set<string>();
+        const ingredientsSet = new Set<string>();
+        const snacksSet = new Set<string>();
 
-        // Добавляем захардкоженные бутылочные товары
-        planogramsHardCode.bottle.forEach(item => allProductNames.add(item));
+        // 1. Собираем все ингредиенты и расходники из конфигурации аппаратов
+        Object.values(machineIngredients).forEach(modelIngredients => {
+          modelIngredients.forEach(ing => {
+            // Исключаем воду, её обычно не учитывают как товар "в руках"
+            if (ing.name.toLowerCase() !== 'вода') {
+              ingredientsSet.add(ing.name);
+            }
+          });
+        });
 
-        // Добавляем названия групп
-        Object.keys(PRODUCT_GROUPS).forEach(groupName => allProductNames.add(groupName));
-
-        // Загружаем продажи из мастер-аппаратов
+        // 2. Загружаем продажи из мастер-аппаратов для снеков и бутылок
         const promises = MASTER_MACHINE_IDS.map(async id => {
           try {
             const salesData = await getSalesByProducts(
@@ -74,15 +81,20 @@ export const InventoryManager = () => {
             );
             if (salesData.data) {
               salesData.data.forEach((sale: TelemetronSaleItem) => {
-                if (sale.planogram?.name) {
-                  // Извлекаем название товара без номера ячейки
-                  const match = sale.planogram.name.match(
-                    /^\d+[A-Za-z]?\.\s*(.+)$/,
-                  );
-                  const cleanName = match ? match[1] : sale.planogram.name;
-                  if (cleanName && cleanName !== 'пр') {
-                    allProductNames.add(cleanName);
-                  }
+                if (!sale.planogram?.name) return;
+
+                // Если у товара есть ингредиенты - это кофейный напиток (Моккачино и т.д.), пропускаем
+                const isDrink = sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
+                if (isDrink) return;
+
+                // Извлекаем название товара без номера ячейки
+                const match = sale.planogram.name.match(
+                  /^\d+[A-Za-z]?\.\s*(.+)$/,
+                );
+                const cleanName = match ? match[1] : sale.planogram.name;
+                
+                if (cleanName && cleanName !== 'пр' && !cleanName.toLowerCase().includes('нет данных')) {
+                  snacksSet.add(cleanName);
                 }
               });
             }
@@ -92,12 +104,23 @@ export const InventoryManager = () => {
         });
 
         await Promise.all(promises);
-        const sortedCatalog = Array.from(allProductNames).sort((a, b) =>
+
+        // 3. Добавляем захардкоженные бутылочные товары и названия групп к снекам
+        planogramsHardCode.bottle.forEach(item => snacksSet.add(item));
+        Object.keys(PRODUCT_GROUPS).forEach(groupName => snacksSet.add(groupName));
+
+        // 4. Формируем финальный список: Сначала Ингредиенты, потом Снеки
+        const sortedIngredients = Array.from(ingredientsSet).sort((a, b) =>
+          a.localeCompare(b, 'ru'),
+        );
+        const sortedSnacks = Array.from(snacksSet).sort((a, b) =>
           a.localeCompare(b, 'ru'),
         );
 
-        setCatalog(sortedCatalog);
-        localStorage.setItem('master_catalog', JSON.stringify(sortedCatalog));
+        const fullCatalog = [...sortedIngredients, ...sortedSnacks];
+
+        setCatalog(fullCatalog);
+        localStorage.setItem('master_catalog', JSON.stringify(fullCatalog));
       } catch (error) {
         console.error('Ошибка формирования мастер-каталога:', error);
       } finally {
@@ -111,24 +134,46 @@ export const InventoryManager = () => {
     loadMasterCatalog();
   }, [loadMasterCatalog]);
 
-  const filteredCatalog = useMemo(() => {
-    return catalog.filter(item => {
-      const matchesSearch = item.toLowerCase().includes(searchQuery.toLowerCase());
-      if (searchQuery) return matchesSearch;
-      
-      const isGroupParent = !!PRODUCT_GROUPS[item];
-      const isConstituent = ALL_CONSTITUENTS_NORMALIZED.has(normalize(item));
-      
-      return isGroupParent || !isConstituent;
-    });
+  const displayCatalog = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return catalog.filter(item => {
+        const isGroupParent = !!PRODUCT_GROUPS[item];
+        const isConstituent = ALL_CONSTITUENTS_NORMALIZED.has(normalize(item));
+        return isGroupParent || !isConstituent;
+      });
+    }
+    return catalog;
   }, [catalog, searchQuery]);
 
+  const matches = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const lowerQuery = searchQuery.toLowerCase();
+    return displayCatalog.reduce((acc, item, index) => {
+      if (item.toLowerCase().includes(lowerQuery)) {
+        acc.push(index);
+      }
+      return acc;
+    }, [] as number[]);
+  }, [displayCatalog, searchQuery]);
+
+  useEffect(() => {
+    setMatchIndex(0);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (matches.length > 0 && matches[matchIndex] !== undefined) {
+      const element = document.getElementById(`inventory-item-${matches[matchIndex]}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [matchIndex, matches]);
+
   const handleStockChange = (itemName: string, value: string) => {
-    if (/^\d{0,2}$/.test(value)) {
+    if (/^\d{0,3}$/.test(value)) {
       setStockOnHand(prev => {
         const next = { ...prev, [itemName]: value };
         
-        // Пересчитываем все группы, в которые входит этот товар
         Object.entries(PRODUCT_GROUPS).forEach(([groupName, constituents]) => {
           if (constituents.includes(itemName)) {
             const sum = constituents.reduce(
@@ -154,6 +199,21 @@ export const InventoryManager = () => {
     ).toString();
   };
 
+  const clearSearch = () => {
+    setSearchQuery('');
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const nextMatch = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMatchIndex(prev => (prev < matches.length - 1 ? prev + 1 : 0));
+  };
+
+  const prevMatch = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMatchIndex(prev => (prev > 0 ? prev - 1 : matches.length - 1));
+  };
+
   return (
     <div className='space-y-4'>
       <Card className='relative'>
@@ -162,7 +222,7 @@ export const InventoryManager = () => {
             <div>
               <CardTitle>Склад / Остатки в руках</CardTitle>
               <CardDescription>
-                Редактируйте количество товара. Изменения в группах сразу попадут в заявку.
+                Ингредиенты в начале списка. Напитки из меню аппарата исключены.
               </CardDescription>
             </div>
             <button
@@ -179,22 +239,45 @@ export const InventoryManager = () => {
               />
             </button>
           </div>
-          <div className='relative mt-4'>
-            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-            <Input
-              placeholder='Поиск по каталогу...'
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className='pl-9 pr-8 h-9'
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
-              >
-                <X className='w-4 h-4' />
-              </button>
-            )}
+          <div className='relative mt-4 flex items-center gap-2'>
+            <div className="relative flex-1">
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
+              <Input
+                ref={inputRef}
+                placeholder='Поиск по каталогу...'
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className='pl-9 pr-28 h-10'
+              />
+              {searchQuery && (
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1">
+                  <span className="text-[10px] font-mono text-muted-foreground px-1 border-r mr-1">
+                    {matches.length > 0 ? `${matchIndex + 1}/${matches.length}` : '0/0'}
+                  </span>
+                  <button
+                    onClick={prevMatch}
+                    disabled={matches.length <= 1}
+                    className='p-1 hover:text-foreground disabled:opacity-30'
+                  >
+                    <ChevronUp className='w-4 h-4' />
+                  </button>
+                  <button
+                    onClick={nextMatch}
+                    disabled={matches.length <= 1}
+                    className='p-1 hover:text-foreground disabled:opacity-30'
+                  >
+                    <ChevronDown className='w-4 h-4' />
+                  </button>
+                  <button
+                    onClick={clearSearch}
+                    className='p-2 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'
+                    aria-label='Очистить поиск'
+                  >
+                    <X className='w-4 h-4' />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className='pt-6'>
@@ -213,15 +296,25 @@ export const InventoryManager = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCatalog.map(item => {
+                  {displayCatalog.map((item, index) => {
                     const isGroup = !!PRODUCT_GROUPS[item];
                     const isConstituent = ALL_CONSTITUENTS_NORMALIZED.has(normalize(item));
+                    const isMatch = searchQuery.trim() !== '' && item.toLowerCase().includes(searchQuery.toLowerCase());
+                    const isCurrentMatch = isMatch && matches[matchIndex] === index;
                     
                     return (
-                      <TableRow key={item} className={cn(isGroup && 'bg-primary/5')}>
+                      <TableRow 
+                        key={item} 
+                        id={`inventory-item-${index}`}
+                        className={cn(
+                          isGroup && 'bg-primary/5',
+                          isMatch && 'bg-yellow-500/10',
+                          isCurrentMatch && 'bg-yellow-500/30 ring-2 ring-yellow-500 ring-inset relative z-10'
+                        )}
+                      >
                         <TableCell className='text-sm font-medium'>
                           <div className='flex items-center gap-2'>
-                            {item}
+                            <span className="capitalize">{item}</span>
                             {isGroup && <Info className='h-3 w-3 text-primary opacity-50' />}
                           </div>
                         </TableCell>
@@ -277,15 +370,13 @@ export const InventoryManager = () => {
                       </TableRow>
                     );
                   })}
-                  {filteredCatalog.length === 0 && (
+                  {displayCatalog.length === 0 && (
                     <TableRow>
                       <TableCell
                         colSpan={2}
                         className='text-center py-10 text-muted-foreground'
                       >
-                        {searchQuery
-                          ? 'Товары не найдены'
-                          : 'Каталог пуст. Нажмите кнопку обновления.'}
+                        Каталог пуст. Нажмите кнопку обновления.
                       </TableCell>
                     </TableRow>
                   )}

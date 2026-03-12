@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -55,8 +55,21 @@ export const GroupedShoppingLists = ({
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
+
+  // Фильтруем входящие ID, чтобы считать только реально существующие и уникальные аппараты
+  const validMachineIds = useMemo(() => {
+    const uniqueIds = Array.from(new Set(machineIds));
+    return uniqueIds.filter(id => allMachines.some(m => m.id === id));
+  }, [machineIds]);
+
+  const machineIdsToProcess = useMemo(() => {
+    return validMachineIds.filter(id => !aaMachineIds.has(id));
+  }, [validMachineIds, aaMachineIds]);
+
+  const machineIdsToProcessCount = machineIdsToProcess.length;
 
   const handleGenerateClick = useCallback(async () => {
     if (showList) {
@@ -66,8 +79,6 @@ export const GroupedShoppingLists = ({
 
     setLoading(true);
     setCombinedList([]);
-
-    const machineIdsToProcess = machineIds.filter(id => !aaMachineIds.has(id));
 
     try {
       const allDates: Record<string, string> = { ...specialMachineDates };
@@ -276,12 +287,11 @@ export const GroupedShoppingLists = ({
       setShowList(true);
     }
   }, [
-    machineIds,
+    machineIdsToProcess,
     specialMachineDates,
     getMachineOverview,
     getSalesByProducts,
     showList,
-    aaMachineIds,
   ]);
 
   const filteredList = useMemo(() => {
@@ -320,9 +330,10 @@ export const GroupedShoppingLists = ({
     }
   };
 
-  const machineIdsToProcessCount = machineIds.filter(
-    id => !aaMachineIds.has(id),
-  ).length;
+  const clearSearch = () => {
+    setSearchQuery('');
+    inputRef.current?.focus();
+  };
 
   return (
     <div className='space-y-6'>
@@ -330,7 +341,7 @@ export const GroupedShoppingLists = ({
         <CardHeader>
           <CardTitle>Формирование общего заказа</CardTitle>
           <CardDescription>
-            {machineIds.length > 0
+            {validMachineIds.length > 0
               ? `Нажмите, чтобы создать сводный список по ${machineIdsToProcessCount} аппаратам (за исключением аппаратов без планограммы).`
               : 'Сначала добавьте аппараты в список выше.'}
           </CardDescription>
@@ -366,17 +377,19 @@ export const GroupedShoppingLists = ({
                 </CardDescription>
               </div>
               <div className='relative w-full sm:w-64'>
-                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
                 <Input
+                  ref={inputRef}
                   placeholder='Поиск в заявке...'
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className='pl-9 pr-8 h-9'
+                  className='pl-9 pr-10 h-9'
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => setSearchQuery('')}
-                    className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
+                    onClick={clearSearch}
+                    className='absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground transition-colors'
+                    aria-label='Очистить поиск'
                   >
                     <X className='w-4 h-4' />
                   </button>
