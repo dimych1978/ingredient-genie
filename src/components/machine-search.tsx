@@ -91,7 +91,7 @@ export function MachineSearch() {
             </Command>
           </PopoverContent>
         </Popover>
-        <Button onClick={handleGoToMachine} disabled={!value}>
+        <Button>
           <Search className="mr-2 h-4 w-4" />
           Перейти
         </Button>
