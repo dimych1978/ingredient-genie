@@ -29,9 +29,9 @@ export function MachineSearch() {
     }, 3000);
     
     // Если нужно перенаправление:
-    // if (value) {
-    //   router.push(`/machines/${value}`);
-    // }
+     if (value) {
+       router.push(`/machines/${value}`);
+     }
   };
 
   return (
