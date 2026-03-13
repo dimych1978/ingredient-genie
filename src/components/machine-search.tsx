@@ -21,12 +21,12 @@ export function MachineSearch() {
 
   const handleGoToMachine = () => {
     // Вместо возврата компонента, устанавливаем состояние
-    setShowUnavailable(true);
+ //   setShowUnavailable(true);
     
     // Если хотите, чтобы сообщение исчезло через некоторое время:
-    setTimeout(() => {
-      setShowUnavailable(false);
-    }, 3000);
+//    setTimeout(() => {
+//      setShowUnavailable(false);
+//    }, 3000);
     
     // Если нужно перенаправление:
      if (value) {
@@ -91,7 +91,7 @@ export function MachineSearch() {
             </Command>
           </PopoverContent>
         </Popover>
-        <Button>
+        <Button onClick={handleGoToMachine}>
           <Search className="mr-2 h-4 w-4" />
           Перейти
         </Button>
