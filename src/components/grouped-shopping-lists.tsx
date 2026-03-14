@@ -404,11 +404,11 @@ export const GroupedShoppingLists = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className='px-1 py-2 sm:px-2'>Название</TableHead>
-                  <TableHead className='px-1 py-2 sm:px-2 text-right whitespace-nowrap'>
+                  <TableHead className='px-1 py-2 md:px-2'>Название</TableHead>
+                  <TableHead className='px-1 py-2 md:px-2 text-right whitespace-nowrap'>
                     Кол-во
                   </TableHead>
-                  <TableHead className='px-1 py-2 sm:px-2 w-10 text-right'>
+                  <TableHead className='px-1 py-2 md:px-2 w-10 text-right'>
                     Инфо
                   </TableHead>
                 </TableRow>
@@ -422,7 +422,7 @@ export const GroupedShoppingLists = ({
                       key={item.name}
                       className={cn(isGroup && 'bg-primary/5')}
                     >
-                      <TableCell className='px-1 py-2 sm:px-2 font-medium min-w-0'>
+                      <TableCell className='px-1 py-2 md:px-2 font-medium min-w-0'>
                         <div className='flex items-center gap-1 sm:gap-2 min-w-0'>
                           {isGroup ? (
                             <Popover>
@@ -529,10 +529,10 @@ export const GroupedShoppingLists = ({
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className='px-1 py-2 sm:px-2 text-right whitespace-nowrap text-xs sm:text-sm'>
+                      <TableCell className='px-1 py-2 md:px-2 text-right whitespace-nowrap text-xs sm:text-sm'>
                         {item.amount} {item.unit}
                       </TableCell>
-                      <TableCell className='px-1 py-2 sm:px-2 text-right'>
+                      <TableCell className='px-1 py-2 md:px-2 text-right'>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button

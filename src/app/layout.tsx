@@ -62,7 +62,7 @@ export default function RootLayout({
       <body className='font-body antialiased'>
         <Providers>
           <div className='min-h-screen bg-background'>
-            <div className='container mx-auto px-3 sm:px-4 max-w-7xl'>
+            <div className='mx-auto w-full max-w-7xl px-3 sm:px-4'>
               {children}
             </div>
           </div>
