@@ -55,6 +55,7 @@ export const GroupedShoppingLists = ({
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeHint, setActiveHint] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
@@ -69,6 +70,11 @@ export const GroupedShoppingLists = ({
   }, [validMachineIds, aaMachineIds]);
 
   const machineIdsToProcessCount = machineIdsToProcess.length;
+
+  const handleHintToggle = (name: string) => {
+    setActiveHint(name);
+    setTimeout(() => setActiveHint(null), 1000);
+  };
 
   const handleGenerateClick = useCallback(async () => {
     if (showList) {
@@ -202,7 +208,7 @@ export const GroupedShoppingLists = ({
         if (machineIdsToProcess.includes(machineIdFromFile)) {
           const name = key.substring(machineIdFromFile.length + 1);
           let carryOver = override.carryOver || 0;
-          if (carryOver < 0) carryOver = 0; // Игнорируем излишки в общей заявке
+          if (carryOver < 0) carryOver = 0;
 
           const machine = allMachines.find(m => m.id === machineIdFromFile);
           if (!machine) continue;
@@ -341,11 +347,11 @@ export const GroupedShoppingLists = ({
   return (
     <div className='space-y-6'>
       <Card className='bg-muted/20'>
-        <CardHeader>
+        <CardHeader className='px-3 sm:px-6'>
           <CardTitle>Формирование общего заказа</CardTitle>
           <CardDescription>
             {validMachineIds.length > 0
-              ? `Нажмите, чтобы создать сводный список по ${machineIdsToProcessCount} аппаратам (за исключением аппаратов без планограммы).`
+              ? `Нажмите, чтобы создать сводный список по ${machineIdsToProcessCount} аппаратам.`
               : 'Сначала добавьте аппараты в список выше.'}
           </CardDescription>
         </CardHeader>
@@ -371,7 +377,7 @@ export const GroupedShoppingLists = ({
 
       {showList && combinedList.length > 0 && (
         <Card className='relative'>
-          <CardHeader className='sticky top-0 z-20 bg-background/95 backdrop-blur border-b pb-4'>
+          <CardHeader className='sticky top-0 z-20 bg-background/95 backdrop-blur border-b pb-4 px-3 sm:px-6'>
             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
               <div>
                 <CardTitle>Общий заказ</CardTitle>
@@ -401,14 +407,16 @@ export const GroupedShoppingLists = ({
             </div>
           </CardHeader>
           <CardContent className='px-1 sm:px-2'>
-            <Table>
+            <Table className='table-fixed w-full'>
               <TableHeader>
                 <TableRow>
-                  <TableHead className='px-1 py-2 md:px-2'>Название</TableHead>
-                  <TableHead className='px-1 py-2 md:px-2 text-right whitespace-nowrap'>
+                  <TableHead className='px-1 py-2 md:px-2 w-[70%]'>
+                    Название
+                  </TableHead>
+                  <TableHead className='px-1 py-2 md:px-2 text-right w-[20%]'>
                     Кол-во
                   </TableHead>
-                  <TableHead className='px-1 py-2 md:px-2 w-10 text-right'>
+                  <TableHead className='px-1 py-2 md:px-2 w-[10%] text-right'>
                     Инфо
                   </TableHead>
                 </TableRow>
@@ -422,46 +430,36 @@ export const GroupedShoppingLists = ({
                       key={item.name}
                       className={cn(isGroup && 'bg-primary/5')}
                     >
-                      <TableCell className='px-1 py-2 md:px-2 font-medium min-w-0'>
-                        <div className='flex items-center gap-1 sm:gap-2 min-w-0'>
-                          {isGroup ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <div className='relative cursor-pointer flex-shrink-0'>
-                                  <Input
-                                    value={getGroupTotal(item.name)}
-                                    readOnly
-                                    className='h-8 w-10 sm:w-12 text-center p-1 font-bold border-primary/30 bg-primary/10'
-                                  />
-                                </div>
-                              </PopoverTrigger>
-                              <PopoverContent className='w-80'>
-                                <div className='space-y-3'>
-                                  <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center gap-2'>
-                                    {item.name}
-                                    <Info className='h-3 w-3 text-primary' />
-                                  </h4>
-                                  <div className='grid gap-3'>
-                                    {PRODUCT_GROUPS[item.name].map(
-                                      constituent => (
-                                        <div
-                                          key={constituent}
-                                          className='flex items-center justify-between gap-2'
-                                        >
-                                          <span className='text-xs text-muted-foreground leading-tight flex-1'>
-                                            {constituent}
-                                          </span>
-                                          <div className='flex items-center gap-1'>
-                                            <Button
-                                              variant='outline'
-                                              size='icon'
-                                              className='h-7 w-7 rounded-full'
-                                              onClick={() =>
-                                                handleStep(constituent, -1)
-                                              }
-                                            >
-                                              <Minus className='h-3 w-3' />
-                                            </Button>
+                      <TableCell className='px-1 py-2 md:px-2 font-medium overflow-hidden'>
+                        <div className='flex items-center gap-1 sm:gap-2 w-full'>
+                          <div className='flex items-center gap-1 flex-shrink-0'>
+                            {isGroup ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <div className='relative cursor-pointer'>
+                                    <Input
+                                      value={getGroupTotal(item.name)}
+                                      readOnly
+                                      className='h-8 w-10 sm:w-12 text-center p-1 font-bold border-primary/30 bg-primary/10'
+                                    />
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className='w-80'>
+                                  <div className='space-y-3'>
+                                    <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center gap-2'>
+                                      {item.name}
+                                      <Info className='h-3 w-3 text-primary' />
+                                    </h4>
+                                    <div className='grid gap-3'>
+                                      {PRODUCT_GROUPS[item.name].map(
+                                        constituent => (
+                                          <div
+                                            key={constituent}
+                                            className='flex items-center justify-between gap-2'
+                                          >
+                                            <span className='text-xs text-muted-foreground leading-tight flex-1'>
+                                              {constituent}
+                                            </span>
                                             <Input
                                               type='number'
                                               value={
@@ -477,60 +475,62 @@ export const GroupedShoppingLists = ({
                                               className='h-8 w-12 text-center text-xs'
                                               inputMode='numeric'
                                             />
-                                            <Button
-                                              variant='outline'
-                                              size='icon'
-                                              className='h-7 w-7 rounded-full'
-                                              onClick={() =>
-                                                handleStep(constituent, 1)
-                                              }
-                                            >
-                                              <Plus className='h-3 w-3' />
-                                            </Button>
                                           </div>
-                                        </div>
-                                      ),
-                                    )}
+                                        ),
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          ) : (
-                            <div className='flex items-center gap-1 flex-shrink-0'>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground md:hidden'
-                                onClick={() => handleStep(item.name, -1)}
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <>
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
+                                  onClick={() => handleStep(item.name, -1)}
+                                >
+                                  <Minus className='h-3 w-3' />
+                                </Button>
+                                <Input
+                                  type='number'
+                                  value={stockOnHand[item.name] || ''}
+                                  onChange={e =>
+                                    onStockChange(item.name, e.target.value)
+                                  }
+                                  className='h-8 w-10 sm:w-12 text-center p-1'
+                                  placeholder='0'
+                                />
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
+                                  onClick={() => handleStep(item.name, 1)}
+                                >
+                                  <Plus className='h-3 w-3' />
+                                </Button>
+                              </>
+                            )}
+                          </div>{' '}
+                          <Popover open={activeHint === item.name}>
+                            <PopoverTrigger asChild>
+                              <span
+                                className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm leading-tight'
+                                onClick={() => handleHintToggle(item.name)}
                               >
-                                <Minus className='h-3 w-3' />
-                              </Button>
-                              <Input
-                                type='number'
-                                value={stockOnHand[item.name] || ''}
-                                onChange={e =>
-                                  onStockChange(item.name, e.target.value)
-                                }
-                                className='h-8 w-10 sm:w-12 text-center p-1'
-                                placeholder='0'
-                              />
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground md:hidden'
-                                onClick={() => handleStep(item.name, 1)}
-                              >
-                                <Plus className='h-3 w-3' />
-                              </Button>
-                            </div>
-                          )}
-                          <span className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm leading-tight'>
-                            {item.name}
-                          </span>
+                                {item.name}
+                              </span>
+                            </PopoverTrigger>
+                            <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
+                              {item.name}
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </TableCell>
-                      <TableCell className='px-1 py-2 md:px-2 text-right whitespace-nowrap text-xs sm:text-sm'>
-                        {item.amount} {item.unit}
+                      <TableCell className='px-1 py-2 md:px-2 text-right text-xs sm:text-sm overflow-hidden'>
+                        <span className='whitespace-nowrap'>
+                          {item.amount} {item.unit}
+                        </span>
                       </TableCell>
                       <TableCell className='px-1 py-2 md:px-2 text-right'>
                         <Popover>
