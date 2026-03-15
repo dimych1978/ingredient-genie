@@ -858,6 +858,34 @@ export const TomorrowsMachines = () => {
         </TabsContent>
       </Tabs>
 
+      <AlertDialog
+        open={dialogState.open}
+        onOpenChange={open => !open && setDialogState(prev => ({ ...prev, open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Подтверждение даты</AlertDialogTitle>
+            <AlertDialogDescription>
+              Найдена дата последней инкассации для аппарата #{dialogState.machineId}:
+              <br />
+              <strong className="text-foreground">
+                {dialogState.lastDate && format(dialogState.lastDate, 'dd MMMM yyyy, HH:mm', { locale: ru })}
+              </strong>
+              <br /><br />
+              Использовать эту дату как начало периода?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDialogCancel}>
+              Выбрать другую
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDialogConfirm}>
+              Да, использовать
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ScrollNavButtons />
     </div>
   );
