@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -65,7 +66,7 @@ export const InventoryManager = () => {
         Object.values(machineIngredients).forEach(modelIngredients => {
           modelIngredients.forEach(ing => {
             if (ing.name.toLowerCase() !== 'вода') {
-              ingredientsSet.add(ing.name);
+              ingredientsSet.add(ing.name.trim());
             }
           });
         });
@@ -84,12 +85,20 @@ export const InventoryManager = () => {
                 const isDrink = sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
                 if (isDrink) return;
 
-                const match = sale.planogram.name.match(
-                  /^\d+[A-Za-z]?\.\s*(.+)$/,
-                );
-                const cleanName = match ? match[1] : sale.planogram.name;
+                // Улучшенный regex: поддерживает цифровые (01.), буквенно-цифровые (1A.) и буквенные (AA.) префиксы
+                const match = sale.planogram.name.match(/^[0-9A-Za-z]+\.\s*(.+)$/);
+                const cleanName = (match ? match[1] : sale.planogram.name).trim();
                 
-                if (cleanName && cleanName !== 'пр' && !cleanName.toLowerCase().includes('нет данных')) {
+                const lowerName = cleanName.toLowerCase();
+                const isInvalid = 
+                  !cleanName || 
+                  cleanName === 'пр' || 
+                  lowerName.includes('нет данных') || 
+                  lowerName === 'item' || 
+                  lowerName === 'telemetron' ||
+                  lowerName === 'тест';
+
+                if (!isInvalid) {
                   snacksSet.add(cleanName);
                 }
               });
@@ -101,8 +110,8 @@ export const InventoryManager = () => {
 
         await Promise.all(promises);
 
-        planogramsHardCode.bottle.forEach(item => snacksSet.add(item));
-        Object.keys(PRODUCT_GROUPS).forEach(groupName => snacksSet.add(groupName));
+        planogramsHardCode.bottle.forEach(item => snacksSet.add(item.trim()));
+        Object.keys(PRODUCT_GROUPS).forEach(groupName => snacksSet.add(groupName.trim()));
 
         const sortedIngredients = Array.from(ingredientsSet).sort((a, b) =>
           a.localeCompare(b, 'ru'),
@@ -238,6 +247,38 @@ export const InventoryManager = () => {
                 )}
               />
             </button>
+            <button
+  onClick={() => {
+    const catalog = JSON.parse(localStorage.getItem('master_catalog') || '[]');
+    const target = 'Добрый/Черноголовка вода+сок в ассорт.';
+    
+    // Нормализуем название для сравнения
+    const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+    const normalizedTarget = normalize(target);
+    
+    // Оставляем только уникальные по нормализованному названию
+    const seen = new Set();
+    const cleaned = catalog.filter(item => {
+      const normalized = normalize(item);
+      if (normalized === normalizedTarget && seen.has(normalized)) {
+        return false; // пропускаем дубликат
+      }
+      seen.add(normalized);
+      return true;
+    });
+    
+    if (cleaned.length !== catalog.length) {
+      localStorage.setItem('master_catalog', JSON.stringify(cleaned));
+      alert(`Удалено ${catalog.length - cleaned.length} дубликатов. Обновите страницу.`);
+    } else {
+      alert('Дубликат не найден');
+    }
+  }}
+  className='p-2 bg-red-500 text-white rounded-full ml-2'
+  title='Удалить дубликат вода+сок'
+>
+  🧹
+</button>
           </div>
           <div className='relative mt-4 flex items-center gap-2'>
             <div className="relative flex-1">
