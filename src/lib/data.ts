@@ -2286,7 +2286,11 @@ export const getIngredientConfig = (
 
   // Ищем модель в первую очередь
   if (machineModel) {
-    const modelKey = Object.keys(machineIngredients).find(model =>
+    const modelKeys = Object.keys(machineIngredients).sort(
+      (a, b) => b.length - a.length,
+    );
+
+    const modelKey = modelKeys.find(model =>
       machineModel.toLowerCase().includes(model.toLowerCase()),
     );
 
