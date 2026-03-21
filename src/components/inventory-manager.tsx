@@ -247,38 +247,6 @@ export const InventoryManager = () => {
                 )}
               />
             </button>
-            <button
-  onClick={() => {
-    const catalog = JSON.parse(localStorage.getItem('master_catalog') || '[]');
-    const target = 'Добрый/Черноголовка вода+сок в ассорт.';
-    
-    // Нормализуем название для сравнения
-    const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
-    const normalizedTarget = normalize(target);
-    
-    // Оставляем только уникальные по нормализованному названию
-    const seen = new Set();
-    const cleaned = catalog.filter(item => {
-      const normalized = normalize(item);
-      if (normalized === normalizedTarget && seen.has(normalized)) {
-        return false; // пропускаем дубликат
-      }
-      seen.add(normalized);
-      return true;
-    });
-    
-    if (cleaned.length !== catalog.length) {
-      localStorage.setItem('master_catalog', JSON.stringify(cleaned));
-      alert(`Удалено ${catalog.length - cleaned.length} дубликатов. Обновите страницу.`);
-    } else {
-      alert('Дубликат не найден');
-    }
-  }}
-  className='p-2 bg-red-500 text-white rounded-full ml-2'
-  title='Удалить дубликат вода+сок'
->
-  🧹
-</button>
           </div>
           <div className='relative mt-4 flex items-center gap-2'>
             <div className="relative flex-1">
