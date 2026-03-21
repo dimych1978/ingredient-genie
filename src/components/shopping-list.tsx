@@ -846,8 +846,10 @@ export const ShoppingList = ({
                     if (item.name.toLowerCase() === 'item') return null;
 
                     const nameLower = item.name.toLowerCase().trim();
-                    const isDuplicate = (duplicateInfo.counts.get(nameLower) || 0) > 1;
-                    const isLastDuplicate = duplicateInfo.lasts.get(nameLower) === index;
+                    const isDuplicate =
+                      (duplicateInfo.counts.get(nameLower) || 0) > 1;
+                    const isLastDuplicate =
+                      duplicateInfo.lasts.get(nameLower) === index;
 
                     const isFullyReplenished = item.amount <= 0;
                     const hasSales = item.salesAmount && item.salesAmount > 0;
@@ -899,8 +901,10 @@ export const ShoppingList = ({
                               ? 'bg-yellow-900/20 border-yellow-600 text-yellow-300'
                               : 'bg-blue-900/20 border-blue-600 text-blue-300',
                           // Подсветка дубликатов
-                          isDuplicate && !isLastDuplicate && 'animated-dash-full opacity-90',
-                          isDuplicate && isLastDuplicate && 'holy-glow'
+                          isDuplicate &&
+                            !isLastDuplicate &&
+                            'animated-dash-full opacity-90',
+                          isDuplicate && isLastDuplicate && 'holy-glow',
                         )}
                       >
                         {/* Левый блок - информация о товаре */}
@@ -918,7 +922,9 @@ export const ShoppingList = ({
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Это последняя ячейка данного товара.</p>
-                                    <p>Используйте её для ввода общего недогруза.</p>
+                                    <p>
+                                      Используйте её для ввода общего недогруза.
+                                    </p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -1205,6 +1211,10 @@ export const ShoppingList = ({
                                       </Button>
                                       <div className='w-20 min-w-20'>
                                         <Input
+                                          autoFocus
+                                          onFocus={e =>
+                                            e.currentTarget.select()
+                                          }
                                           type='number'
                                           value={
                                             loadedAmounts[index]?.toString() ??
