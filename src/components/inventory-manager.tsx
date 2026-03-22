@@ -1,4 +1,3 @@
-
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -28,8 +27,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Loader2, Search, RefreshCcw, X, Info, ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { 
+  Loader2, 
+  Search, 
+  RefreshCcw, 
+  X, 
+  Info, 
+  ChevronUp, 
+  ChevronDown, 
+  Plus, 
+  Minus, 
+  CalendarDays,
+  AlertCircle,
+  Keyboard
+} from 'lucide-react';
+import { format, differenceInDays, parseISO, isValid, parse } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -37,12 +51,17 @@ const ALL_CONSTITUENTS_NORMALIZED = new Set(
   Object.values(PRODUCT_GROUPS).flat().map(normalize)
 );
 
+const ALL_COFFEE_INGREDIENTS = new Set(
+  Object.values(machineIngredients).flatMap(modelIngs => modelIngs.map(ing => normalize(ing.name)))
+);
+
 export const InventoryManager = () => {
-  const { stockOnHand, setStockOnHand } = useScheduleState();
+  const { stockOnHand, setStockOnHand, expirationDates, setExpirationDates } = useScheduleState();
   const [catalog, setCatalog] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchIndex, setMatchIndex] = useState(0);
+  const [manualDateInput, setManualDateInput] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const { getSalesByProducts } = useTelemetronApi();
 
@@ -85,8 +104,7 @@ export const InventoryManager = () => {
                 const isDrink = sale.planogram.ingredients && sale.planogram.ingredients.length > 0;
                 if (isDrink) return;
 
-                // Улучшенный regex: поддерживает цифровые (01.), буквенно-цифровые (1A.) и буквенные (AA.) префиксы
-                const match = sale.planogram.name.match(/^[0-9A-Za-z]+\.\s*(.+)$/);
+                const match = sale.planogram.name.match(/^(?:[0-9A-Za-z]+\.)\s*(.+)$/);
                 const cleanName = (match ? match[1] : sale.planogram.name).trim();
                 
                 const lowerName = cleanName.toLowerCase();
@@ -192,6 +210,32 @@ export const InventoryManager = () => {
     }
   };
 
+  const handleExpiryChange = (itemName: string, date: Date | undefined) => {
+    setExpirationDates(prev => ({
+      ...prev,
+      [itemName]: date ? date.toISOString() : ''
+    }));
+  };
+
+  const handleManualDateInput = (itemName: string, value: string) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 8);
+    let formatted = cleaned;
+    if (cleaned.length > 4) {
+      formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(4)}`;
+    } else if (cleaned.length > 2) {
+      formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+    }
+    
+    setManualDateInput(prev => ({ ...prev, [itemName]: formatted }));
+
+    if (formatted.length === 10) {
+      const parsedDate = parse(formatted, 'dd.MM.yyyy', new Date());
+      if (isValid(parsedDate)) {
+        handleExpiryChange(itemName, parsedDate);
+      }
+    }
+  };
+
   const handleStep = (itemName: string, delta: number) => {
     const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
     const newValue = Math.max(0, currentValue + delta);
@@ -206,6 +250,28 @@ export const InventoryManager = () => {
       (sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0),
       0
     ).toString();
+  };
+
+  const getExpiryStatus = (itemName: string) => {
+    if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
+
+    const groupItems = PRODUCT_GROUPS[itemName];
+    if (groupItems) {
+      const statuses = groupItems.map(gi => getExpiryStatus(gi));
+      if (statuses.includes('critical')) return 'critical';
+      if (statuses.includes('empty')) return 'empty';
+      return 'ok';
+    }
+
+    const dateStr = expirationDates[itemName];
+    if (!dateStr) return 'empty';
+    
+    const expiryDate = parseISO(dateStr);
+    if (!isValid(expiryDate)) return 'empty';
+    
+    const daysLeft = differenceInDays(expiryDate, new Date());
+    if (daysLeft <= 14) return 'critical';
+    return 'ok';
   };
 
   const clearSearch = () => {
@@ -223,6 +289,147 @@ export const InventoryManager = () => {
     setMatchIndex(prev => (prev > 0 ? prev - 1 : matches.length - 1));
   };
 
+  const ExpiryPicker = ({ itemName }: { itemName: string }) => {
+    const status = getExpiryStatus(itemName);
+    const dateStr = expirationDates[itemName];
+    const isCoffee = ALL_COFFEE_INGREDIENTS.has(normalize(itemName));
+    const isGroup = !!PRODUCT_GROUPS[itemName];
+
+    if (isCoffee) {
+      return (
+        <div className="flex justify-center">
+          <div className="h-2 w-2 rounded-full bg-green-500/40" title="Бессрочный ингредиент" />
+        </div>
+      );
+    }
+
+    if (isGroup) {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "h-8 w-8 rounded-full transition-colors",
+            status === 'empty' && "text-orange-500 hover:text-orange-600 hover:bg-orange-500/10",
+            status === 'critical' && "text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30",
+            status === 'ok' && "text-green-600 hover:text-green-700 hover:bg-green-500/10"
+          )}
+        >
+          {status === 'empty' ? <AlertCircle className="h-5 w-5" /> : <CalendarDays className="h-5 w-5" />}
+        </Button>
+      );
+    }
+
+    return (
+      <Popover onOpenChange={(open) => {
+        if (!open) setManualDateInput(prev => ({ ...prev, [itemName]: '' }));
+      }}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-8 w-8 rounded-full transition-colors",
+              status === 'empty' && "text-orange-500 hover:text-orange-600 hover:bg-orange-500/10",
+              status === 'critical' && "text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30",
+              status === 'ok' && "text-green-600 hover:text-green-700 hover:bg-green-500/10"
+            )}
+          >
+            {status === 'empty' ? (
+              <AlertCircle className="h-5 w-5" />
+            ) : (
+              <CalendarDays className="h-5 w-5" />
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <div className="p-3 border-b bg-muted/30 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Срок: {itemName}
+              </span>
+              {dateStr && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 text-[10px] text-destructive"
+                  onClick={() => handleExpiryChange(itemName, undefined)}
+                >
+                  Сбросить
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Keyboard className="h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="ДД.ММ.ГГГГ"
+                value={manualDateInput[itemName] || (dateStr ? format(parseISO(dateStr), 'dd.MM.yyyy') : '')}
+                onChange={(e) => handleManualDateInput(itemName, e.target.value)}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+          </div>
+          <Calendar
+            mode="single"
+            selected={dateStr ? parseISO(dateStr) : undefined}
+            onSelect={(date) => {
+              handleExpiryChange(itemName, date);
+            }}
+            locale={ru}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  const renderGroupDetails = (item: string) => (
+    <div className='space-y-3'>
+      <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center justify-between'>
+        {item}
+        <Info className="h-3 w-3 opacity-40" />
+      </h4>
+      <div className='grid gap-3'>
+        {PRODUCT_GROUPS[item].map(constituent => (
+          <div key={constituent} className='flex items-center justify-between gap-2 p-1 rounded hover:bg-muted/30'>
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+              <ExpiryPicker itemName={constituent} />
+              <div className="flex flex-col min-w-0">
+                <span className='text-xs text-muted-foreground leading-tight truncate'>
+                  {constituent}
+                </span>
+                {expirationDates[constituent] && (
+                  <span className="text-[9px] font-mono text-muted-foreground">
+                    до {format(parseISO(expirationDates[constituent]), 'dd.MM.yy')}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className='flex items-center gap-1'>
+              <Button
+                variant="outline" size="icon" className="h-6 w-6 rounded-full"
+                onClick={() => handleStep(constituent, -1)}
+              >
+                <Minus className="h-2.5 w-2.5" />
+              </Button>
+              <Input
+                type='number' value={stockOnHand[constituent] || ''}
+                onChange={e => handleStockChange(constituent, e.target.value)}
+                className='h-7 w-10 text-center text-xs' inputMode='numeric'
+              />
+              <Button
+                variant="outline" size="icon" className="h-6 w-6 rounded-full"
+                onClick={() => handleStep(constituent, 1)}
+              >
+                <Plus className="h-2.5 w-2.5" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className='space-y-4'>
       <Card className='relative'>
@@ -231,7 +438,7 @@ export const InventoryManager = () => {
             <div>
               <CardTitle>Склад / Остатки в руках</CardTitle>
               <CardDescription>
-                Ингредиенты в начале списка. Напитки из меню аппарата исключены.
+                Нажмите на иконку календаря, чтобы установить срок годности.
               </CardDescription>
             </div>
             <button
@@ -263,27 +470,9 @@ export const InventoryManager = () => {
                   <span className="text-[10px] font-mono text-muted-foreground px-1 border-r mr-1">
                     {matches.length > 0 ? `${matchIndex + 1}/${matches.length}` : '0/0'}
                   </span>
-                  <button
-                    onClick={prevMatch}
-                    disabled={matches.length <= 1}
-                    className='p-1 hover:text-foreground disabled:opacity-30'
-                  >
-                    <ChevronUp className='w-4 h-4' />
-                  </button>
-                  <button
-                    onClick={nextMatch}
-                    disabled={matches.length <= 1}
-                    className='p-1 hover:text-foreground disabled:opacity-30'
-                  >
-                    <ChevronDown className='w-4 h-4' />
-                  </button>
-                  <button
-                    onClick={clearSearch}
-                    className='p-2 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'
-                    aria-label='Очистить поиск'
-                  >
-                    <X className='w-4 h-4' />
-                  </button>
+                  <button onClick={prevMatch} className='p-1 hover:text-foreground'><ChevronUp className='w-4 h-4' /></button>
+                  <button onClick={nextMatch} className='p-1 hover:text-foreground'><ChevronDown className='w-4 h-4' /></button>
+                  <button onClick={clearSearch} className='p-2 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'><X className='w-4 h-4' /></button>
                 </div>
               )}
             </div>
@@ -300,6 +489,7 @@ export const InventoryManager = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12 text-center">Срок</TableHead>
                     <TableHead>Название товара</TableHead>
                     <TableHead className='w-32 sm:w-40 text-center'>Остаток</TableHead>
                   </TableRow>
@@ -307,10 +497,11 @@ export const InventoryManager = () => {
                 <TableBody>
                   {displayCatalog.map((item, index) => {
                     const isGroup = !!PRODUCT_GROUPS[item];
-                    const isConstituent = ALL_CONSTITUENTS_NORMALIZED.has(normalize(item));
                     const isMatch = searchQuery.trim() !== '' && item.toLowerCase().includes(searchQuery.toLowerCase());
                     const isCurrentMatch = isMatch && matches[matchIndex] === index;
-                    
+                    const expiryStatus = getExpiryStatus(item);
+                    const expiryDate = expirationDates[item];
+
                     return (
                       <TableRow 
                         key={item} 
@@ -318,13 +509,38 @@ export const InventoryManager = () => {
                         className={cn(
                           isGroup && 'bg-primary/5',
                           isMatch && 'bg-yellow-500/10',
-                          isCurrentMatch && 'bg-yellow-500/30 ring-2 ring-yellow-500 ring-inset relative z-10'
+                          isCurrentMatch && 'bg-yellow-500/30 ring-2 ring-yellow-500 ring-inset relative z-10',
+                          expiryStatus === 'critical' && 'bg-red-500/10 hover:bg-red-500/20'
                         )}
                       >
+                        <TableCell className="px-2">
+                          {isGroup ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <div><ExpiryPicker itemName={item} /></div>
+                              </PopoverTrigger>
+                              <PopoverContent className='w-80' align="start">
+                                {renderGroupDetails(item)}
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <ExpiryPicker itemName={item} />
+                          )}
+                        </TableCell>
                         <TableCell className='text-sm font-medium'>
-                          <div className='flex items-center gap-2'>
+                          <div className='flex flex-col'>
                             <span className="capitalize">{item}</span>
-                            {isGroup && <Info className='h-3 w-3 text-primary opacity-50' />}
+                            {expiryDate && !isGroup && (
+                              <span className={cn(
+                                "text-[10px] font-mono leading-none mt-1",
+                                expiryStatus === 'critical' ? "text-red-600 font-bold" : "text-muted-foreground"
+                              )}>
+                                до {format(parseISO(expiryDate), 'dd.MM.yyyy')}
+                              </span>
+                            )}
+                            {isGroup && (
+                              <span className="text-[10px] text-primary/60 font-medium">Группа</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -339,75 +555,26 @@ export const InventoryManager = () => {
                                   />
                                 </div>
                               </PopoverTrigger>
-                              <PopoverContent className='w-80'>
-                                <div className='space-y-3'>
-                                  <h4 className='font-medium text-sm leading-none border-b pb-2'>
-                                    {item}
-                                  </h4>
-                                  <div className='grid gap-3'>
-                                    {PRODUCT_GROUPS[item].map(constituent => (
-                                      <div key={constituent} className='flex items-center justify-between gap-4'>
-                                        <span className='text-xs text-muted-foreground leading-tight'>
-                                          {constituent}
-                                        </span>
-                                        <div className='flex items-center gap-1'>
-                                          <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-7 w-7 rounded-full"
-                                            onClick={() => handleStep(constituent, -1)}
-                                          >
-                                            <Minus className="h-3 w-3" />
-                                          </Button>
-                                          <Input
-                                            type='number'
-                                            value={stockOnHand[constituent] || ''}
-                                            onChange={e => handleStockChange(constituent, e.target.value)}
-                                            placeholder='0'
-                                            className='h-8 w-14 text-center text-xs'
-                                            inputMode='numeric'
-                                          />
-                                          <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-7 w-7 rounded-full"
-                                            onClick={() => handleStep(constituent, 1)}
-                                          >
-                                            <Plus className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
+                              <PopoverContent className='w-80' align="end">
+                                {renderGroupDetails(item)}
                               </PopoverContent>
                             </Popover>
                           ) : (
                             <div className='flex items-center gap-1 sm:gap-2 justify-center'>
                               <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex-shrink-0"
+                                variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
                                 onClick={() => handleStep(item, -1)}
-                                disabled={isConstituent && !searchQuery}
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <Input
-                                type='number'
-                                value={stockOnHand[item] || ''}
+                                type='number' value={stockOnHand[item] || ''}
                                 onChange={e => handleStockChange(item, e.target.value)}
-                                placeholder='0'
-                                className='h-8 w-12 sm:w-14 text-center p-1'
-                                inputMode='numeric'
-                                disabled={isConstituent && !searchQuery}
+                                className='h-8 w-12 sm:w-14 text-center p-1' inputMode='numeric'
                               />
                               <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full flex-shrink-0"
+                                variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
                                 onClick={() => handleStep(item, 1)}
-                                disabled={isConstituent && !searchQuery}
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -417,16 +584,6 @@ export const InventoryManager = () => {
                       </TableRow>
                     );
                   })}
-                  {displayCatalog.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={2}
-                        className='text-center py-10 text-muted-foreground'
-                      >
-                        Каталог пуст. Нажмите кнопку обновления.
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             </div>

@@ -7,6 +7,7 @@ import type { LoadingOverride } from '@/types/telemetron';
 // --- Функции для работы с датами спец. аппаратов ---
 
 const DATES_KEY = 'special-machine-dates';
+const EXPIRATION_DATES_KEY = 'product-expiration-dates';
 
 const TELEMETRON_PRESS_KEY_PREFIX = 'telemetron-press:';
 const LAST_SAVE_KEY_PREFIX = 'last-save:';
@@ -82,6 +83,28 @@ export async function setSpecialMachineDate(
     return { success: true };
   } catch (error) {
     console.error('Ошибка записи даты в KV:', error);
+    return { success: false };
+  }
+}
+
+export async function getExpirationDates(): Promise<Record<string, string>> {
+  try {
+    const dates = await kv.get<Record<string, string>>(EXPIRATION_DATES_KEY);
+    return dates || {};
+  } catch (error) {
+    console.error('Ошибка чтения сроков годности из KV:', error);
+    return {};
+  }
+}
+
+export async function saveExpirationDates(
+  dates: Record<string, string>
+): Promise<{ success: boolean }> {
+  try {
+    await kv.set(EXPIRATION_DATES_KEY, dates);
+    return { success: true };
+  } catch (error) {
+    console.error('Ошибка сохранения сроков годности в KV:', error);
     return { success: false };
   }
 }

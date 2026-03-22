@@ -2,19 +2,24 @@
 
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getExpirationDates, saveExpirationDates } from '@/app/actions';
 
 type ScheduleStateContextType = {
   selectedDate: Date;
   setSelectedDate: Dispatch<SetStateAction<Date>>;
   stockOnHand: Record<string, string>;
   setStockOnHand: Dispatch<SetStateAction<Record<string, string>>>;
+  expirationDates: Record<string, string>;
+  setExpirationDates: Dispatch<SetStateAction<Record<string, string>>>;
+  refreshExpirationDates: () => Promise<void>;
 };
 
 const ScheduleStateContext = createContext<
   ScheduleStateContextType | undefined
 >(undefined);
 
-const STORAGE_KEY = 'telemetron_stock_on_hand';
+const STOCK_STORAGE_KEY = 'telemetron_stock_on_hand';
+const EXPIRY_STORAGE_KEY = 'telemetron_expiration_dates';
 
 export const ScheduleStateProvider = ({
   children,
@@ -23,51 +28,98 @@ export const ScheduleStateProvider = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [stockOnHand, setStockOnHand] = useState<Record<string, string>>({});
+  const [expirationDates, setExpirationDates] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 1. Загрузка данных из localStorage при первом запуске (только на клиенте)
-  useEffect(() => {
-    const savedStock = localStorage.getItem(STORAGE_KEY);
-    if (savedStock) {
-      try {
-        setStockOnHand(JSON.parse(savedStock));
-      } catch (error) {
-        console.error('Ошибка парсинга остатков из localStorage:', error);
+  const refreshExpirationDates = async () => {
+    try {
+      const cloudDates = await getExpirationDates();
+      if (cloudDates && Object.keys(cloudDates).length > 0) {
+        setExpirationDates(cloudDates);
+        localStorage.setItem(EXPIRY_STORAGE_KEY, JSON.stringify(cloudDates));
       }
+    } catch (error) {
+      console.error('Ошибка синхронизации с Redis:', error);
     }
-    setIsInitialized(true);
+  };
+
+  // 1. Загрузка данных при первом запуске (сначала локально, потом облако)
+  useEffect(() => {
+    const init = async () => {
+      // Загружаем остатки
+      const savedStock = localStorage.getItem(STOCK_STORAGE_KEY);
+      if (savedStock) {
+        try {
+          setStockOnHand(JSON.parse(savedStock));
+        } catch (error) {
+          console.error('Ошибка парсинга остатков:', error);
+        }
+      }
+      
+      // Сначала грузим сроки из локалки для скорости
+      const savedExpiry = localStorage.getItem(EXPIRY_STORAGE_KEY);
+      if (savedExpiry) {
+        try {
+          setExpirationDates(JSON.parse(savedExpiry));
+        } catch (error) {
+          console.error('Ошибка парсинга сроков из локалки:', error);
+        }
+      }
+      
+      // Потом обновляем из Redis
+      await refreshExpirationDates();
+      setIsInitialized(true);
+    };
+    
+    init();
   }, []);
 
-  // 2. Сохранение данных в localStorage при каждом изменении stockOnHand
+  // 2. Сохранение остатков в локалку
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stockOnHand));
+      localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stockOnHand));
     }
   }, [stockOnHand, isInitialized]);
 
-  // 3. СИНХРОНИЗАЦИЯ МЕЖДУ ВКЛАДКАМИ
-  // Слушаем изменения localStorage, сделанные в других вкладках
+  // 3. Сохранение сроков в Redis и локалку
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem(EXPIRY_STORAGE_KEY, JSON.stringify(expirationDates));
+      saveExpirationDates(expirationDates);
+    }
+  }, [expirationDates, isInitialized]);
+
+  // 4. Синхронизация остатков между вкладками (Оптимизировано: без лишних зависимостей)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
+      if (!e.newValue) return;
+
+      if (e.key === STOCK_STORAGE_KEY) {
         try {
           const newData = JSON.parse(e.newValue);
-          // Обновляем состояние только если данные реально отличаются
-          if (JSON.stringify(newData) !== JSON.stringify(stockOnHand)) {
-            setStockOnHand(newData);
-          }
-        } catch (error) {
-          console.error(
-            'Ошибка синхронизации остатков между вкладками:',
-            error,
+          setStockOnHand(prev => 
+            JSON.stringify(prev) !== e.newValue ? newData : prev
           );
+        } catch (error) {
+          console.error('Storage sync error (stock):', error);
+        }
+      }
+      
+      if (e.key === EXPIRY_STORAGE_KEY) {
+        try {
+          const newData = JSON.parse(e.newValue);
+          setExpirationDates(prev => 
+            JSON.stringify(prev) !== e.newValue ? newData : prev
+          );
+        } catch (error) {
+          console.error('Storage sync error (expiry):', error);
         }
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [stockOnHand]);
+  }, []);
 
   return (
     <ScheduleStateContext.Provider
@@ -76,6 +128,9 @@ export const ScheduleStateProvider = ({
         setSelectedDate,
         stockOnHand,
         setStockOnHand,
+        expirationDates,
+        setExpirationDates,
+        refreshExpirationDates
       }}
     >
       {children}
