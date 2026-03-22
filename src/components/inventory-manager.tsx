@@ -72,6 +72,11 @@ export const InventoryManager = () => {
   const [manualDateInput, setManualDateInput] = useState<
     Record<string, string>
   >({});
+  const [activeHint, setActiveHint] = useState<string | null>(null);
+  const [activeConstituent, setActiveConstituent] = useState<string | null>(
+    null,
+  );
+
   const inputRef = useRef<HTMLInputElement>(null);
   const { getSalesByProducts } = useTelemetronApi();
 
@@ -249,7 +254,7 @@ export const InventoryManager = () => {
     setManualDateInput(prev => ({ ...prev, [itemName]: formatted }));
 
     if (formatted.length === 10) {
-      const parsedDate = parse(formatted, 'dd.MM.yyyy', new Date());
+      const parsedDate = parse(formatted, 'dd.MM.yy', new Date());
       if (isValid(parsedDate)) {
         handleExpiryChange(itemName, parsedDate);
       }
@@ -260,6 +265,16 @@ export const InventoryManager = () => {
     const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
     const newValue = Math.max(0, currentValue + delta);
     handleStockChange(itemName, newValue.toString());
+  };
+
+  const handleHintToggle = (name: string) => {
+    setActiveHint(name);
+    setTimeout(() => setActiveHint(null), 1000);
+  };
+
+  const handleConstituentHint = (name: string) => {
+    setActiveConstituent(name);
+    setTimeout(() => setActiveConstituent(null), 1000);
   };
 
   const getGroupTotal = (groupName: string) => {
@@ -396,10 +411,10 @@ export const InventoryManager = () => {
             <div className='flex items-center gap-2'>
               <Keyboard className='h-3.5 w-3.5 text-muted-foreground' />
               <Input
-                placeholder='ДД.ММ.ГГГГ'
+                placeholder='ДД.ММ.ГГ'
                 value={
                   manualDateInput[itemName] ||
-                  (dateStr ? format(parseISO(dateStr), 'dd.MM.yyyy') : '')
+                  (dateStr ? format(parseISO(dateStr), 'dd.MM.yy') : '')
                 }
                 onChange={e => handleManualDateInput(itemName, e.target.value)}
                 className='h-8 text-xs font-mono'
@@ -435,9 +450,19 @@ export const InventoryManager = () => {
             <div className='flex items-center gap-1.5 flex-1 min-w-0'>
               {mode === 'expiry' && <ExpiryPicker itemName={constituent} />}
               <div className='flex flex-col min-w-0'>
-                <span className='text-[11px] text-muted-foreground leading-tight truncate'>
-                  {constituent}
-                </span>
+                <Popover
+                  open={activeConstituent === constituent}
+                  onOpenChange={open => !open && setActiveConstituent(null)}
+                >
+                  <PopoverTrigger asChild>
+                    <span className='text-[11px] text-muted-foreground leading-tight truncate cursor-pointer' onClick={() => handleConstituentHint(constituent)}>
+                      {constituent}
+                    </span>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
+                    {constituent}
+                  </PopoverContent>
+                </Popover>
                 {mode === 'expiry' && expirationDates[constituent] && (
                   <span className='text-[9px] font-mono text-muted-foreground'>
                     до{' '}
@@ -614,14 +639,27 @@ export const InventoryManager = () => {
                         </TableCell>
                         <TableCell className='text-[12px] sm:text-sm font-medium px-1.5 py-2.5 break-words'>
                           <div className='flex flex-col min-w-0'>
-                            <span
-                              className={cn(
-                                'capitalize leading-tight',
-                                isGroup && 'font-bold text-primary',
-                              )}
+                            <Popover
+                              open={activeHint === item}
+                              onOpenChange={open =>
+                                !open && setActiveHint(null)
+                              }
                             >
-                              {item}
-                            </span>
+                              <PopoverTrigger asChild>
+                                <span
+                                  className={cn(
+                                    'capitalize leading-tight cursor-pointer',
+                                    isGroup && 'font-bold text-primary',
+                                  )}
+                                  onClick={() => handleHintToggle(item)}
+                                >
+                                  {item}
+                                </span>
+                              </PopoverTrigger>
+                              <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
+                                {item}
+                              </PopoverContent>
+                            </Popover>
                             {expiryDate && !isGroup && (
                               <span
                                 className={cn(
@@ -631,7 +669,7 @@ export const InventoryManager = () => {
                                     : 'text-muted-foreground',
                                 )}
                               >
-                                до {format(parseISO(expiryDate), 'dd.MM.yyyy')}
+                                до {format(parseISO(expiryDate), 'dd.MM.yy')}
                               </span>
                             )}
                             {isGroup && (
