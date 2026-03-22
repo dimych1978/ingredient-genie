@@ -309,13 +309,13 @@ export const InventoryManager = () => {
           variant="ghost"
           size="icon"
           className={cn(
-            "h-8 w-8 rounded-full transition-colors",
+            "h-6 w-6 rounded-full transition-colors",
             status === 'empty' && "text-orange-500 hover:text-orange-600 hover:bg-orange-500/10",
             status === 'critical' && "text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30",
             status === 'ok' && "text-green-600 hover:text-green-700 hover:bg-green-500/10"
           )}
         >
-          {status === 'empty' ? <AlertCircle className="h-5 w-5" /> : <CalendarDays className="h-5 w-5" />}
+          {status === 'empty' ? <AlertCircle className="h-3.5 w-3.5" /> : <CalendarDays className="h-3.5 w-3.5" />}
         </Button>
       );
     }
@@ -329,30 +329,30 @@ export const InventoryManager = () => {
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 rounded-full transition-colors",
+              "h-6 w-6 rounded-full transition-colors",
               status === 'empty' && "text-orange-500 hover:text-orange-600 hover:bg-orange-500/10",
               status === 'critical' && "text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30",
               status === 'ok' && "text-green-600 hover:text-green-700 hover:bg-green-500/10"
             )}
           >
             {status === 'empty' ? (
-              <AlertCircle className="h-5 w-5" />
+              <AlertCircle className="h-3.5 w-3.5" />
             ) : (
-              <CalendarDays className="h-5 w-5" />
+              <CalendarDays className="h-3.5 w-3.5" />
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <div className="p-3 border-b bg-muted/30 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Срок: {itemName}
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate max-w-[150px]">
+                {itemName}
               </span>
               {dateStr && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-6 text-[10px] text-destructive"
+                  className="h-6 text-[10px] text-destructive px-2"
                   onClick={() => handleExpiryChange(itemName, undefined)}
                 >
                   Сбросить
@@ -360,7 +360,7 @@ export const InventoryManager = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Keyboard className="h-4 w-4 text-muted-foreground" />
+              <Keyboard className="h-3.5 w-3.5 text-muted-foreground" />
               <Input 
                 placeholder="ДД.ММ.ГГГГ"
                 value={manualDateInput[itemName] || (dateStr ? format(parseISO(dateStr), 'dd.MM.yyyy') : '')}
@@ -383,47 +383,49 @@ export const InventoryManager = () => {
     );
   };
 
-  const renderGroupDetails = (item: string) => (
+  const renderGroupDetails = (item: string, mode: 'expiry' | 'stock') => (
     <div className='space-y-3'>
       <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center justify-between'>
         {item}
         <Info className="h-3 w-3 opacity-40" />
       </h4>
-      <div className='grid gap-3'>
+      <div className='grid gap-2'>
         {PRODUCT_GROUPS[item].map(constituent => (
-          <div key={constituent} className='flex items-center justify-between gap-2 p-1 rounded hover:bg-muted/30'>
-            <div className="flex items-center gap-1 flex-1 min-w-0">
-              <ExpiryPicker itemName={constituent} />
+          <div key={constituent} className='flex items-center justify-between gap-2 p-1 rounded hover:bg-muted/20'>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              {mode === 'expiry' && <ExpiryPicker itemName={constituent} />}
               <div className="flex flex-col min-w-0">
-                <span className='text-xs text-muted-foreground leading-tight truncate'>
+                <span className='text-[11px] text-muted-foreground leading-tight truncate'>
                   {constituent}
                 </span>
-                {expirationDates[constituent] && (
+                {mode === 'expiry' && expirationDates[constituent] && (
                   <span className="text-[9px] font-mono text-muted-foreground">
                     до {format(parseISO(expirationDates[constituent]), 'dd.MM.yy')}
                   </span>
                 )}
               </div>
             </div>
-            <div className='flex items-center gap-1'>
-              <Button
-                variant="outline" size="icon" className="h-6 w-6 rounded-full"
-                onClick={() => handleStep(constituent, -1)}
-              >
-                <Minus className="h-2.5 w-2.5" />
-              </Button>
-              <Input
-                type='number' value={stockOnHand[constituent] || ''}
-                onChange={e => handleStockChange(constituent, e.target.value)}
-                className='h-7 w-10 text-center text-xs' inputMode='numeric'
-              />
-              <Button
-                variant="outline" size="icon" className="h-6 w-6 rounded-full"
-                onClick={() => handleStep(constituent, 1)}
-              >
-                <Plus className="h-2.5 w-2.5" />
-              </Button>
-            </div>
+            {mode === 'stock' && (
+              <div className='flex items-center gap-1'>
+                <Button
+                  variant="outline" size="icon" className="h-6 w-6 rounded-full"
+                  onClick={() => handleStep(constituent, -1)}
+                >
+                  <Minus className="h-2.5 w-2.5" />
+                </Button>
+                <Input
+                  type='number' value={stockOnHand[constituent] || ''}
+                  onChange={e => handleStockChange(constituent, e.target.value)}
+                  className='h-7 w-10 text-center text-[11px] p-0' inputMode='numeric'
+                />
+                <Button
+                  variant="outline" size="icon" className="h-6 w-6 rounded-full"
+                  onClick={() => handleStep(constituent, 1)}
+                >
+                  <Plus className="h-2.5 w-2.5" />
+                </Button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -433,65 +435,65 @@ export const InventoryManager = () => {
   return (
     <div className='space-y-4'>
       <Card className='relative'>
-        <CardHeader className='pb-3 sticky top-0 z-20 bg-background/95 backdrop-blur border-b'>
+        <CardHeader className='pb-2 px-2 sm:px-6 sticky top-0 z-20 bg-background/95 backdrop-blur border-b'>
           <div className='flex items-center justify-between'>
             <div>
-              <CardTitle>Склад / Остатки в руках</CardTitle>
-              <CardDescription>
-                Нажмите на иконку календаря, чтобы установить срок годности.
+              <CardTitle className="text-lg sm:text-2xl">Склад / Остатки</CardTitle>
+              <CardDescription className="text-[10px] sm:text-sm">
+                Нажмите на иконку календаря для установки срока.
               </CardDescription>
             </div>
             <button
               onClick={() => loadMasterCatalog(true)}
-              className='p-2 hover:bg-muted rounded-full transition-colors'
+              className='p-1.5 hover:bg-muted rounded-full transition-colors'
               title='Обновить список товаров'
               disabled={loading}
             >
               <RefreshCcw
                 className={cn(
-                  'h-5 w-5 text-muted-foreground',
+                  'h-4 w-4 text-muted-foreground',
                   loading && 'animate-spin',
                 )}
               />
             </button>
           </div>
-          <div className='relative mt-4 flex items-center gap-2'>
+          <div className='relative mt-2 flex items-center gap-2'>
             <div className="relative flex-1">
-              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none' />
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none' />
               <Input
                 ref={inputRef}
                 placeholder='Поиск по каталогу...'
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className='pl-9 pr-28 h-10'
+                className='pl-8 pr-24 h-9 text-xs'
               />
               {searchQuery && (
                 <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1">
-                  <span className="text-[10px] font-mono text-muted-foreground px-1 border-r mr-1">
+                  <span className="text-[9px] font-mono text-muted-foreground px-1 border-r mr-1">
                     {matches.length > 0 ? `${matchIndex + 1}/${matches.length}` : '0/0'}
                   </span>
-                  <button onClick={prevMatch} className='p-1 hover:text-foreground'><ChevronUp className='w-4 h-4' /></button>
-                  <button onClick={nextMatch} className='p-1 hover:text-foreground'><ChevronDown className='w-4 h-4' /></button>
-                  <button onClick={clearSearch} className='p-2 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'><X className='w-4 h-4' /></button>
+                  <button onClick={prevMatch} className='p-0.5 hover:text-foreground'><ChevronUp className='w-3.5 h-3.5' /></button>
+                  <button onClick={nextMatch} className='p-0.5 hover:text-foreground'><ChevronDown className='w-3.5 h-3.5' /></button>
+                  <button onClick={clearSearch} className='p-1.5 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'><X className='w-3.5 h-3.5' /></button>
                 </div>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent className='pt-6'>
+        <CardContent className='pt-2 px-0 sm:px-6'>
           {loading && catalog.length === 0 ? (
-            <div className='flex items-center justify-center py-10'>
-              <Loader2 className='h-8 w-8 animate-spin text-primary mr-3' />
-              <p>Загрузка каталога товаров...</p>
+            <div className='flex items-center justify-center py-8'>
+              <Loader2 className='h-6 w-6 animate-spin text-primary mr-3' />
+              <p className="text-xs">Загрузка каталога...</p>
             </div>
           ) : (
-            <div className='border rounded-md overflow-hidden'>
+            <div className='border-t sm:border rounded-md overflow-hidden'>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12 text-center">Срок</TableHead>
-                    <TableHead>Название товара</TableHead>
-                    <TableHead className='w-32 sm:w-40 text-center'>Остаток</TableHead>
+                  <TableRow className="bg-muted/20">
+                    <TableHead className="w-8 sm:w-12 text-center px-0.5">Срок</TableHead>
+                    <TableHead className="px-1.5">Название</TableHead>
+                    <TableHead className='w-24 sm:w-40 text-center px-0.5'>Остаток</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -513,70 +515,72 @@ export const InventoryManager = () => {
                           expiryStatus === 'critical' && 'bg-red-500/10 hover:bg-red-500/20'
                         )}
                       >
-                        <TableCell className="px-2">
+                        <TableCell className="px-0.5 text-center">
                           {isGroup ? (
                             <Popover>
                               <PopoverTrigger asChild>
-                                <div><ExpiryPicker itemName={item} /></div>
+                                <div className="flex justify-center cursor-pointer outline-none">
+                                  <ExpiryPicker itemName={item} />
+                                </div>
                               </PopoverTrigger>
-                              <PopoverContent className='w-80' align="start">
-                                {renderGroupDetails(item)}
+                              <PopoverContent className='w-72 sm:w-80 p-2' align="start">
+                                {renderGroupDetails(item, 'expiry')}
                               </PopoverContent>
                             </Popover>
                           ) : (
                             <ExpiryPicker itemName={item} />
                           )}
                         </TableCell>
-                        <TableCell className='text-sm font-medium'>
-                          <div className='flex flex-col'>
-                            <span className="capitalize">{item}</span>
+                        <TableCell className='text-[12px] sm:text-sm font-medium px-1.5 py-2.5'>
+                          <div className='flex flex-col min-w-0'>
+                            <span className="capitalize truncate leading-tight">{item}</span>
                             {expiryDate && !isGroup && (
                               <span className={cn(
-                                "text-[10px] font-mono leading-none mt-1",
+                                "text-[8px] font-mono leading-none mt-0.5",
                                 expiryStatus === 'critical' ? "text-red-600 font-bold" : "text-muted-foreground"
                               )}>
                                 до {format(parseISO(expiryDate), 'dd.MM.yyyy')}
                               </span>
                             )}
                             {isGroup && (
-                              <span className="text-[10px] text-primary/60 font-medium">Группа</span>
+                              <span className="text-[8px] text-primary/60 font-medium uppercase tracking-tighter mt-0.5">Группа</span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-0.5">
                           {isGroup ? (
                             <Popover>
                               <PopoverTrigger asChild>
-                                <div className='relative cursor-pointer'>
+                                <div className='relative cursor-pointer px-1'>
                                   <Input
                                     value={getGroupTotal(item)}
                                     readOnly
-                                    className='h-8 text-center bg-muted/50 font-bold border-primary/20'
+                                    className='h-7 text-center bg-muted/50 font-bold border-primary/20 text-[11px] p-0'
                                   />
                                 </div>
                               </PopoverTrigger>
-                              <PopoverContent className='w-80' align="end">
-                                {renderGroupDetails(item)}
+                              <PopoverContent className='w-72 sm:w-80 p-2' align="end">
+                                {renderGroupDetails(item, 'stock')}
                               </PopoverContent>
                             </Popover>
                           ) : (
-                            <div className='flex items-center gap-1 sm:gap-2 justify-center'>
+                            <div className='flex items-center gap-0.5 sm:gap-2 justify-center'>
                               <Button
-                                variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+                                variant="outline" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 rounded-full"
                                 onClick={() => handleStep(item, -1)}
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                               </Button>
                               <Input
                                 type='number' value={stockOnHand[item] || ''}
                                 onChange={e => handleStockChange(item, e.target.value)}
-                                className='h-8 w-12 sm:w-14 text-center p-1' inputMode='numeric'
+                                className='h-7 w-9 sm:w-12 text-center p-0 text-[11px]' inputMode='numeric'
                               />
                               <Button
-                                variant="outline" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+                                variant="outline" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 rounded-full"
                                 onClick={() => handleStep(item, 1)}
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                               </Button>
                             </div>
                           )}
