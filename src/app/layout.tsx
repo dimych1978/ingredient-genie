@@ -4,7 +4,14 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Providers } from '@/components/providers';
 
-export const viewport = 'width=device-width, initial-scale=1, maximum-scale=1';
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: 'no' as const,
+  viewportFit: 'cover' as const,
+  interactiveWidget: 'resizes-content' as const,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(

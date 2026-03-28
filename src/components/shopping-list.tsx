@@ -320,6 +320,7 @@ export const ShoppingList = ({
     });
     return { counts, lasts, totals };
   }, [shoppingList]);
+  const scrollPositionRef = useRef(0);
 
   // Стабильные функции
   const stableToast = useRef(toast).current;
@@ -528,6 +529,44 @@ export const ShoppingList = ({
       dispatch({ type: 'SET_SHOPPING_LIST', payload: newShoppingList });
     }
   }, [loadedAmounts]);
+
+  useEffect(() => {
+    const handleVisualViewportResize = () => {
+      // Когда клавиатура скрылась (высота viewport увеличилась)
+      if (window.visualViewport && scrollPositionRef.current > 0) {
+        setTimeout(() => {
+          window.scrollTo({
+            top: scrollPositionRef.current,
+            behavior: 'smooth',
+          });
+          scrollPositionRef.current = 0;
+        }, 50);
+      }
+    };
+
+    window.visualViewport?.addEventListener(
+      'resize',
+      handleVisualViewportResize,
+    );
+    
+    return () => {
+      window.visualViewport?.removeEventListener(
+        'resize',
+        handleVisualViewportResize,
+      );
+    };
+  }, []);
+
+  const handleInputFocus = () => {
+    scrollPositionRef.current = window.scrollY;
+  };
+
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    const isButtonClick = relatedTarget?.closest?.('button') !== null;
+
+    if (isButtonClick) return;
+  };
 
   const handleCheckboxChange = (index: number) => {
     dispatch({
@@ -928,17 +967,24 @@ export const ShoppingList = ({
                               {isDuplicate && isLastDuplicate && (
                                 <Popover>
                                   <PopoverTrigger asChild>
-                                    <button className="focus:outline-none p-1 hover:bg-blue-400/10 rounded-full transition-colors">
+                                    <button className='focus:outline-none p-1 hover:bg-blue-400/10 rounded-full transition-colors'>
                                       <Bookmark className='h-4 w-4 text-blue-400 fill-blue-400/20' />
                                     </button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-3 text-sm bg-blue-900 border-blue-700 text-blue-50 shadow-xl" align="start">
-                                    <div className="space-y-1">
-                                      <p className="font-semibold text-blue-200">Общий итог в аппарате:</p>
-                                      <p className="text-xl font-bold">
-                                        {duplicateInfo.totals.get(nameLower) ?? 0} {item.unit}
+                                  <PopoverContent
+                                    className='w-auto p-3 text-sm bg-blue-900 border-blue-700 text-blue-50 shadow-xl'
+                                    align='start'
+                                  >
+                                    <div className='space-y-1'>
+                                      <p className='font-semibold text-blue-200'>
+                                        Общий итог в аппарате:
                                       </p>
-                                      <p className="text-[10px] text-blue-300/70 border-t border-blue-700 pt-1 mt-2">
+                                      <p className='text-xl font-bold'>
+                                        {duplicateInfo.totals.get(nameLower) ??
+                                          0}{' '}
+                                        {item.unit}
+                                      </p>
+                                      <p className='text-[10px] text-blue-300/70 border-t border-blue-700 pt-1 mt-2'>
                                         Сумма по всем ячейкам этого товара
                                       </p>
                                     </div>
@@ -1230,9 +1276,11 @@ export const ShoppingList = ({
                                       <div className='w-20 min-w-20'>
                                         <Input
                                           autoFocus
-                                          onFocus={e =>
-                                            e.currentTarget.select()
-                                          }
+                                          onFocus={e => {
+                                            handleInputFocus();
+                                            e.currentTarget.select();
+                                          }}
+                                          onBlur={handleInputBlur}
                                           type='number'
                                           value={
                                             loadedAmounts[index]?.toString() ??
