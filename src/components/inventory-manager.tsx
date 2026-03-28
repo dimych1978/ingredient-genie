@@ -63,6 +63,117 @@ const ALL_COFFEE_INGREDIENTS = new Set(
   ),
 );
 
+interface ExpiryPickerProps {
+  itemName: string;
+  status: 'ok' | 'critical' | 'empty';
+  dateStr: string;
+  onDateSelect: (date: Date | undefined) => void;
+}
+
+const ExpiryPicker = ({
+  itemName,
+  status,
+  dateStr,
+  onDateSelect,
+}: ExpiryPickerProps) => {
+  const isCoffee = ALL_COFFEE_INGREDIENTS.has(normalize(itemName));
+  const [localManualInput, setLocalManualInput] = useState(
+    dateStr ? format(parseISO(dateStr), 'dd.MM.yy') : '',
+  );
+  const [open, setOpen] = useState(false);
+
+  const handleManualInput = (val: string) => {
+    setLocalManualInput(val);
+    const cleaned = val.replace(/\D/g, '').slice(0, 6);
+
+    if (cleaned.length === 6) {
+      const parsedDate = parse(cleaned, 'ddMMyy', new Date());
+      if (isValid(parsedDate)) {
+        onDateSelect(parsedDate);
+        setOpen(false);
+      }
+    } else if (cleaned.length === 0) {
+      onDateSelect(undefined);
+    }
+  };
+
+  if (isCoffee) {
+    return (
+      <div className='flex justify-center'>
+        <div className='h-2 w-2 rounded-full bg-green-500/40' />
+      </div>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant='ghost'
+          size='icon'
+          className={cn(
+            'h-6 w-6 rounded-full transition-colors',
+            status === 'empty' &&
+              'text-orange-500 hover:text-orange-600 hover:bg-orange-500/10',
+            status === 'critical' &&
+              'text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30',
+            status === 'ok' &&
+              'text-green-600 hover:text-green-700 hover:bg-green-500/10',
+          )}
+        >
+          {status === 'empty' ? (
+            <AlertCircle className='h-3.5 w-3.5' />
+          ) : (
+            <CalendarDays className='h-3.5 w-3.5' />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className='w-auto p-0' align='start'>
+        <div className='p-3 border-b bg-muted/30 space-y-3'>
+          <div className='flex items-center justify-between'>
+            <span className='text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate max-w-[150px]'>
+              {itemName}
+            </span>
+            {dateStr && (
+              <Button
+                variant='ghost'
+                size='sm'
+                className='h-6 text-[10px] text-destructive px-2'
+                onClick={() => {
+                  onDateSelect(undefined);
+                  setLocalManualInput('');
+                }}
+              >
+                Сбросить
+              </Button>
+            )}
+          </div>
+          <div className='flex items-center gap-2'>
+            <Keyboard className='h-3.5 w-3.5 text-muted-foreground' />
+            <Input
+              placeholder='ДД.ММ.ГГ'
+              value={localManualInput}
+              onChange={e => handleManualInput(e.target.value)}
+              className='h-8 text-xs font-mono'
+            />
+          </div>
+        </div>
+        <Calendar
+          mode='single'
+          selected={dateStr ? parseISO(dateStr) : undefined}
+          onSelect={date => {
+            onDateSelect(date);
+            if (date) setLocalManualInput(format(date, 'dd.MM.yy'));
+            else setLocalManualInput('');
+          }}
+          locale={ru}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 export const InventoryManager = () => {
   const { stockOnHand, setStockOnHand, expirationDates, setExpirationDates } =
     useScheduleState();
@@ -70,9 +181,9 @@ export const InventoryManager = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchIndex, setMatchIndex] = useState(0);
-  const [manualDateInput, setManualDateInput] = useState<
-    Record<string, string>
-  >({});
+  // const [manualDateInput, setManualDateInput] = useState<
+  //   Record<string, string>
+  // >({});
   const [activeHint, setActiveHint] = useState<string | null>(null);
   const [activeConstituent, setActiveConstituent] = useState<string | null>(
     null,
@@ -243,24 +354,25 @@ export const InventoryManager = () => {
     }));
   };
 
-  const handleManualDateInput = (itemName: string, value: string) => {
-    const cleaned = value.replace(/\D/g, '').slice(0, 8);
-    let formatted = cleaned;
-    if (cleaned.length > 4) {
-      formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(4)}`;
-    } else if (cleaned.length > 2) {
-      formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
-    }
+  //   const handleManualDateInput = (itemName: string, value: string) => {
+  //     const cleaned = value.replace(/\D/g, '').slice(0, 6);
+  //     let formatted = cleaned;
+  //     if (cleaned.length > 4) {
+  //       formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(4)}`;
+  //     } else if (cleaned.length > 2) {
+  //       formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+  //     }
 
-    setManualDateInput(prev => ({ ...prev, [itemName]: formatted }));
+  //     setManualDateInput(prev => ({ ...prev, [itemName]: formatted }));
 
-    if (formatted.length === 10) {
-      const parsedDate = parse(formatted, 'dd.MM.yy', new Date());
-      if (isValid(parsedDate)) {
-        handleExpiryChange(itemName, parsedDate);
-      }
-    }
-  };
+  //     if (cleaned.length === 6) {
+  //  const parsedDate = parse(cleaned, 'ddMMyy', new Date());
+  //        if (isValid(parsedDate)) {
+  //         console.log('object');
+  //         handleExpiryChange(itemName, parsedDate);
+  //       }
+  //     }
+  //   };
 
   const handleStep = (itemName: string, delta: number) => {
     const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
@@ -324,118 +436,6 @@ export const InventoryManager = () => {
     setMatchIndex(prev => (prev > 0 ? prev - 1 : matches.length - 1));
   };
 
-  const ExpiryPicker = ({ itemName }: { itemName: string }) => {
-    const status = getExpiryStatus(itemName);
-    const dateStr = expirationDates[itemName];
-    const isCoffee = ALL_COFFEE_INGREDIENTS.has(normalize(itemName));
-    const isGroup = !!PRODUCT_GROUPS[itemName];
-
-    if (isCoffee) {
-      return (
-        <div className='flex justify-center'>
-          <div
-            className='h-2 w-2 rounded-full bg-green-500/40'
-            title='Бессрочный ингредиент'
-          />
-        </div>
-      );
-    }
-
-    if (isGroup) {
-      return (
-        <Button
-          variant='ghost'
-          size='icon'
-          className={cn(
-            'h-6 w-6 rounded-full transition-colors',
-            status === 'empty' &&
-              'text-orange-500 hover:text-orange-600 hover:bg-orange-500/10',
-            status === 'critical' &&
-              'text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30',
-            status === 'ok' &&
-              'text-green-600 hover:text-green-700 hover:bg-green-500/10',
-          )}
-        >
-          {status === 'empty' ? (
-            <AlertCircle className='h-3.5 w-3.5' />
-          ) : (
-            <CalendarDays className='h-3.5 w-3.5' />
-          )}
-        </Button>
-      );
-    }
-
-    return (
-      <Popover
-        onOpenChange={open => {
-          if (!open) setManualDateInput(prev => ({ ...prev, [itemName]: '' }));
-        }}
-      >
-        <PopoverTrigger asChild>
-          <Button
-            variant='ghost'
-            size='icon'
-            className={cn(
-              'h-6 w-6 rounded-full transition-colors',
-              status === 'empty' &&
-                'text-orange-500 hover:text-orange-600 hover:bg-orange-500/10',
-              status === 'critical' &&
-                'text-red-600 hover:text-red-700 bg-red-500/20 hover:bg-red-500/30',
-              status === 'ok' &&
-                'text-green-600 hover:text-green-700 hover:bg-green-500/10',
-            )}
-          >
-            {status === 'empty' ? (
-              <AlertCircle className='h-3.5 w-3.5' />
-            ) : (
-              <CalendarDays className='h-3.5 w-3.5' />
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className='w-auto p-0' align='start'>
-          <div className='p-3 border-b bg-muted/30 space-y-3'>
-            <div className='flex items-center justify-between'>
-              <span className='text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate max-w-[150px]'>
-                {itemName}
-              </span>
-              {dateStr && (
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  className='h-6 text-[10px] text-destructive px-2'
-                  onClick={() => handleExpiryChange(itemName, undefined)}
-                >
-                  Сбросить
-                </Button>
-              )}
-            </div>
-            <div className='flex items-center gap-2'>
-              <Keyboard className='h-3.5 w-3.5 text-muted-foreground' />
-              <Input
-                placeholder='ДД.ММ.ГГ'
-                value={
-                  manualDateInput[itemName] ||
-                  (dateStr ? format(parseISO(dateStr), 'dd.MM.yy') : '')
-                }
-                onChange={e => handleManualDateInput(itemName, e.target.value)}
-                className='h-8 text-xs font-mono'
-              />
-            </div>
-          </div>
-          <Calendar
-            mode='single'
-            selected={dateStr ? parseISO(dateStr) : undefined}
-            onSelect={date => {
-              handleExpiryChange(itemName, date);
-            }}
-            locale={ru}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-    );
-  };
-
   const renderGroupDetails = (item: string, mode: 'expiry' | 'stock') => (
     <div className='space-y-3 max-w-full'>
       <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center justify-between'>
@@ -449,14 +449,24 @@ export const InventoryManager = () => {
             className='flex items-center justify-between gap-2 p-1 rounded hover:bg-muted/20 min-w-0'
           >
             <div className='flex items-center gap-1.5 flex-1 min-w-0'>
-              {mode === 'expiry' && <ExpiryPicker itemName={constituent} />}
+              {mode === 'expiry' && (
+                <ExpiryPicker
+                  itemName={constituent}
+                  status={getExpiryStatus(constituent)}
+                  dateStr={expirationDates[constituent]}
+                  onDateSelect={d => handleExpiryChange(constituent, d)}
+                />
+              )}
               <div className='flex flex-col min-w-0'>
                 <Popover
                   open={activeConstituent === constituent}
                   onOpenChange={open => !open && setActiveConstituent(null)}
                 >
                   <PopoverTrigger asChild>
-                    <span className='text-[11px] text-muted-foreground leading-tight truncate cursor-pointer' onClick={() => handleConstituentHint(constituent)}>
+                    <span
+                      className='text-[11px] text-muted-foreground leading-tight truncate cursor-pointer'
+                      onClick={() => handleConstituentHint(constituent)}
+                    >
                       {constituent}
                     </span>
                   </PopoverTrigger>
@@ -626,7 +636,14 @@ export const InventoryManager = () => {
                             <Popover>
                               <PopoverTrigger asChild>
                                 <div className='flex justify-center cursor-pointer outline-none'>
-                                  <ExpiryPicker itemName={item} />
+                                  <ExpiryPicker
+                                    itemName={item}
+                                    status={expiryStatus}
+                                    dateStr={expiryDate}
+                                    onDateSelect={d =>
+                                      handleExpiryChange(item, d)
+                                    }
+                                  />{' '}
                                 </div>
                               </PopoverTrigger>
                               <PopoverContent
@@ -637,7 +654,12 @@ export const InventoryManager = () => {
                               </PopoverContent>
                             </Popover>
                           ) : (
-                            <ExpiryPicker itemName={item} />
+                            <ExpiryPicker
+                              itemName={item}
+                              status={expiryStatus}
+                              dateStr={expiryDate}
+                              onDateSelect={d => handleExpiryChange(item, d)}
+                            />
                           )}
                         </TableCell>
                         <TableCell className='text-[12px] sm:text-sm font-medium px-1.5 py-2.5 break-words'>
