@@ -557,17 +557,6 @@ export const ShoppingList = ({
     };
   }, []);
 
-  const handleInputFocus = () => {
-    scrollPositionRef.current = window.scrollY;
-  };
-
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const relatedTarget = e.relatedTarget as HTMLElement | null;
-    const isButtonClick = relatedTarget?.closest?.('button') !== null;
-
-    if (isButtonClick) return;
-  };
-
   const handleCheckboxChange = (index: number) => {
     dispatch({
       type: 'UPDATE_ITEM_CHECKBOX',
@@ -611,6 +600,10 @@ export const ShoppingList = ({
   };
 
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
+     if (status === 'partial') {
+      scrollPositionRef.current = window.scrollY;
+    } 
+    
     // При переходе на карандаш (status: 'partial')
     // loadedAmount = item.amount (продажи + недогруз/излишек)
     // При переходе на крестик (status: 'none') loadedAmount = 0
@@ -1277,10 +1270,8 @@ export const ShoppingList = ({
                                         <Input
                                           autoFocus
                                           onFocus={e => {
-                                            handleInputFocus();
                                             e.currentTarget.select();
                                           }}
-                                          onBlur={handleInputBlur}
                                           type='number'
                                           value={
                                             loadedAmounts[index]?.toString() ??
