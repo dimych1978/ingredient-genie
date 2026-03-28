@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { SoundButton } from './ui/sound-button';
 
 type CombinedListItem = {
   name: string;
@@ -484,14 +485,15 @@ export const GroupedShoppingLists = ({
                               </Popover>
                             ) : (
                               <>
-                                <Button
+                                <SoundButton
                                   variant='ghost'
                                   size='icon'
                                   className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
+                                  soundType='decrement'
                                   onClick={() => handleStep(item.name, -1)}
                                 >
                                   <Minus className='h-3 w-3' />
-                                </Button>
+                                </SoundButton>
                                 <Input
                                   type='number'
                                   value={stockOnHand[item.name] || ''}
@@ -501,14 +503,15 @@ export const GroupedShoppingLists = ({
                                   className='h-8 w-10 sm:w-12 text-center p-1'
                                   placeholder='0'
                                 />
-                                <Button
+                                <SoundButton
                                   variant='ghost'
                                   size='icon'
                                   className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
+                                  soundType='increment'
                                   onClick={() => handleStep(item.name, 1)}
                                 >
                                   <Plus className='h-3 w-3' />
-                                </Button>
+                                </SoundButton>
                               </>
                             )}
                           </div>{' '}

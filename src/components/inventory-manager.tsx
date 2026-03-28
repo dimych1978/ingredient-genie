@@ -50,6 +50,7 @@ import {
 import { format, differenceInDays, parseISO, isValid, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { TelemetronSaleItem } from '@/types/telemetron';
+import { SoundButton } from './ui/sound-button';
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 const ALL_CONSTITUENTS_NORMALIZED = new Set(
@@ -473,14 +474,15 @@ export const InventoryManager = () => {
             </div>
             {mode === 'stock' && (
               <div className='flex items-center gap-1'>
-                <Button
+                <SoundButton
                   variant='outline'
                   size='icon'
                   className='h-6 w-6 rounded-full'
+                  soundType='decrement'
                   onClick={() => handleStep(constituent, -1)}
                 >
                   <Minus className='h-2.5 w-2.5' />
-                </Button>
+                </SoundButton>
                 <Input
                   type='number'
                   value={stockOnHand[constituent] || ''}
@@ -489,14 +491,15 @@ export const InventoryManager = () => {
                   inputMode='numeric'
                   placeholder='0'
                 />
-                <Button
+                <SoundButton
                   variant='outline'
                   size='icon'
                   className='h-6 w-6 rounded-full'
+                  soundType='increment'
                   onClick={() => handleStep(constituent, 1)}
                 >
                   <Plus className='h-2.5 w-2.5' />
-                </Button>
+                </SoundButton>
               </div>
             )}
           </div>
@@ -700,14 +703,15 @@ export const InventoryManager = () => {
                             </Popover>
                           ) : (
                             <div className='flex items-center gap-0.5 sm:gap-2 justify-center'>
-                              <Button
+                              <SoundButton
                                 variant='outline'
                                 size='icon'
                                 className='h-6 w-6 sm:h-7 sm:w-7 rounded-full'
+                                soundType='decrement'
                                 onClick={() => handleStep(item, -1)}
                               >
                                 <Minus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
-                              </Button>
+                              </SoundButton>
                               <Input
                                 type='number'
                                 value={stockOnHand[item] || ''}
@@ -718,14 +722,15 @@ export const InventoryManager = () => {
                                 inputMode='numeric'
                                 placeholder='0'
                               />
-                              <Button
+                              <SoundButton
                                 variant='outline'
                                 size='icon'
                                 className='h-6 w-6 sm:h-7 sm:w-7 rounded-full'
+                                soundType='increment'
                                 onClick={() => handleStep(item, 1)}
                               >
                                 <Plus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
-                              </Button>
+                              </SoundButton>
                             </div>
                           )}
                         </TableCell>
