@@ -40,6 +40,8 @@ import {
   CircleCheckBig,
   AlertTriangle,
   Bookmark,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +55,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   allMachines,
   alternativeDisplayNames,
   getMachineType,
@@ -60,6 +67,7 @@ import {
 } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
 import { ScrollNavButtons } from './scroll-nav-buttons';
+import { SoundButton } from './ui/sound-button';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -299,16 +307,18 @@ export const ShoppingList = ({
   } | null>(null);
   const CACHE_TTL = 300000; // 5 минут
 
-  // Анализ дубликатов для визуальной подсветки
+  // Анализ дубликатов для визуальной подсветки и расчета итогов
   const duplicateInfo = useMemo(() => {
     const counts = new Map<string, number>();
     const lasts = new Map<string, number>();
+    const totals = new Map<string, number>();
     shoppingList.forEach((item, idx) => {
       const name = item.name.toLowerCase().trim();
       counts.set(name, (counts.get(name) || 0) + 1);
       lasts.set(name, idx);
+      totals.set(name, (totals.get(name) || 0) + item.amount);
     });
-    return { counts, lasts };
+    return { counts, lasts, totals };
   }, [shoppingList]);
 
   // Стабильные функции
@@ -916,17 +926,24 @@ export const ShoppingList = ({
                                 item.name,
                               )}
                               {isDuplicate && isLastDuplicate && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Bookmark className='h-4 w-4 text-blue-400 fill-blue-400/20' />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Это последняя ячейка данного товара.</p>
-                                    <p>
-                                      Используйте её для ввода общего недогруза.
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="focus:outline-none p-1 hover:bg-blue-400/10 rounded-full transition-colors">
+                                      <Bookmark className='h-4 w-4 text-blue-400 fill-blue-400/20' />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-3 text-sm bg-blue-900 border-blue-700 text-blue-50 shadow-xl" align="start">
+                                    <div className="space-y-1">
+                                      <p className="font-semibold text-blue-200">Общий итог в аппарате:</p>
+                                      <p className="text-xl font-bold">
+                                        {duplicateInfo.totals.get(nameLower) ?? 0} {item.unit}
+                                      </p>
+                                      <p className="text-[10px] text-blue-300/70 border-t border-blue-700 pt-1 mt-2">
+                                        Сумма по всем ячейкам этого товара
+                                      </p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               )}
                               {item.planogramName &&
                                 extractProductName(
@@ -1194,10 +1211,11 @@ export const ShoppingList = ({
                                 {item.status === 'partial' && (
                                   <div className='ml-2'>
                                     <div className='flex items-center gap-1 flex-wrap'>
-                                      <Button
+                                      <SoundButton
                                         variant='outline'
                                         size='icon'
                                         className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                        soundType='decrement'
                                         onClick={() => {
                                           const current =
                                             loadedAmounts[index] ?? 0;
@@ -1207,8 +1225,8 @@ export const ShoppingList = ({
                                           );
                                         }}
                                       >
-                                        -
-                                      </Button>
+                                        <Minus className='h-4 w-4' />
+                                      </SoundButton>
                                       <div className='w-20 min-w-20'>
                                         <Input
                                           autoFocus
@@ -1232,10 +1250,11 @@ export const ShoppingList = ({
                                           autoComplete='off'
                                         />
                                       </div>
-                                      <Button
+                                      <SoundButton
                                         variant='outline'
                                         size='icon'
                                         className='h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 flex-shrink-0'
+                                        soundType='increment'
                                         onClick={() => {
                                           const current =
                                             loadedAmounts[index] ?? 0;
@@ -1245,8 +1264,8 @@ export const ShoppingList = ({
                                           );
                                         }}
                                       >
-                                        +
-                                      </Button>
+                                        <Plus className='h-4 w-4' />
+                                      </SoundButton>
                                     </div>
                                   </div>
                                 )}
