@@ -181,15 +181,13 @@ export const InventoryManager = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchIndex, setMatchIndex] = useState(0);
-  // const [manualDateInput, setManualDateInput] = useState<
-  //   Record<string, string>
-  // >({});
   const [activeHint, setActiveHint] = useState<string | null>(null);
   const [activeConstituent, setActiveConstituent] = useState<string | null>(
     null,
   );
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollPositionRef = useRef(0);
   const { getSalesByProducts } = useTelemetronApi();
 
   const loadMasterCatalog = useCallback(
@@ -354,25 +352,16 @@ export const InventoryManager = () => {
     }));
   };
 
-  //   const handleManualDateInput = (itemName: string, value: string) => {
-  //     const cleaned = value.replace(/\D/g, '').slice(0, 6);
-  //     let formatted = cleaned;
-  //     if (cleaned.length > 4) {
-  //       formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(4)}`;
-  //     } else if (cleaned.length > 2) {
-  //       formatted = `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
-  //     }
+  const handleInputFocus = () => {
+    scrollPositionRef.current = window.scrollY;
+  };
 
-  //     setManualDateInput(prev => ({ ...prev, [itemName]: formatted }));
-
-  //     if (cleaned.length === 6) {
-  //  const parsedDate = parse(cleaned, 'ddMMyy', new Date());
-  //        if (isValid(parsedDate)) {
-  //         console.log('object');
-  //         handleExpiryChange(itemName, parsedDate);
-  //       }
-  //     }
-  //   };
+  const handleInputBlur = () => {
+    // Небольшая задержка, чтобы клавиатура успела скрыться
+    setTimeout(() => {
+      window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
+    }, 50);
+  };
 
   const handleStep = (itemName: string, delta: number) => {
     const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
@@ -497,6 +486,8 @@ export const InventoryManager = () => {
                   type='number'
                   value={stockOnHand[constituent] || ''}
                   onChange={e => handleStockChange(constituent, e.target.value)}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   className='h-7 w-10 text-center text-[11px] p-0'
                   inputMode='numeric'
                   placeholder='0'
