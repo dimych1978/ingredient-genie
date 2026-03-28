@@ -25,15 +25,17 @@ export const useClickSound = () => {
   }, []);
 
   const playSound = useCallback((type: ClickType) => {
-    // Вибрация
+    // Вибрация (разная для плюса и минуса)
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         if (type === 'increment') {
-          navigator.vibrate(8);
+          navigator.vibrate(20);
         } else {
-          navigator.vibrate([5, 5]);
+          navigator.vibrate(20);
         }
-      } catch (e) {}
+      } catch (e) {
+        // тихо падаем
+      }
     }
 
     // Звук
@@ -49,8 +51,8 @@ export const useClickSound = () => {
         ctx.resume();
       }
 
-      // Шум (как в твоей версии)
-      const bufferSize = ctx.sampleRate * 0.01;
+      // Шум
+      const bufferSize = ctx.sampleRate * 0.008; // чуть короче
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
       
@@ -61,22 +63,26 @@ export const useClickSound = () => {
       const source = ctx.createBufferSource();
       source.buffer = buffer;
 
-      // Фильтр с разной частотой для плюса и минуса
+      // Фильтр
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.value = type === 'increment' ? 2200 : 800;
-      filter.Q.value = 1.2;
+      filter.frequency.value = type === 'increment' ? 2000 : 700;
+      filter.Q.value = 1.0;
 
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.5, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.01);
+      // Разная громкость для плюса и минуса
+      const volume = type === 'increment' ? 0.08 : 0.05;
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
 
       source.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
 
       source.start();
-    } catch (error) {}
+    } catch (error) {
+      // тихо падаем
+    }
   }, [initAudio]);
 
   const playIncrement = useCallback(() => playSound('increment'), [playSound]);
