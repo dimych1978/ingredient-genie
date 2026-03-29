@@ -526,19 +526,29 @@ export const GroupedShoppingLists = ({
                               </>
                             )}
                           </div>{' '}
-                          <Popover open={activeHint === item.name}>
-                            <PopoverTrigger asChild>
-                              <span
-                                className='min-w-0 flex-1 break-words line-clamp-2 text-xs sm:text-sm leading-tight'
-                                onClick={() => handleHintToggle(item.name)}
-                              >
+                          <div className='flex flex-col min-w-0 flex-1'>
+                            <Popover open={activeHint === item.name}>
+                              <PopoverTrigger asChild>
+                                <span
+                                  className={cn(
+                                    'min-w-0 break-words line-clamp-2 text-xs sm:text-sm leading-tight cursor-pointer',
+                                    isGroup && 'font-bold text-primary'
+                                  )}
+                                  onClick={() => handleHintToggle(item.name)}
+                                >
+                                  {item.name}
+                                </span>
+                              </PopoverTrigger>
+                              <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
                                 {item.name}
+                              </PopoverContent>
+                            </Popover>
+                            {isGroup && (
+                              <span className='text-[8px] text-primary/60 font-medium uppercase tracking-tighter mt-0.5'>
+                                Группа
                               </span>
-                            </PopoverTrigger>
-                            <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
-                              {item.name}
-                            </PopoverContent>
-                          </Popover>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className='px-1 py-2 md:px-2 text-right text-xs sm:text-sm overflow-hidden'>
