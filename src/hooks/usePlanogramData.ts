@@ -33,10 +33,6 @@ export const usePlanogramData = () => {
 
       console.log('🚀 ~ usePlanogramData ~ machineType:', machineType);
       if (machineType === 'bottle') {
-        console.log(
-          'Используем захардкоженную планограмму для бутылочного аппарата'
-        );
-
         return {
           planogram: planogramsHardCode.bottle.map(
             (item, index) => `${index + 1}. ${item}`

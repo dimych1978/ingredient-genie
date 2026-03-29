@@ -70,7 +70,7 @@ export const allMachines: Machine[] = [
     id: '33412',
     name: 'Автодор на Советской кофе 227',
     location: 'Автодор на Советской кофе\nул. Советская, д. 11',
-    model: 'Necta Opera',
+    model: 'Necta Opera 33412',
   },
   {
     id: '39496',
@@ -1612,6 +1612,7 @@ export const MASTER_MACHINE_IDS = [
   '33367',
   '66693',
   '55138',
+  '39496',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -1688,6 +1689,65 @@ export const getMachineType = (
 };
 
 export const machineIngredients: MachineIngredients = {
+  'opera 33412': [
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'Кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'Сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    {
+      name: 'ваниль',
+      apiNames: ['Капучино Ваниль', 'ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'амаретто',
+      apiNames: ['Капучино Амаретто', 'Раф Амаретто'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'чай',
+      apiNames: ['Чай', 'чай фруктовый'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'стаканы opera',
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы 300',
+        'стаканы opera',
+        'стаканы',
+      ],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышка', 'крышки 80'],
+      unit: 'шт',
+      type: 'checkbox',
+    },
+    {
+      name: 'размешиватели 125',
+      apiNames: ['Размешиватель', 'размешиватели 125', 'размешиватели'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+  ],
   opera: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
