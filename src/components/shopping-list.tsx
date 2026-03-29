@@ -537,10 +537,10 @@ export const ShoppingList = ({
         setTimeout(() => {
           window.scrollTo({
             top: scrollPositionRef.current,
-            behavior: 'smooth',
+            behavior: 'instant',
           });
           scrollPositionRef.current = 0;
-        }, 50);
+        }, 100);
       }
     };
 
@@ -548,7 +548,7 @@ export const ShoppingList = ({
       'resize',
       handleVisualViewportResize,
     );
-    
+
     return () => {
       window.visualViewport?.removeEventListener(
         'resize',
@@ -600,10 +600,10 @@ export const ShoppingList = ({
   };
 
   const handleStatusChange = (index: number, status: 'none' | 'partial') => {
-     if (status === 'partial') {
-      scrollPositionRef.current = window.scrollY;
-    } 
-    
+    if (status === 'partial') {
+      setTimeout(() => (scrollPositionRef.current = window.scrollY), 50);
+    }
+
     // При переходе на карандаш (status: 'partial')
     // loadedAmount = item.amount (продажи + недогруз/излишек)
     // При переходе на крестик (status: 'none') loadedAmount = 0
@@ -1271,6 +1271,12 @@ export const ShoppingList = ({
                                           autoFocus
                                           onFocus={e => {
                                             e.currentTarget.select();
+                                            if (scrollPositionRef.current > 0) {
+                                              window.scrollTo(
+                                                0,
+                                                scrollPositionRef.current,
+                                              );
+                                            }
                                           }}
                                           type='number'
                                           value={
