@@ -139,10 +139,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Kikko ES6',
   },
   {
-    id: '51352',
-    name: 'Автомойка Пузыри',
+    id: '58739',
+    name: 'Автомойка Пузыри 187',
     location: 'Автомойка Пузыри\nул. Коммунальная, д. 21',
-    model: 'Necta Colibri',
+    model: 'Saeco Cristallo 600 58739',
   },
   {
     id: '58694',
@@ -187,7 +187,7 @@ export const allMachines: Machine[] = [
     model: 'Necta Colibri',
   },
   {
-    id: '58698',
+    id: '58757',
     name: 'Автосервис Динамика 134',
     location: 'Автосервис Динамика 134\nПервомайский просп., д.76а',
     model: 'Necta Colibri',
@@ -913,12 +913,6 @@ export const allMachines: Machine[] = [
     model: 'Unicum FoodBox',
   },
   {
-    id: '58739',
-    name: 'Национальный театр 187',
-    location: 'Национальный театр 187\nКарла Маркса, д. 19',
-    model: 'Saeco Cristallo 600',
-  },
-  {
     id: '47743',
     name: 'Озон кофе 246',
     location: 'Озон кофе\nПряжинское шоссе, 10, стр. 1',
@@ -1073,12 +1067,6 @@ export const allMachines: Machine[] = [
     name: 'Петрович снэк 22',
     location: 'Петрович снек 22\nСоломенское шоссе, 5',
     model: 'Unicum FoodBox',
-  },
-  {
-    id: '58757',
-    name: 'ПКФ Слово "Авто с пробегом "',
-    location: 'ПКФ Слово "Авто с пробегом "\nул. Лоссосинское шоссе, д. 39',
-    model: 'Necta Colibri',
   },
   {
     id: '58759',
@@ -1613,7 +1601,7 @@ export const MASTER_MACHINE_IDS = [
   '66693',
   '55138',
   '39496',
-  '33412'
+  '33412',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -1690,6 +1678,58 @@ export const getMachineType = (
 };
 
 export const machineIngredients: MachineIngredients = {
+  'Saeco Cristallo 600 58739':  [
+    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
+    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+    {
+      name: 'ваниль',
+      apiNames: ['Капучино Ваниль', 'ваниль'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'кисель',
+      apiNames: ['Кисель'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'чай',
+      apiNames: ['Чай', 'чай фруктовый'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'стаканы 150',
+      apiNames: [
+        'Стаканчик',
+        'Стакан',
+        'стаканы 300',
+        'стаканы',
+      ],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'размешиватели 105',
+      apiNames: ['Размешиватель'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+  ],
   'opera 33412': [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
@@ -2303,10 +2343,7 @@ export const PRODUCT_GROUPS: Record<string, string[]> = {
     'Лимонад "Добрый Лимон Лайм" 0,33 ж/б',
   ],
   'Сок Добрый 0.33': ['Сок Добрый Мультифрукт 0,33', 'Сок Добрый Яблоко 0,33'],
-  'Сок Палпи в ассорт. 0.45': [
-    'Сок Палпи Апельсин 0,45',
-    'Сок Палпи Вишня 0,45',
-  ],
+  'Сок Палпи 0.45': ['Сок Палпи Апельсин 0,45', 'Сок Палпи Вишня 0,45'],
   'Чай Рич 0,5': [
     'Чай Рич/Черноголовка Зеленый 0,5',
     'Чай Рич/Черноголовка Черный 0,5',
