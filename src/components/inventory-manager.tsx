@@ -459,8 +459,15 @@ export const InventoryManager = () => {
                       {constituent}
                     </span>
                   </PopoverTrigger>
-                  <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
-                    {constituent}
+                  <PopoverContent className='w-auto max-w-[280px] p-3 bg-popover/95 backdrop-blur-sm shadow-xl'>
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">{constituent}</p>
+                      {expirationDates[constituent] && (
+                        <p className="text-xs text-muted-foreground">
+                          Срок до: <span className="font-mono text-red-500 font-bold">{format(parseISO(expirationDates[constituent]), 'dd.MM.yy')}</span>
+                        </p>
+                      )}
+                    </div>
                   </PopoverContent>
                 </Popover>
                 {mode === 'expiry' && expirationDates[constituent] && (
@@ -672,8 +679,18 @@ export const InventoryManager = () => {
                                   {item}
                                 </span>
                               </PopoverTrigger>
-                              <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
-                                {item}
+                              <PopoverContent className='w-auto max-w-[280px] p-3 bg-popover/95 backdrop-blur-sm shadow-xl'>
+                                <div className="space-y-1">
+                                  <p className="font-medium text-sm">{item}</p>
+                                  {expiryDate && !isGroup && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Срок до: <span className="font-mono text-red-500 font-bold">{format(parseISO(expiryDate), 'dd.MM.yy')}</span>
+                                    </p>
+                                  )}
+                                  {isGroup && (
+                                    <p className="text-[10px] text-primary/70 uppercase">Группа товаров</p>
+                                  )}
+                                </div>
                               </PopoverContent>
                             </Popover>
                             {expiryDate && !isGroup && (
