@@ -29,9 +29,9 @@ export const useClickSound = () => {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         if (type === 'increment') {
-          navigator.vibrate(20);
+          navigator.vibrate(50);
         } else {
-          navigator.vibrate(20);
+          navigator.vibrate(50);
         }
       } catch (e) {
         // тихо падаем
@@ -70,7 +70,6 @@ export const useClickSound = () => {
       filter.Q.value = 1.0;
 
       const gain = ctx.createGain();
-      // Разная громкость для плюса и минуса
       const volume = 0.2;
       gain.gain.setValueAtTime(volume, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);

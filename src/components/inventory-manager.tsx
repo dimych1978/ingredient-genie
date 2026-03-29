@@ -489,7 +489,7 @@ export const InventoryManager = () => {
                 <SoundButton
                   variant='outline'
                   size='icon'
-                  className='h-6 w-6 rounded-full'
+                  className='h-6 w-6 rounded-full p-1.5'
                   soundType='decrement'
                   onClick={() => handleStep(constituent, -1)}
                 >
@@ -508,7 +508,7 @@ export const InventoryManager = () => {
                 <SoundButton
                   variant='outline'
                   size='icon'
-                  className='h-6 w-6 rounded-full'
+                  className='h-6 w-6 rounded-full p-1.5'
                   soundType='increment'
                   onClick={() => handleStep(constituent, 1)}
                 >
@@ -759,7 +759,7 @@ export const InventoryManager = () => {
                               <SoundButton
                                 variant='outline'
                                 size='icon'
-                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full'
+                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
                                 soundType='decrement'
                                 onClick={() => handleStep(item, -1)}
                               >
@@ -778,7 +778,7 @@ export const InventoryManager = () => {
                               <SoundButton
                                 variant='outline'
                                 size='icon'
-                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full'
+                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
                                 soundType='increment'
                                 onClick={() => handleStep(item, 1)}
                               >
