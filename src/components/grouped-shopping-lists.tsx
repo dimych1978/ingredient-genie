@@ -439,7 +439,11 @@ export const GroupedShoppingLists = ({
                                 <PopoverTrigger asChild>
                                   <div className='relative cursor-pointer'>
                                     <Input
-                                      value={getGroupTotal(item.name)}
+                                      value={
+                                        getGroupTotal(item.name) === '0'
+                                          ? ''
+                                          : getGroupTotal(item.name)
+                                      }
                                       readOnly
                                       className='h-8 w-10 sm:w-12 text-center p-1 font-bold border-primary/30 bg-primary/10'
                                     />
@@ -464,7 +468,10 @@ export const GroupedShoppingLists = ({
                                             <Input
                                               type='number'
                                               value={
-                                                stockOnHand[constituent] || ''
+                                                stockOnHand[constituent] === '0'
+                                                  ? ''
+                                                  : stockOnHand[constituent] ||
+                                                    ''
                                               }
                                               onChange={e =>
                                                 handleGroupStockChange(
@@ -496,7 +503,11 @@ export const GroupedShoppingLists = ({
                                 </SoundButton>
                                 <Input
                                   type='number'
-                                  value={stockOnHand[item.name] || ''}
+                                  value={
+                                    stockOnHand[item.name] === '0'
+                                      ? ''
+                                      : stockOnHand[item.name] || ''
+                                  }
                                   onChange={e =>
                                     onStockChange(item.name, e.target.value)
                                   }

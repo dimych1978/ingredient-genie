@@ -71,7 +71,7 @@ export const useClickSound = () => {
 
       const gain = ctx.createGain();
       // Разная громкость для плюса и минуса
-      const volume = type === 'increment' ? 0.08 : 0.05;
+      const volume = 0.2;
       gain.gain.setValueAtTime(volume, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
 

@@ -497,7 +497,7 @@ export const InventoryManager = () => {
                 </SoundButton>
                 <Input
                   type='number'
-                  value={stockOnHand[constituent] || ''}
+                  value={stockOnHand[constituent] === '0' ? '' : stockOnHand[constituent] || ''}
                   onChange={e => handleStockChange(constituent, e.target.value)}
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
@@ -741,7 +741,7 @@ export const InventoryManager = () => {
                               <PopoverTrigger asChild>
                                 <div className='relative cursor-pointer px-1'>
                                   <Input
-                                    value={getGroupTotal(item)}
+                                    value={getGroupTotal(item) === '0' ? '' : getGroupTotal(item)}
                                     readOnly
                                     className='h-7 text-center bg-muted/50 font-bold border-primary/20 text-[11px] p-0'
                                   />
@@ -767,7 +767,7 @@ export const InventoryManager = () => {
                               </SoundButton>
                               <Input
                                 type='number'
-                                value={stockOnHand[item] || ''}
+                                value={stockOnHand[item] === '0' ? '' : stockOnHand[item] || ''}
                                 onChange={e =>
                                   handleStockChange(item, e.target.value)
                                 }
