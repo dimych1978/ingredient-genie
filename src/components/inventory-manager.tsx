@@ -66,7 +66,7 @@ const ALL_COFFEE_INGREDIENTS = new Set(
 interface ExpiryPickerProps {
   itemName: string;
   status: 'ok' | 'critical' | 'empty';
-  dateStr: string;
+  dateStr?: string;
   onDateSelect: (date: Date | undefined) => void;
 }
 
@@ -161,13 +161,13 @@ const ExpiryPicker = ({
         <Calendar
           mode='single'
           selected={dateStr ? parseISO(dateStr) : undefined}
+          defaultMonth={dateStr ? parseISO(dateStr) : undefined}
           onSelect={date => {
             onDateSelect(date);
             if (date) setLocalManualInput(format(date, 'dd.MM.yy'));
             else setLocalManualInput('');
           }}
           locale={ru}
-          initialFocus
         />
       </PopoverContent>
     </Popover>
@@ -460,11 +460,17 @@ export const InventoryManager = () => {
                     </span>
                   </PopoverTrigger>
                   <PopoverContent className='w-auto max-w-[280px] p-3 bg-popover/95 backdrop-blur-sm shadow-xl'>
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">{constituent}</p>
+                    <div className='space-y-1'>
+                      <p className='font-medium text-sm'>{constituent}</p>
                       {expirationDates[constituent] && (
-                        <p className="text-xs text-muted-foreground">
-                          Срок до: <span className="font-mono text-red-500 font-bold">{format(parseISO(expirationDates[constituent]), 'dd.MM.yy')}</span>
+                        <p className='text-xs text-muted-foreground'>
+                          Срок до:{' '}
+                          <span className='font-mono text-red-500 font-bold'>
+                            {format(
+                              parseISO(expirationDates[constituent]),
+                              'dd.MM.yy',
+                            )}
+                          </span>
                         </p>
                       )}
                     </div>
@@ -634,14 +640,23 @@ export const InventoryManager = () => {
                             <Popover>
                               <PopoverTrigger asChild>
                                 <div className='flex justify-center cursor-pointer outline-none'>
-                                  <ExpiryPicker
-                                    itemName={item}
-                                    status={expiryStatus}
-                                    dateStr={expiryDate}
-                                    onDateSelect={d =>
-                                      handleExpiryChange(item, d)
-                                    }
-                                  />{' '}
+                                  <div
+                                    className={cn(
+                                      'h-6 w-6 rounded-full flex items-center justify-center transition-colors',
+                                      expiryStatus === 'empty' &&
+                                        'text-orange-500 hover:text-orange-600 hover:bg-orange-500/10',
+                                      expiryStatus === 'critical' &&
+                                        'text-red-600 bg-red-500/20',
+                                      expiryStatus === 'ok' &&
+                                        'text-green-600 hover:bg-green-500/10',
+                                    )}
+                                  >
+                                    {expiryStatus === 'empty' ? (
+                                      <AlertCircle className='h-3.5 w-3.5' />
+                                    ) : (
+                                      <CalendarDays className='h-3.5 w-3.5' />
+                                    )}
+                                  </div>{' '}
                                 </div>
                               </PopoverTrigger>
                               <PopoverContent
@@ -680,15 +695,23 @@ export const InventoryManager = () => {
                                 </span>
                               </PopoverTrigger>
                               <PopoverContent className='w-auto max-w-[280px] p-3 bg-popover/95 backdrop-blur-sm shadow-xl'>
-                                <div className="space-y-1">
-                                  <p className="font-medium text-sm">{item}</p>
+                                <div className='space-y-1'>
+                                  <p className='font-medium text-sm'>{item}</p>
                                   {expiryDate && !isGroup && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Срок до: <span className="font-mono text-red-500 font-bold">{format(parseISO(expiryDate), 'dd.MM.yy')}</span>
+                                    <p className='text-xs text-muted-foreground'>
+                                      Срок до:{' '}
+                                      <span className='font-mono text-red-500 font-bold'>
+                                        {format(
+                                          parseISO(expiryDate),
+                                          'dd.MM.yy',
+                                        )}
+                                      </span>
                                     </p>
                                   )}
                                   {isGroup && (
-                                    <p className="text-[10px] text-primary/70 uppercase">Группа товаров</p>
+                                    <p className='text-[10px] text-primary/70 uppercase'>
+                                      Группа товаров
+                                    </p>
                                   )}
                                 </div>
                               </PopoverContent>
