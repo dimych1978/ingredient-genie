@@ -192,12 +192,58 @@ export const InventoryManager = () => {
 
   const loadMasterCatalog = useCallback(
     async (force = false) => {
+      // 1. Пытаемся взять из кеша, если не force
       const cachedCatalog = localStorage.getItem('master_catalog');
       if (cachedCatalog && !force) {
-        setCatalog(JSON.parse(cachedCatalog));
+        let parsed = JSON.parse(cachedCatalog);
+
+        const stopWords = [
+          'Лимонад "Добрый" 0,5 в ассорт.',
+          'Лимонад "Добрый" ж/б 0,33 в ассорт.',
+          'Лимонад "Добрый Фанта" 0,5',
+          'Лимонад "Добрый Фанта" 0,33 ж/б',
+          'Лимонад "Добрый Спрайт" 0,33 ж/б',
+          'Лимонад "Добрый Спрайт" 0,5',
+          'Добрый/Черноголовка вода+сок в ассорт.',
+          'Лимонад Черноголовка 0,5 в ассорт.',
+          'Лимонад Черноголовка ж/б 0.33 в ассорт.',
+          'Лимонад Фрустайл в ассорт. 0,5',
+          'Лимонад Фрустайл ж/б в ассорт. 0,33',
+          'Сок Добрый в ассорт 0.33',
+          'Сок Рич в ассорт.',
+          'Конф. Простое Чудо 40г',
+          'Меллер/Ментос',
+          'Милкис напиток 0.3',
+          'Калинов морс/Русморс 0,5',
+          'Калинов морс 0,5',
+          'нет данных',
+          'тест',
+          'пр',
+          'telemetron',
+        ];
+
+        // Фильтруем устаревшие названия
+        const isDeprecated = (name: string) => {
+          const lower = name.toLowerCase();
+          return stopWords.some(word => lower.includes(word));
+        };
+
+        const filtered = parsed.filter((item: string) => !isDeprecated(item));
+
+        if (filtered.length !== parsed.length) {
+          console.log(
+            `Отфильтровано ${parsed.length - filtered.length} устаревших товаров`,
+          );
+          // Сохраняем отфильтрованный каталог обратно в localStorage
+          localStorage.setItem('master_catalog', JSON.stringify(filtered));
+          parsed = filtered;
+        }
+
+        setCatalog(parsed);
         return;
       }
 
+      // 2. Принудительное обновление — загружаем свежие данные из API
       setLoading(true);
       try {
         const dateTo = new Date();
@@ -207,6 +253,7 @@ export const InventoryManager = () => {
         const ingredientsSet = new Set<string>();
         const snacksSet = new Set<string>();
 
+        // Собираем ингредиенты из конфигурации
         Object.values(machineIngredients).forEach(modelIngredients => {
           modelIngredients.forEach(ing => {
             if (ing.name.toLowerCase() !== 'вода') {
@@ -215,6 +262,7 @@ export const InventoryManager = () => {
           });
         });
 
+        // Загружаем продажи из мастер-аппаратов
         const promises = MASTER_MACHINE_IDS.map(async id => {
           try {
             const salesData = await getSalesByProducts(
@@ -232,7 +280,7 @@ export const InventoryManager = () => {
                 if (isDrink) return;
 
                 const match = sale.planogram.name.match(
-                  /^(?:[0-9A-Za-z]+\.)\s*(.+)$/,
+                  /^[0-9A-Za-z]+\.\s*(.+)$/,
                 );
                 const cleanName = (
                   match ? match[1] : sale.planogram.name
@@ -259,11 +307,13 @@ export const InventoryManager = () => {
 
         await Promise.all(promises);
 
+        // Добавляем бутылочные товары и группы
         planogramsHardCode.bottle.forEach(item => snacksSet.add(item.trim()));
         Object.keys(PRODUCT_GROUPS).forEach(groupName =>
           snacksSet.add(groupName.trim()),
         );
 
+        // Сортируем
         const sortedIngredients = Array.from(ingredientsSet).sort((a, b) =>
           a.localeCompare(b, 'ru'),
         );
@@ -273,8 +323,47 @@ export const InventoryManager = () => {
 
         const fullCatalog = [...sortedIngredients, ...sortedSnacks];
 
-        setCatalog(fullCatalog);
-        localStorage.setItem('master_catalog', JSON.stringify(fullCatalog));
+        const stopWords = [
+          'Лимонад "Добрый" 0,5 в ассорт.',
+          'Лимонад "Добрый" ж/б 0,33 в ассорт.',
+          'Лимонад "Добрый Фанта" 0,5',
+          'Лимонад "Добрый Фанта" 0,33 ж/б',
+          'Лимонад "Добрый Спрайт" 0,33 ж/б',
+          'Лимонад "Добрый Спрайт" 0,5',
+          'Добрый/Черноголовка вода+сок в ассорт.',
+          'Лимонад Черноголовка 0,5 в ассорт.',
+          'Лимонад Черноголовка ж/б 0.33 в ассорт.',
+          'Лимонад Фрустайл в ассорт. 0,5',
+          'Лимонад Фрустайл ж/б в ассорт. 0,33',
+          'Сок Добрый в ассорт 0.33',
+          'Сок Рич в ассорт.',
+          'Конф. Простое Чудо 40г',
+          'Меллер/Ментос',
+          'Милкис напиток 0.3',
+          'Калинов морс/Русморс 0,5',
+          'Калинов морс 0,5',
+          'нет данных',
+          'тест',
+          'пр',
+          'telemetron',
+        ];
+
+        const isDeprecated = (name: string) => {
+          const lower = name.toLowerCase();
+          return stopWords.some(word => lower.includes(word.toLowerCase()));
+        };
+
+        const filteredCatalog = fullCatalog.filter(item => !isDeprecated(item));
+
+        if (filteredCatalog.length !== fullCatalog.length) {
+          console.log(
+            `Отфильтровано ${fullCatalog.length - filteredCatalog.length} устаревших товаров из API`,
+          );
+        }
+
+        // Сохраняем в state и localStorage уже отфильтрованный каталог
+        setCatalog(filteredCatalog);
+        localStorage.setItem('master_catalog', JSON.stringify(filteredCatalog));
       } catch (error) {
         console.error('Ошибка формирования мастер-каталога:', error);
       } finally {
@@ -314,16 +403,25 @@ export const InventoryManager = () => {
     setMatchIndex(0);
   }, [searchQuery]);
 
-  useEffect(() => {
-    if (matches.length > 0 && matches[matchIndex] !== undefined) {
-      const element = document.getElementById(
-        `inventory-item-${matches[matchIndex]}`,
-      );
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const scrollToMatch = useCallback(
+    (index: number, retryCount: number = 0) => {
+      if (matches.length > 0 && matches[index] !== undefined) {
+        const element = document.getElementById(
+          `inventory-item-${matches[index]}`,
+        );
+        if (element) {
+          element.scrollIntoView({ behavior: 'instant', block: 'center' });
+        } else if (retryCount < 3) {
+          setTimeout(() => scrollToMatch(index, retryCount + 1), 50);
+        }
       }
-    }
-  }, [matchIndex, matches]);
+    },
+    [matches],
+  );
+
+  useEffect(() => {
+    scrollToMatch(matchIndex);
+  }, [matchIndex, matches, scrollToMatch]);
 
   const handleStockChange = (itemName: string, value: string) => {
     if (/^\d{0,3}$/.test(value)) {
@@ -417,12 +515,17 @@ export const InventoryManager = () => {
 
   const nextMatch = (e: React.MouseEvent) => {
     e.preventDefault();
-    setMatchIndex(prev => (prev < matches.length - 1 ? prev + 1 : 0));
+    const nextIdx = matchIndex < matches.length - 1 ? matchIndex + 1 : 0;
+    setMatchIndex(nextIdx);
+    // Принудительный скролл с задержкой, чтобы сработал после скрытия клавиатуры
+    setTimeout(() => scrollToMatch(nextIdx), 50);
   };
 
   const prevMatch = (e: React.MouseEvent) => {
     e.preventDefault();
-    setMatchIndex(prev => (prev > 0 ? prev - 1 : matches.length - 1));
+    const prevIdx = matchIndex > 0 ? matchIndex - 1 : matches.length - 1;
+    setMatchIndex(prevIdx);
+    setTimeout(() => scrollToMatch(prevIdx), 50);
   };
 
   const renderGroupDetails = (item: string, mode: 'expiry' | 'stock') => (
@@ -497,7 +600,11 @@ export const InventoryManager = () => {
                 </SoundButton>
                 <Input
                   type='number'
-                  value={stockOnHand[constituent] === '0' ? '' : stockOnHand[constituent] || ''}
+                  value={
+                    stockOnHand[constituent] === '0'
+                      ? ''
+                      : stockOnHand[constituent] || ''
+                  }
                   onChange={e => handleStockChange(constituent, e.target.value)}
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
@@ -741,7 +848,11 @@ export const InventoryManager = () => {
                               <PopoverTrigger asChild>
                                 <div className='relative cursor-pointer px-1'>
                                   <Input
-                                    value={getGroupTotal(item) === '0' ? '' : getGroupTotal(item)}
+                                    value={
+                                      getGroupTotal(item) === '0'
+                                        ? ''
+                                        : getGroupTotal(item)
+                                    }
                                     readOnly
                                     className='h-7 text-center bg-muted/50 font-bold border-primary/20 text-[11px] p-0'
                                   />
@@ -767,7 +878,11 @@ export const InventoryManager = () => {
                               </SoundButton>
                               <Input
                                 type='number'
-                                value={stockOnHand[item] === '0' ? '' : stockOnHand[item] || ''}
+                                value={
+                                  stockOnHand[item] === '0'
+                                    ? ''
+                                    : stockOnHand[item] || ''
+                                }
                                 onChange={e =>
                                   handleStockChange(item, e.target.value)
                                 }

@@ -45,3 +45,5 @@ firebase-debug.log
 firestore-debug.log
 
 extractData.js
+forRedis_clean.json
+forRedis_backup.json
