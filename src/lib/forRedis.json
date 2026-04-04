@@ -1339,16 +1339,6 @@
     "selectedSyrups": [],
     "carryOver": 288
   },
-  "33367-стаканчик": {
-    "status": "none",
-    "requiredAmount": 17,
-    "loadedAmount": 0,
-    "timestamp": "2026-01-30T10:38:40.475Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 17
-  },
   "33367-размешиватель": {
     "status": "none",
     "requiredAmount": 119,
@@ -1598,26 +1588,6 @@
     "selectedSizes": [],
     "selectedSyrups": [],
     "carryOver": 846
-  },
-  "33367-стакан": {
-    "status": "none",
-    "requiredAmount": 110,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-06T10:50:12.500Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 110
-  },
-  "33367-стаканы": {
-    "status": "none",
-    "requiredAmount": 35,
-    "loadedAmount": 0,
-    "timestamp": "2026-02-27T06:45:16.044Z",
-    "checked": false,
-    "selectedSizes": [],
-    "selectedSyrups": [],
-    "carryOver": 35
   },
   "33367-размешиватели": {
     "status": "none",
