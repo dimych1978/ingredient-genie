@@ -198,6 +198,7 @@ export const InventoryManager = () => {
         let parsed = JSON.parse(cachedCatalog);
 
         const stopWords = [
+          'Амаретто',
           'Лимонад "Добрый" 0,5 в ассорт.',
           'Лимонад "Добрый" ж/б 0,33 в ассорт.',
           'Лимонад "Добрый Фанта" 0,5',
