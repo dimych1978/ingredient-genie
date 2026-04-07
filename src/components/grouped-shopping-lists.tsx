@@ -455,39 +455,41 @@ export const GroupedShoppingLists = ({
                                       {item.name}
                                       <Info className='h-3 w-3 text-primary' />
                                     </h4>
-                                    <div className='grid gap-3'>
-                                      {PRODUCT_GROUPS[item.name].map(
-                                        constituent => (
-                                          <div
-                                            key={constituent}
-                                            className='flex items-center justify-between gap-2'
-                                          >
-                                            <span className='text-xs text-muted-foreground leading-tight flex-1'>
-                                              {constituent}
-                                            </span>
-                                            <Input
-                                              type='number'
-                                              value={
-                                                stockOnHand[constituent] === '0'
-                                                  ? ''
-                                                  : stockOnHand[constituent] ||
-                                                    ''
-                                              }
-                                              onChange={e =>
-                                                handleGroupStockChange(
-                                                  constituent,
-                                                  e.target.value,
-                                                )
-                                              }
-                                              placeholder='0'
-                                              className='h-8 w-12 text-center text-xs'
-                                              inputMode='numeric'
-                                            />
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  </div>
+<div className='grid gap-3'>
+  {PRODUCT_GROUPS[item.name].map(constituent => (
+    <div key={constituent} className='flex items-center justify-between gap-2'>
+      <span className='text-xs text-muted-foreground leading-tight flex-1'>
+        {constituent}
+      </span>
+      <div className='flex items-center gap-1'>
+        <Button
+          variant='outline'
+          size='icon'
+          className='h-7 w-7 rounded-full'
+          onClick={() => handleStep(constituent, -1)}
+        >
+          <Minus className='h-3 w-3' />
+        </Button>
+        <Input
+          type='number'
+          value={stockOnHand[constituent] === '0' ? '' : stockOnHand[constituent] || ''}
+          onChange={e => handleGroupStockChange(constituent, e.target.value)}
+          placeholder='0'
+          className='h-8 w-12 text-center text-xs'
+          inputMode='numeric'
+        />
+        <Button
+          variant='outline'
+          size='icon'
+          className='h-7 w-7 rounded-full'
+          onClick={() => handleStep(constituent, 1)}
+        >
+          <Plus className='h-3 w-3' />
+        </Button>
+      </div>
+    </div>
+  ))}
+</div>                                  </div>
                                 </PopoverContent>
                               </Popover>
                             ) : (
