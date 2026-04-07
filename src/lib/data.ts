@@ -739,10 +739,10 @@ export const allMachines: Machine[] = [
     model: 'Saeco Cristallo 600',
   },
   {
-    id: '46561',
+    id: '67254',
     name: 'Лемана Про столовая корнер',
     location: 'Лемана Про столовая корнер\nЛесной проспект, 49',
-    model: 'Necta Krea Touch',
+    model: 'Jetinno, JL28',
   },
   {
     id: '33405',
@@ -985,10 +985,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Opera',
   },
   {
-    id: '36153',
+    id: '46561',
     name: 'Офисный центр на Свердлова корнер 213',
     location: 'Офисный центр на Свердлова корнер 213\nул. Свердлова, д. 18',
-    model: 'Necta Koro Prime',
+    model: 'Necta Krea Touch',
   },
   {
     id: '58910',
@@ -1897,12 +1897,11 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'checkbox',
     },
-    // Чекбоксы
     {
       name: 'стаканы',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
-      type: 'checkbox',
+      type: 'auto',
     },
     {
       name: 'крышки',
