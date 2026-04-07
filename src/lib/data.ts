@@ -1897,12 +1897,11 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'checkbox',
     },
-    // Чекбоксы
     {
       name: 'стаканы',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
-      type: 'checkbox',
+      type: 'auto',
     },
     {
       name: 'крышки',

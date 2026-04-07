@@ -148,6 +148,7 @@ export const GroupedShoppingLists = ({
           amount: number;
           unit: 'шт';
           breakdown: Record<string, { name: string; amount: number }>;
+          isCoffeeIngredient?: boolean;
         }
       >();
 
@@ -202,51 +203,113 @@ export const GroupedShoppingLists = ({
         }
       });
 
-      for (const key in allOverrides) {
-        const override = allOverrides[key];
-        const machineIdFromFile = key.split('-')[0];
+for (const key in allOverrides) {
+  const override = allOverrides[key];
+  const machineIdFromFile = key.split('-')[0];
 
-        if (machineIdsToProcess.includes(machineIdFromFile)) {
-          const name = key.substring(machineIdFromFile.length + 1);
-          let carryOver = override.carryOver || 0;
-          if (carryOver < 0) carryOver = 0;
+  if (!machineIdsToProcess.includes(machineIdFromFile)) continue;
 
-          const machine = allMachines.find(m => m.id === machineIdFromFile);
-          if (!machine) continue;
+  const name = key.substring(machineIdFromFile.length + 1);
+  const machine = allMachines.find(m => m.id === machineIdFromFile);
+  if (!machine) continue;
 
-          const ingredientConfig = getIngredientConfig(name, machine?.model);
-          if (ingredientConfig) {
-            const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
-              amount: 0,
-              unit: ingredientConfig.unit,
-              breakdown: {},
-            };
-            current.amount += carryOver;
-            const machineBreakdown = current.breakdown[machineIdFromFile] || {
-              name: machine.name,
-              amount: 0,
-            };
-            machineBreakdown.amount += carryOver;
-            current.breakdown[machineIdFromFile] = machineBreakdown;
-            coffeeIngredientsMap.set(ingredientConfig.name, current);
-          } else {
-            const current = productMap.get(name) || {
-              amount: 0,
-              unit: 'шт',
-              breakdown: {},
-            };
-            current.amount += carryOver;
-            const machineBreakdown = current.breakdown[machineIdFromFile] || {
-              name: machine.name,
-              amount: 0,
-            };
-            machineBreakdown.amount += carryOver;
-            current.breakdown[machineIdFromFile] = machineBreakdown;
-            productMap.set(name, current);
-          }
-        }
+  // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ И КРЫШЕК
+  if (name === 'стаканы' || name === 'крышки') {
+    const selectedSizes = override.selectedSizes || [];
+    const allSizes = ['big', 'small'] as const;
+    const sizeLabels = { big: 'большие', small: 'малые' };
+
+    allSizes.forEach((size: 'big' | 'small') => {
+      // Если размер НЕ выбран — добавляем 1 в заказ для этого аппарата
+      if (!selectedSizes.includes(size)) {
+        const sizeName = `${name} ${sizeLabels[size]}`;
+        const current = productMap.get(sizeName) || {
+          amount: 0,
+          unit: 'шт',
+          breakdown: {},
+          isCoffeeIngredient: true,
+        };
+        current.amount += 1;
+        const machineBreakdown = current.breakdown[machineIdFromFile] || {
+          name: machine.name,
+          amount: 0,
+        };
+        machineBreakdown.amount += 1;
+        current.breakdown[machineIdFromFile] = machineBreakdown;
+        productMap.set(sizeName, current);
       }
+    });
+    continue; // пропускаем обычную обработку carryOver
+  }
 
+  // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СИРОПОВ
+  if (name === 'сироп') {
+    const selectedSyrups = override.selectedSyrups || [];
+    // Все возможные сиропы — берём из конфига или определяем здесь
+    const allSyrups = [
+      { id: 'banana', name: 'банан' },
+      { id: 'vanilla', name: 'ваниль' },
+      { id: 'coconut', name: 'кокос' },
+      { id: 'caramel', name: 'карамель' },
+    ];
+
+    allSyrups.forEach(syrup => {
+      if (!selectedSyrups.includes(syrup.id)) {
+        const syrupName = `сироп ${syrup.name}`;
+        const current = productMap.get(syrupName) || {
+          amount: 0,
+          unit: 'шт',
+          breakdown: {},
+          isCoffeeIngredient: true,
+        };
+        current.amount += 1;
+        const machineBreakdown = current.breakdown[machineIdFromFile] || {
+          name: machine.name,
+          amount: 0,
+        };
+        machineBreakdown.amount += 1;
+        current.breakdown[machineIdFromFile] = machineBreakdown;
+        productMap.set(syrupName, current);
+      }
+    });
+    continue;
+  }
+
+  // ОБЫЧНАЯ ОБРАБОТКА ДЛЯ ОСТАЛЬНЫХ ТОВАРОВ (carryOver)
+  let carryOver = override.carryOver || 0;
+  if (carryOver < 0) carryOver = 0;
+
+  const ingredientConfig = getIngredientConfig(name, machine?.model);
+  if (ingredientConfig) {
+    const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
+      amount: 0,
+      unit: ingredientConfig.unit,
+      breakdown: {},
+    };
+    current.amount += carryOver;
+    const machineBreakdown = current.breakdown[machineIdFromFile] || {
+      name: machine.name,
+      amount: 0,
+    };
+    machineBreakdown.amount += carryOver;
+    current.breakdown[machineIdFromFile] = machineBreakdown;
+    coffeeIngredientsMap.set(ingredientConfig.name, current);
+  } else {
+    const current = productMap.get(name) || {
+      amount: 0,
+      unit: 'шт',
+      breakdown: {},
+    };
+    current.amount += carryOver;
+    const machineBreakdown = current.breakdown[machineIdFromFile] || {
+      name: machine.name,
+      amount: 0,
+    };
+    machineBreakdown.amount += carryOver;
+    current.breakdown[machineIdFromFile] = machineBreakdown;
+    productMap.set(name, current);
+  }
+}
       const finalList: CombinedListItem[] = [];
 
       coffeeIngredientsMap.forEach((value, name) => {
@@ -269,7 +332,7 @@ export const GroupedShoppingLists = ({
             name: name,
             amount: totalAmount,
             unit: value.unit,
-            isCoffeeIngredient: false,
+            isCoffeeIngredient: value.isCoffeeIngredient ?? false,
             breakdown: value.breakdown,
           });
         }
