@@ -91,10 +91,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Kikko ES6',
   },
   {
-    id: '33344',
+    id: '41789',
     name: 'Автоколонна проходная 166',
     location: 'Автоколонна проходная 166\nПутейская улица, 5',
-    model: 'Saeco Cristallo 400',
+    model: 'Necta Opera',
   },
   {
     id: '39875',
@@ -392,9 +392,15 @@ export const allMachines: Machine[] = [
   },
   {
     id: '47710',
-    name: 'Автосалон Волна',
-    location: 'Автосалон Волна корнер,\n ул. Новосулажгорская, д.30',
+    name: 'Автосалон на Суоярвском шоссе корнер',
+    location: 'Автосалон на Суоярвском шоссе, Лесной просп., д.85',
     model: 'Necta Krea Touch',
+  },
+  {
+    id: '67364',
+    name: 'Автосалон на Суоярвском шоссе снэк',
+    location: 'Автосалон на Суоярвском шоссе, Лесной просп., д.85',
+    model: 'LE Vending, LE205B',
   },
   {
     id: '43928',
@@ -415,10 +421,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Opera',
   },
   {
-    id: '33418',
-    name: 'Глостер 60/18',
-    location: 'Глостер 60/18\nПряжинское шоссе. д.10',
-    model: 'Necta Kikko ES6',
+    id: '41286',
+    name: 'Глостер кофе 235',
+    location: 'Глостер кофе 235\nПряжинское шоссе. д.10',
+    model: 'Necta Opera',
   },
   {
     id: '33416',
@@ -553,10 +559,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Kikko ES6',
   },
   {
-    id: '34841',
-    name: 'ДФК бутмат 66',
-    location: 'ДФК бутмат 66\nПушкинская, 7',
-    model: 'Sanden Vendo SVE DR9',
+    id: '67226',
+    name: 'ДФК снэк 111',
+    location: 'ДФК снэк 111\nПушкинская, 7',
+    model: 'LE Vending, LE205B',
   },
   {
     id: '39543',
@@ -575,12 +581,6 @@ export const allMachines: Machine[] = [
     name: 'Иномарка Сервис 56',
     location: 'Иномарка Сервис 56\nул. Зайцева, 63, стр. 2',
     model: 'Necta Kikko ES6',
-  },
-  {
-    id: '41789',
-    name: 'Карел Импекс',
-    location: 'Карел Импекс\nул. Боровая, д. 10в',
-    model: 'Necta Opera',
   },
   {
     id: '58730',
@@ -769,10 +769,10 @@ export const allMachines: Machine[] = [
     model: 'Unicum FoodBox',
   },
   {
-    id: '58736',
+    id: '67233',
     name: 'Лицей 1 кофе',
     location: 'Лицей 1 кофе\nул. Берёзовая аллея, д. 42',
-    model: 'Necta Brio',
+    model: 'Jetinno, JL300',
   },
   {
     id: '54616',
@@ -805,10 +805,10 @@ export const allMachines: Machine[] = [
     model: 'Unicum FoodBox',
   },
   {
-    id: '41286',
-    name: 'Лотос Плаза холл кофе',
-    location: 'Лотос плаза холл кофе\nЛесной просп., 47А',
-    model: 'Necta Opera',
+    id: '67248',
+    name: 'Лотос плаза вход №1 кофе',
+    location: 'Лотос плаза вход №1 кофе\nЛесной просп., 47А',
+    model: 'Jetinno, JL300',
   },
   {
     id: '33370',
@@ -968,8 +968,8 @@ export const allMachines: Machine[] = [
   },
   {
     id: '33402',
-    name: 'Офис (из Речное училище общ.) кофе 196',
-    location: 'Речное училище (общ.) кофе 196\nВарламова, 34',
+    name: 'Автомойка Автосауна кофе 196',
+    location: 'Автомойка Автосауна кофе 196\nул. Хейкконена, д.39',
     model: 'Saeco Cristallo 600',
   },
   {
@@ -1678,7 +1678,7 @@ export const getMachineType = (
 };
 
 export const machineIngredients: MachineIngredients = {
-  'Saeco Cristallo 600 58739':  [
+  'Saeco Cristallo 600 58739': [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
       name: 'кофе',
@@ -1713,12 +1713,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'стаканы 150',
-      apiNames: [
-        'Стаканчик',
-        'Стакан',
-        'стаканы 300',
-        'стаканы',
-      ],
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
     },
@@ -1927,6 +1922,83 @@ export const machineIngredients: MachineIngredients = {
         { id: 'coconut', name: 'кокос', selected: false },
         { id: 'caramel', name: 'карамель', selected: false },
       ],
+    },
+  ],
+  'Jetinno, JL300': [
+    {
+      name: 'вода',
+      apiNames: ['Вода'],
+      unit: 'мл',
+      type: 'auto',
+    },
+    {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой, кофе'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сливки',
+      apiNames: ['Сливки сухие', 'сливки'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'шоколад',
+      apiNames: ['Шоколад'],
+      unit: 'г',
+      type: 'auto',
+    },
+    { name: 'Пломбир', apiNames: ['раф сливки'], unit: 'г', type: 'auto' },
+    {
+      name: 'клубника',
+      apiNames: ['клубника', 'раф клубника'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сироп мохито',
+      apiNames: ['Сироп Мохито'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сироп апельсин',
+      apiNames: ['Сироп Апельсин'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'сироп лесной орех',
+      apiNames: ['Сироп лесной орех'],
+      unit: 'г',
+      type: 'auto',
+    },
+    { name: 'клубника', apiNames: ['Раф клубника'], unit: 'г', type: 'auto' },
+    { name: 'банан', apiNames: ['Раф Банан'], unit: 'г', type: 'auto' },
+    {
+      name: 'сахар',
+      apiNames: ['Сахар'],
+      unit: 'г',
+      type: 'auto',
+    },
+    {
+      name: 'стаканы',
+      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'крышки',
+      apiNames: ['Крышки', 'крышка', 'крышки 80'],
+      unit: 'шт',
+      type: 'auto',
+    },
+    {
+      name: 'размешиватели',
+      apiNames: ['Размешиватель', 'размешиватели'],
+      unit: 'шт',
+      type: 'checkbox',
     },
   ],
   koro: [
