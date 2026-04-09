@@ -215,11 +215,9 @@ export const GroupedShoppingLists = ({
         if (!machine) continue;
 
         const machineType = getMachineType(machine);
-  const isCoffeeMachine = machineType === 'coffee';
-  const isKreaMachine = machine?.model?.toLowerCase().includes('krea');
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ И КРЫШЕК
-        if (isKreaMachine && (name === 'стаканы' || name === 'крышки')) {
+        if (name === 'стаканы' || name === 'крышки') {
           const selectedSizes = override.selectedSizes || [];
           const allSizes = ['big', 'small'] as const;
           const sizeLabels = { big: 'большие', small: 'малые' };
@@ -248,7 +246,7 @@ export const GroupedShoppingLists = ({
         }
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СИРОПОВ
-        if (isKreaMachine && name === 'сироп') {
+        if (name === 'сироп') {
           const selectedSyrups = override.selectedSyrups || [];
           // Все возможные сиропы — берём из конфига или определяем здесь
           const ingredientConfig = getIngredientConfig(name, machine?.model);
