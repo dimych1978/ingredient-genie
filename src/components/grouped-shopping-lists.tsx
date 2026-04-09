@@ -203,113 +203,113 @@ export const GroupedShoppingLists = ({
         }
       });
 
-for (const key in allOverrides) {
-  const override = allOverrides[key];
-  const machineIdFromFile = key.split('-')[0];
+      for (const key in allOverrides) {
+        const override = allOverrides[key];
+        const machineIdFromFile = key.split('-')[0];
 
-  if (!machineIdsToProcess.includes(machineIdFromFile)) continue;
+        if (!machineIdsToProcess.includes(machineIdFromFile)) continue;
 
-  const name = key.substring(machineIdFromFile.length + 1);
-  const machine = allMachines.find(m => m.id === machineIdFromFile);
-  if (!machine) continue;
+        const name = key.substring(machineIdFromFile.length + 1);
+        const machine = allMachines.find(m => m.id === machineIdFromFile);
+        if (!machine) continue;
 
-  // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ И КРЫШЕК
-  if (name === 'стаканы' || name === 'крышки') {
-    const selectedSizes = override.selectedSizes || [];
-    const allSizes = ['big', 'small'] as const;
-    const sizeLabels = { big: 'большие', small: 'малые' };
+        // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ И КРЫШЕК
+        if (name === 'стаканы' || name === 'крышки') {
+          const selectedSizes = override.selectedSizes || [];
+          const allSizes = ['big', 'small'] as const;
+          const sizeLabels = { big: 'большие', small: 'малые' };
 
-    allSizes.forEach((size: 'big' | 'small') => {
-      // Если размер НЕ выбран — добавляем 1 в заказ для этого аппарата
-      if (!selectedSizes.includes(size)) {
-        const sizeName = `${name} ${sizeLabels[size]}`;
-        const current = productMap.get(sizeName) || {
-          amount: 0,
-          unit: 'шт',
-          breakdown: {},
-          isCoffeeIngredient: true,
-        };
-        current.amount += 1;
-        const machineBreakdown = current.breakdown[machineIdFromFile] || {
-          name: machine.name,
-          amount: 0,
-        };
-        machineBreakdown.amount += 1;
-        current.breakdown[machineIdFromFile] = machineBreakdown;
-        productMap.set(sizeName, current);
+          allSizes.forEach((size: 'big' | 'small') => {
+            // Если размер НЕ выбран — добавляем 1 в заказ для этого аппарата
+            if (!selectedSizes.includes(size)) {
+              const sizeName = `${name} ${sizeLabels[size]}`;
+              const current = productMap.get(sizeName) || {
+                amount: 0,
+                unit: 'шт',
+                breakdown: {},
+                isCoffeeIngredient: true,
+              };
+              current.amount += 1;
+              const machineBreakdown = current.breakdown[machineIdFromFile] || {
+                name: machine.name,
+                amount: 0,
+              };
+              machineBreakdown.amount += 1;
+              current.breakdown[machineIdFromFile] = machineBreakdown;
+              productMap.set(sizeName, current);
+            }
+          });
+          continue; // пропускаем обычную обработку carryOver
+        }
+
+        // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СИРОПОВ
+        if (name === 'сироп') {
+          const selectedSyrups = override.selectedSyrups || [];
+          // Все возможные сиропы — берём из конфига или определяем здесь
+          const allSyrups = [
+            { id: 'banana', name: 'банан' },
+            { id: 'vanilla', name: 'ваниль' },
+            { id: 'coconut', name: 'кокос' },
+            { id: 'caramel', name: 'карамель' },
+          ];
+
+          allSyrups.forEach(syrup => {
+            if (!selectedSyrups.includes(syrup.id)) {
+              const syrupName = `сироп ${syrup.name}`;
+              const current = productMap.get(syrupName) || {
+                amount: 0,
+                unit: 'шт',
+                breakdown: {},
+                isCoffeeIngredient: true,
+              };
+              current.amount += 1;
+              const machineBreakdown = current.breakdown[machineIdFromFile] || {
+                name: machine.name,
+                amount: 0,
+              };
+              machineBreakdown.amount += 1;
+              current.breakdown[machineIdFromFile] = machineBreakdown;
+              productMap.set(syrupName, current);
+            }
+          });
+          continue;
+        }
+
+        // ОБЫЧНАЯ ОБРАБОТКА ДЛЯ ОСТАЛЬНЫХ ТОВАРОВ (carryOver)
+        let carryOver = override.carryOver || 0;
+        if (carryOver < 0) carryOver = 0;
+
+        const ingredientConfig = getIngredientConfig(name, machine?.model);
+        if (ingredientConfig) {
+          const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
+            amount: 0,
+            unit: ingredientConfig.unit,
+            breakdown: {},
+          };
+          current.amount += carryOver;
+          const machineBreakdown = current.breakdown[machineIdFromFile] || {
+            name: machine.name,
+            amount: 0,
+          };
+          machineBreakdown.amount += carryOver;
+          current.breakdown[machineIdFromFile] = machineBreakdown;
+          coffeeIngredientsMap.set(ingredientConfig.name, current);
+        } else {
+          const current = productMap.get(name) || {
+            amount: 0,
+            unit: 'шт',
+            breakdown: {},
+          };
+          current.amount += carryOver;
+          const machineBreakdown = current.breakdown[machineIdFromFile] || {
+            name: machine.name,
+            amount: 0,
+          };
+          machineBreakdown.amount += carryOver;
+          current.breakdown[machineIdFromFile] = machineBreakdown;
+          productMap.set(name, current);
+        }
       }
-    });
-    continue; // пропускаем обычную обработку carryOver
-  }
-
-  // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СИРОПОВ
-  if (name === 'сироп') {
-    const selectedSyrups = override.selectedSyrups || [];
-    // Все возможные сиропы — берём из конфига или определяем здесь
-    const allSyrups = [
-      { id: 'banana', name: 'банан' },
-      { id: 'vanilla', name: 'ваниль' },
-      { id: 'coconut', name: 'кокос' },
-      { id: 'caramel', name: 'карамель' },
-    ];
-
-    allSyrups.forEach(syrup => {
-      if (!selectedSyrups.includes(syrup.id)) {
-        const syrupName = `сироп ${syrup.name}`;
-        const current = productMap.get(syrupName) || {
-          amount: 0,
-          unit: 'шт',
-          breakdown: {},
-          isCoffeeIngredient: true,
-        };
-        current.amount += 1;
-        const machineBreakdown = current.breakdown[machineIdFromFile] || {
-          name: machine.name,
-          amount: 0,
-        };
-        machineBreakdown.amount += 1;
-        current.breakdown[machineIdFromFile] = machineBreakdown;
-        productMap.set(syrupName, current);
-      }
-    });
-    continue;
-  }
-
-  // ОБЫЧНАЯ ОБРАБОТКА ДЛЯ ОСТАЛЬНЫХ ТОВАРОВ (carryOver)
-  let carryOver = override.carryOver || 0;
-  if (carryOver < 0) carryOver = 0;
-
-  const ingredientConfig = getIngredientConfig(name, machine?.model);
-  if (ingredientConfig) {
-    const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
-      amount: 0,
-      unit: ingredientConfig.unit,
-      breakdown: {},
-    };
-    current.amount += carryOver;
-    const machineBreakdown = current.breakdown[machineIdFromFile] || {
-      name: machine.name,
-      amount: 0,
-    };
-    machineBreakdown.amount += carryOver;
-    current.breakdown[machineIdFromFile] = machineBreakdown;
-    coffeeIngredientsMap.set(ingredientConfig.name, current);
-  } else {
-    const current = productMap.get(name) || {
-      amount: 0,
-      unit: 'шт',
-      breakdown: {},
-    };
-    current.amount += carryOver;
-    const machineBreakdown = current.breakdown[machineIdFromFile] || {
-      name: machine.name,
-      amount: 0,
-    };
-    machineBreakdown.amount += carryOver;
-    current.breakdown[machineIdFromFile] = machineBreakdown;
-    productMap.set(name, current);
-  }
-}
       const finalList: CombinedListItem[] = [];
 
       coffeeIngredientsMap.forEach((value, name) => {
@@ -518,41 +518,63 @@ for (const key in allOverrides) {
                                       {item.name}
                                       <Info className='h-3 w-3 text-primary' />
                                     </h4>
-<div className='grid gap-3'>
-  {PRODUCT_GROUPS[item.name].map(constituent => (
-    <div key={constituent} className='flex items-center justify-between gap-2'>
-      <span className='text-xs text-muted-foreground leading-tight flex-1'>
-        {constituent}
-      </span>
-      <div className='flex items-center gap-1'>
-        <Button
-          variant='outline'
-          size='icon'
-          className='h-7 w-7 rounded-full'
-          onClick={() => handleStep(constituent, -1)}
-        >
-          <Minus className='h-3 w-3' />
-        </Button>
-        <Input
-          type='number'
-          value={stockOnHand[constituent] === '0' ? '' : stockOnHand[constituent] || ''}
-          onChange={e => handleGroupStockChange(constituent, e.target.value)}
-          placeholder='0'
-          className='h-8 w-12 text-center text-xs'
-          inputMode='numeric'
-        />
-        <Button
-          variant='outline'
-          size='icon'
-          className='h-7 w-7 rounded-full'
-          onClick={() => handleStep(constituent, 1)}
-        >
-          <Plus className='h-3 w-3' />
-        </Button>
-      </div>
-    </div>
-  ))}
-</div>                                  </div>
+                                    <div className='grid gap-3'>
+                                      {PRODUCT_GROUPS[item.name].map(
+                                        constituent => (
+                                          <div
+                                            key={constituent}
+                                            className='flex items-center justify-between gap-2'
+                                          >
+                                            <span className='text-xs text-muted-foreground leading-tight flex-1'>
+                                              {constituent}
+                                            </span>
+                                            <div className='flex items-center gap-1'>
+                                              <SoundButton
+                                                variant='outline'
+                                                size='icon'
+                                                className='h-7 w-7 rounded-full'
+                                                onClick={() =>
+                                                  handleStep(constituent, -1)
+                                                }
+                                              >
+                                                <Minus className='h-3 w-3' />
+                                              </SoundButton>
+                                              <Input
+                                                type='number'
+                                                value={
+                                                  stockOnHand[constituent] ===
+                                                  '0'
+                                                    ? ''
+                                                    : stockOnHand[
+                                                        constituent
+                                                      ] || ''
+                                                }
+                                                onChange={e =>
+                                                  handleGroupStockChange(
+                                                    constituent,
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                placeholder='0'
+                                                className='h-8 w-12 text-center text-xs'
+                                                inputMode='numeric'
+                                              />
+                                              <SoundButton
+                                                variant='outline'
+                                                size='icon'
+                                                className='h-7 w-7 rounded-full'
+                                                onClick={() =>
+                                                  handleStep(constituent, 1)
+                                                }
+                                              >
+                                                <Plus className='h-3 w-3' />
+                                              </SoundButton>
+                                            </div>
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>{' '}
+                                  </div>
                                 </PopoverContent>
                               </Popover>
                             ) : (
@@ -597,7 +619,7 @@ for (const key in allOverrides) {
                                 <span
                                   className={cn(
                                     'min-w-0 break-words line-clamp-2 text-xs sm:text-sm leading-tight cursor-pointer',
-                                    isGroup && 'font-bold text-primary'
+                                    isGroup && 'font-bold text-primary',
                                   )}
                                   onClick={() => handleHintToggle(item.name)}
                                 >
