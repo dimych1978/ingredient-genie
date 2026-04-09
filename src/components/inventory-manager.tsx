@@ -212,11 +212,16 @@ export const InventoryManager = () => {
           'Лимонад Фрустайл ж/б в ассорт. 0,33',
           'Сок Добрый в ассорт 0.33',
           'Сок Рич в ассорт.',
+          'Сок Палпи в ассорт. 0.45',
           'Конф. Простое Чудо 40г',
           'Меллер/Ментос',
           'Милкис напиток 0.3',
           'Калинов морс/Русморс 0,5',
           'Калинов морс 0,5',
+          'Печенье Форсайт 190гр',
+          'Степ/ ДаЁжь 42гр.',
+          'Печенье Школьн. шпарг. 50гр./Посольское 44гр.',
+          'Мармелад Яшкино/frunel',
           'нет данных',
           'тест',
           'пр',
@@ -226,7 +231,7 @@ export const InventoryManager = () => {
         // Фильтруем устаревшие названия
         const isDeprecated = (name: string) => {
           const lower = name.toLowerCase();
-          return stopWords.some(word => lower.includes(word));
+          return stopWords.some(word => lower === word.toLowerCase());
         };
 
         const filtered = parsed.filter((item: string) => !isDeprecated(item));
@@ -338,11 +343,16 @@ export const InventoryManager = () => {
           'Лимонад Фрустайл ж/б в ассорт. 0,33',
           'Сок Добрый в ассорт 0.33',
           'Сок Рич в ассорт.',
+          'Сок Палпи в ассорт. 0.45',
           'Конф. Простое Чудо 40г',
           'Меллер/Ментос',
           'Милкис напиток 0.3',
           'Калинов морс/Русморс 0,5',
           'Калинов морс 0,5',
+          'Печенье Форсайт 190гр',
+          'Степ/ ДаЁжь 42гр.',
+          'Печенье Школьн. шпарг. 50гр./Посольское 44гр.',
+          'Мармелад Яшкино/frunel',
           'нет данных',
           'тест',
           'пр',
@@ -351,7 +361,7 @@ export const InventoryManager = () => {
 
         const isDeprecated = (name: string) => {
           const lower = name.toLowerCase();
-          return stopWords.some(word => lower.includes(word.toLowerCase()));
+          return stopWords.some(word => lower === word.toLowerCase());
         };
 
         const filteredCatalog = fullCatalog.filter(item => !isDeprecated(item));
