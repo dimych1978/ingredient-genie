@@ -11,6 +11,7 @@ export interface Ingredient {
   apiNames: string[];
   unit: string;
   type: IngredientType;
+  hasSizes?: boolean,
   syrupOptions?: SyrupOption[];
 }
 

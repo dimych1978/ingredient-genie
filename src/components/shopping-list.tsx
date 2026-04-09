@@ -62,6 +62,7 @@ import {
 import {
   allMachines,
   alternativeDisplayNames,
+  getIngredientConfig,
   getMachineType,
   isSpecialMachine,
 } from '@/lib/data';
@@ -925,9 +926,11 @@ export const ShoppingList = ({
                     const isKreaMachine = machine?.model
                       ?.toLowerCase()
                       .includes('krea');
+                      const ingredientConfig = getIngredientConfig(item.name, machine?.model);
+const hasSizes = ingredientConfig?.hasSizes === true;
                     const isSpecialKreaItem =
                       isKreaMachine &&
-                      (item.name === 'стаканы' || item.name === 'крышки');
+                     hasSizes;
                     const isCheckboxItem =
                       item.type === 'checkbox' && !isSpecialKreaItem;
                     const isSyrupItem = item.type === 'select';

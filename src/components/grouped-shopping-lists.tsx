@@ -25,6 +25,7 @@ import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
   allMachines,
   getIngredientConfig,
+  getMachineType,
   GroupedShoppingListsProps,
   PRODUCT_GROUPS,
 } from '@/lib/data';
@@ -213,8 +214,12 @@ export const GroupedShoppingLists = ({
         const machine = allMachines.find(m => m.id === machineIdFromFile);
         if (!machine) continue;
 
+        const machineType = getMachineType(machine);
+  const isCoffeeMachine = machineType === 'coffee';
+  const isKreaMachine = machine?.model?.toLowerCase().includes('krea');
+
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ И КРЫШЕК
-        if (name === 'стаканы' || name === 'крышки') {
+        if (isKreaMachine && (name === 'стаканы' || name === 'крышки')) {
           const selectedSizes = override.selectedSizes || [];
           const allSizes = ['big', 'small'] as const;
           const sizeLabels = { big: 'большие', small: 'малые' };
@@ -243,15 +248,11 @@ export const GroupedShoppingLists = ({
         }
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СИРОПОВ
-        if (name === 'сироп') {
+        if (isKreaMachine && name === 'сироп') {
           const selectedSyrups = override.selectedSyrups || [];
           // Все возможные сиропы — берём из конфига или определяем здесь
-          const allSyrups = [
-            { id: 'banana', name: 'банан' },
-            { id: 'vanilla', name: 'ваниль' },
-            { id: 'coconut', name: 'кокос' },
-            { id: 'caramel', name: 'карамель' },
-          ];
+          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const allSyrups = ingredientConfig?.syrupOptions || [];
 
           allSyrups.forEach(syrup => {
             if (!selectedSyrups.includes(syrup.id)) {
