@@ -682,7 +682,7 @@ export const allMachines: Machine[] = [
     id: '33472',
     name: 'КТК-РТИ на Зайцева 197',
     location: 'КТК-РТИ на Зайцева\nул. Зайцева, д.69А',
-    model: 'Saeco Cristallo 600',
+    model: 'Saeco Cristallo 600 EVO ТТТ',
   },
   {
     id: '33369',
@@ -1827,12 +1827,14 @@ export const machineIngredients: MachineIngredients = {
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'checkbox',
+      hasSizes: true,
     },
     {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
+      hasSizes: true,
     },
     {
       name: 'размешиватели',
@@ -2234,7 +2236,7 @@ export const machineIngredients: MachineIngredients = {
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
   ],
-  'Saeco Cristallo 600': [
+  'Saeco Cristallo 600 EVO ТТТ': [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
       name: 'кофе',
