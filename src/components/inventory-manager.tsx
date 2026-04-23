@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays, parseISO, isValid, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import type { TelemetronSaleItem } from '@/types/telemetron';
+import type { Ingredient, TelemetronSaleItem } from '@/types/telemetron';
 import { SoundButton } from './ui/sound-button';
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -57,11 +57,39 @@ const ALL_CONSTITUENTS_NORMALIZED = new Set(
   Object.values(PRODUCT_GROUPS).flat().map(normalize),
 );
 
+const getDisplayNames = (ing: Ingredient) => {
+  const result: string[] = [];
+
+  if (ing.name.toLowerCase() === 'вода') return result;
+
+  if (ing.size) {
+    const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+    result.push(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`);
+  } else if (ing.hasSizes) {
+    const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+    result.push(`${prefix} большие`, `${prefix} малые`);
+  } else if (ing.syrupOptions) {
+    ing.syrupOptions.forEach(syrup => result.push(`сироп ${syrup.name}`));
+  } else {
+    result.push(ing.name.trim());
+  }
+
+  return result;
+};
+
 const ALL_COFFEE_INGREDIENTS = new Set(
   Object.values(machineIngredients).flatMap(modelIngs =>
     modelIngs.map(ing => normalize(ing.name)),
   ),
 );
+
+Object.values(machineIngredients).forEach(modelIngredients => {
+  modelIngredients.forEach(ing => {
+    getDisplayNames(ing).forEach((name: string) =>
+      ALL_COFFEE_INGREDIENTS.add(normalize(name)),
+    );
+  });
+});
 
 interface ExpiryPickerProps {
   itemName: string;
@@ -262,9 +290,7 @@ export const InventoryManager = () => {
         // Собираем ингредиенты из конфигурации
         Object.values(machineIngredients).forEach(modelIngredients => {
           modelIngredients.forEach(ing => {
-            if (ing.name.toLowerCase() !== 'вода') {
-              ingredientsSet.add(ing.name.trim());
-            }
+            getDisplayNames(ing).forEach(name => ingredientsSet.add(name));
           });
         });
 

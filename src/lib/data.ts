@@ -1602,6 +1602,7 @@ export const MASTER_MACHINE_IDS = [
   '55138',
   '39496',
   '33412',
+  '38566',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -2419,10 +2420,10 @@ export const getIngredientConfig = (
     if (modelKey) {
       // 🔥 Сначала ищем по ТОЧНОМУ СОВПАДЕНИЮ с name (приоритет!)
       const foundByName = machineIngredients[modelKey].find(
-        ing => ing.name.toLowerCase() === normalizedApiName
+        ing => ing.name.toLowerCase() === normalizedApiName,
       );
       if (foundByName) return foundByName;
-      
+
       // Потом по apiNames
       const foundByApi = machineIngredients[modelKey].find(ingredient =>
         ingredient.apiNames.some(
@@ -2436,11 +2437,11 @@ export const getIngredientConfig = (
   // Глобальный поиск: сначала по name, потом по apiNames
   for (const modelKey in machineIngredients) {
     const foundByName = machineIngredients[modelKey].find(
-      ing => ing.name.toLowerCase() === normalizedApiName
+      ing => ing.name.toLowerCase() === normalizedApiName,
     );
     if (foundByName) return foundByName;
   }
-  
+
   for (const modelKey in machineIngredients) {
     const foundByApi = machineIngredients[modelKey].find(ingredient =>
       ingredient.apiNames.some(
