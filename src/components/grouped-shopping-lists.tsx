@@ -78,6 +78,23 @@ export const GroupedShoppingLists = ({
     setTimeout(() => setActiveHint(null), 1000);
   };
 
+  const getCupsName = (
+    apiName: string,
+    machineModel?: string,
+    ingredientConfig?: ReturnType<typeof getIngredientConfig>,
+  ) => {
+    const config =
+      ingredientConfig || getIngredientConfig(apiName, machineModel);
+    if (!config) return apiName;
+
+    if (config.size) {
+      const prefix = config.name.includes('крышк') ? 'крышки' : 'стаканы';
+      return `${prefix} ${config.size === 'big' ? 'большие' : 'малые'}`;
+    }
+
+    return config.name;
+  };
+
   const handleGenerateClick = useCallback(async () => {
     if (showList) {
       setShowList(false);
@@ -140,6 +157,7 @@ export const GroupedShoppingLists = ({
         {
           amount: number;
           unit: string;
+          isCoffeeIngredient: boolean;
           breakdown: Record<string, { name: string; amount: number }>;
         }
       >();
@@ -149,7 +167,7 @@ export const GroupedShoppingLists = ({
           amount: number;
           unit: 'шт';
           breakdown: Record<string, { name: string; amount: number }>;
-          isCoffeeIngredient?: boolean;
+          isCoffeeIngredient: boolean;
         }
       >();
 
@@ -168,11 +186,29 @@ export const GroupedShoppingLists = ({
               apiIngredient.name,
               machine?.model,
             );
+            const displayName = getCupsName(
+              apiIngredient.name,
+              machine.model,
+              config,
+            );
+
             if (config) {
-              const current = coffeeIngredientsMap.get(config.name) || {
+              if (
+                (config.name === 'сахар' || config.name === 'сироп') &&
+                machine?.model &&
+                (machine.model.toLowerCase().includes('krea') ||
+                  machine.model.toLowerCase().includes('jetinno'))
+              ) {
+                return;
+              }
+              const current = coffeeIngredientsMap.get(displayName) || {
                 amount: 0,
                 unit: config.unit,
-                breakdown: {},
+                breakdown: {} as Record<
+                  string,
+                  { name: string; amount: number }
+                >,
+                isCoffeeIngredient: true,
               };
               const amountToAdd = apiIngredient.volume * sale.number;
               current.amount += amountToAdd;
@@ -182,7 +218,7 @@ export const GroupedShoppingLists = ({
               };
               machineBreakdown.amount += amountToAdd;
               current.breakdown[sale.machineId] = machineBreakdown;
-              coffeeIngredientsMap.set(config.name, current);
+              coffeeIngredientsMap.set(displayName, current);
             }
           });
         } else {
@@ -190,7 +226,8 @@ export const GroupedShoppingLists = ({
           const current = productMap.get(name) || {
             amount: 0,
             unit: 'шт',
-            breakdown: {},
+            breakdown: {} as Record<string, { name: string; amount: number }>,
+            isCoffeeIngredient: false,
           };
           const amountToAdd = sale.number;
           current.amount += amountToAdd;
@@ -203,7 +240,6 @@ export const GroupedShoppingLists = ({
           productMap.set(name, current);
         }
       });
-
       for (const key in allOverrides) {
         const override = allOverrides[key];
         const machineIdFromFile = key.split('-')[0];
@@ -212,24 +248,190 @@ export const GroupedShoppingLists = ({
 
         const name = key.substring(machineIdFromFile.length + 1);
         const machine = allMachines.find(m => m.id === machineIdFromFile);
+
         if (!machine) continue;
 
-        const machineType = getMachineType(machine);
+        if (
+          (name === 'сахар' || name === 'сироп') &&
+          machine?.model &&
+          (machine.model.toLowerCase().includes('krea') ||
+            machine.model.toLowerCase().includes('jetinno'))
+        ) {
+          continue;
+        }
 
-        // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ И КРЫШЕК
-        if (name === 'стаканы' || name === 'крышки') {
+        // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ
+        if (name.includes('стаканы')) {
+          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const displayName = getCupsName(
+            name,
+            machine?.model,
+            ingredientConfig,
+          );
           const selectedSizes = override.selectedSizes || [];
           const allSizes = ['big', 'small'] as const;
           const sizeLabels = { big: 'большие', small: 'малые' };
 
-          allSizes.forEach((size: 'big' | 'small') => {
-            // Если размер НЕ выбран — добавляем 1 в заказ для этого аппарата
-            if (!selectedSizes.includes(size)) {
-              const sizeName = `${name} ${sizeLabels[size]}`;
+          if (ingredientConfig?.hasSizes) {
+            allSizes.forEach(size => {
+              if (!selectedSizes.includes(size)) {
+                const sizeName = `стаканы ${sizeLabels[size]}`;
+                const current = coffeeIngredientsMap.get(sizeName) || {
+                  amount: 0,
+                  unit: 'уп',
+                  breakdown: {} as Record<
+                    string,
+                    { name: string; amount: number }
+                  >,
+                  isCoffeeIngredient: true,
+                };
+                current.amount += 1;
+                const machineBreakdown = current.breakdown[
+                  machineIdFromFile
+                ] || {
+                  name: machine.name,
+                  amount: 0,
+                };
+                machineBreakdown.amount += 1;
+                current.breakdown[machineIdFromFile] = machineBreakdown;
+                coffeeIngredientsMap.set(sizeName, current);
+              }
+            });
+            continue;
+          }
+
+          if (ingredientConfig?.size) {
+            const sizeName = `стаканы ${ingredientConfig.size === 'big' ? 'большие' : 'малые'}`;
+
+            if (ingredientConfig?.type === 'checkbox') {
+              const isChecked = override.checked === true;
+              if (!isChecked) {
+                const current = coffeeIngredientsMap.get(sizeName) || {
+                  amount: 0,
+                  unit: 'уп',
+                  breakdown: {} as Record<
+                    string,
+                    { name: string; amount: number }
+                  >,
+                  isCoffeeIngredient: true,
+                };
+                current.amount += 1;
+
+                const machineBreakdown = current.breakdown[
+                  machineIdFromFile
+                ] || {
+                  name: machine.name,
+                  amount: 0,
+                };
+                machineBreakdown.amount += 1;
+
+                coffeeIngredientsMap.set(sizeName, current);
+              }
+              continue;
+            }
+
+            const overRide = override.carryOver;
+
+            const current = coffeeIngredientsMap.get(sizeName) || {
+              amount: 0,
+              unit: 'шт',
+              breakdown: {} as Record<string, { name: string; amount: number }>,
+              isCoffeeIngredient: true,
+            };
+            const machineBreakdown = current.breakdown[machineIdFromFile] || {
+              name: machine.name,
+              amount: 0,
+            };
+            if (overRide) {
+              const totalShots = machineBreakdown.amount + overRide;
+
+              current.breakdown[machineIdFromFile] = {
+                name: machine.name,
+                amount: totalShots,
+              };
+
+              coffeeIngredientsMap.set(sizeName, current);
+              current.amount = Object.values(current.breakdown).reduce(
+                (sum, b) => sum + b.amount,
+                0,
+              );
+              console.log('machineName', machine.name, current);
+            }
+            continue;
+          }
+
+          const current = coffeeIngredientsMap.get(displayName) || {
+            amount: 0,
+            unit: ingredientConfig?.unit as string,
+            breakdown: {} as Record<string, { name: string; amount: number }>,
+            isCoffeeIngredient: true,
+          };
+
+          const machineBreakdown = current.breakdown[machineIdFromFile]?.amount;
+          const carryOver = override.carryOver || 0;
+          const totalShots = machineBreakdown + carryOver;
+          current.breakdown[machineIdFromFile] = {
+            name: machine.name,
+            amount: totalShots,
+          };
+
+          current.amount = Object.values(current.breakdown).reduce(
+            (sum, b) => sum + b.amount,
+            0,
+          );
+          coffeeIngredientsMap.set(displayName, current);
+          continue;
+        }
+
+        // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ КРЫШЕК
+        if (name === 'крышки') {
+          const ingredientConfig = getIngredientConfig(name, machine?.model);
+
+          // Если есть hasSizes — Krea, разбиваем на большие/малые
+          if (ingredientConfig?.hasSizes) {
+            const selectedSizes = override.selectedSizes || [];
+            const allSizes = ['big', 'small'] as const;
+            const sizeLabels = { big: 'большие', small: 'малые' };
+
+            allSizes.forEach(size => {
+              if (!selectedSizes.includes(size)) {
+                const sizeName = `крышки ${sizeLabels[size]}`;
+                const current = coffeeIngredientsMap.get(sizeName) || {
+                  amount: 0,
+                  unit: 'шт',
+                  breakdown: {} as Record<
+                    string,
+                    { name: string; amount: number }
+                  >,
+                  isCoffeeIngredient: true,
+                };
+                current.amount += 1;
+                const machineBreakdown = current.breakdown[
+                  machineIdFromFile
+                ] || {
+                  name: machine.name,
+                  amount: 0,
+                };
+                machineBreakdown.amount += 1;
+                current.breakdown[machineIdFromFile] = machineBreakdown;
+                coffeeIngredientsMap.set(sizeName, current);
+              }
+            });
+            continue;
+          }
+
+          // Если есть size — создаём строку с нужным размером
+          if (ingredientConfig?.size) {
+            const sizeName = `крышки ${ingredientConfig.size === 'big' ? 'большие' : 'малые'}`;
+            const isChecked = override.checked === true;
+            if (!isChecked) {
               const current = productMap.get(sizeName) || {
                 amount: 0,
                 unit: 'шт',
-                breakdown: {},
+                breakdown: {} as Record<
+                  string,
+                  { name: string; amount: number }
+                >,
                 isCoffeeIngredient: true,
               };
               current.amount += 1;
@@ -239,10 +441,10 @@ export const GroupedShoppingLists = ({
               };
               machineBreakdown.amount += 1;
               current.breakdown[machineIdFromFile] = machineBreakdown;
-              productMap.set(sizeName, current);
+              coffeeIngredientsMap.set(sizeName, current);
             }
-          });
-          continue; // пропускаем обычную обработку carryOver
+            continue;
+          }
         }
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СИРОПОВ
@@ -255,10 +457,13 @@ export const GroupedShoppingLists = ({
           allSyrups.forEach(syrup => {
             if (!selectedSyrups.includes(syrup.id)) {
               const syrupName = `сироп ${syrup.name}`;
-              const current = productMap.get(syrupName) || {
+              const current = coffeeIngredientsMap.get(syrupName) || {
                 amount: 0,
                 unit: 'шт',
-                breakdown: {},
+                breakdown: {} as Record<
+                  string,
+                  { name: string; amount: number }
+                >,
                 isCoffeeIngredient: true,
               };
               current.amount += 1;
@@ -268,7 +473,7 @@ export const GroupedShoppingLists = ({
               };
               machineBreakdown.amount += 1;
               current.breakdown[machineIdFromFile] = machineBreakdown;
-              productMap.set(syrupName, current);
+              coffeeIngredientsMap.set(syrupName, current);
             }
           });
           continue;
@@ -279,18 +484,27 @@ export const GroupedShoppingLists = ({
         if (carryOver < 0) carryOver = 0;
 
         const ingredientConfig = getIngredientConfig(name, machine?.model);
+
+        // 🔥 Если есть packSize — делим carryOver на packSize и округляем вверх
+        let adjustedCarryOver = carryOver;
+        if (ingredientConfig?.packSize && ingredientConfig.packSize > 0) {
+          const oldCarryOver = carryOver;
+          adjustedCarryOver = Math.ceil(carryOver / ingredientConfig.packSize);
+        }
+
         if (ingredientConfig) {
           const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
             amount: 0,
             unit: ingredientConfig.unit,
-            breakdown: {},
+            breakdown: {} as Record<string, { name: string; amount: number }>,
+            isCoffeeIngredient: true,
           };
-          current.amount += carryOver;
+          current.amount += adjustedCarryOver;
           const machineBreakdown = current.breakdown[machineIdFromFile] || {
             name: machine.name,
             amount: 0,
           };
-          machineBreakdown.amount += carryOver;
+          machineBreakdown.amount += adjustedCarryOver;
           current.breakdown[machineIdFromFile] = machineBreakdown;
           coffeeIngredientsMap.set(ingredientConfig.name, current);
         } else {
@@ -298,17 +512,63 @@ export const GroupedShoppingLists = ({
             amount: 0,
             unit: 'шт',
             breakdown: {},
+            isCoffeeIngredient: false,
           };
-          current.amount += carryOver;
+          current.amount += adjustedCarryOver;
           const machineBreakdown = current.breakdown[machineIdFromFile] || {
             name: machine.name,
             amount: 0,
           };
-          machineBreakdown.amount += carryOver;
+          machineBreakdown.amount += adjustedCarryOver;
           current.breakdown[machineIdFromFile] = machineBreakdown;
           productMap.set(name, current);
         }
       }
+
+      for (const [name, value] of coffeeIngredientsMap.entries()) {
+        if (value.unit === 'уп') continue;
+        const newBreakdown: typeof value.breakdown = {};
+        let totalPacks = 0;
+        let unitChanged = false;
+
+        for (const [mId, details] of Object.entries(value.breakdown)) {
+          const machine = allMachines.find(m => m.id === mId);
+
+          let config = getIngredientConfig(name, machine?.model);
+          if (!config && machine?.model) {
+            const baseName = name.split(' ')[0];
+            config = getIngredientConfig(baseName, machine?.model);
+          }
+
+          if (config?.packSize) {
+            const packs = Math.floor(details.amount / config.packSize);
+            if (packs > 0) {
+              newBreakdown[mId] = {
+                name: details.name,
+                amount: packs,
+              };
+              totalPacks += packs;
+              unitChanged = true;
+            }
+          } else {
+            newBreakdown[mId] = details;
+            totalPacks += details.amount;
+          }
+        }
+
+        if (totalPacks > 0) {
+          value.amount = totalPacks;
+          if (unitChanged) value.unit = 'уп';
+          value.breakdown = newBreakdown;
+          coffeeIngredientsMap.set(name, value);
+        } else {
+          coffeeIngredientsMap.delete(name);
+        }
+      }
+
+      coffeeIngredientsMap.delete('крышки');
+      coffeeIngredientsMap.delete('стаканы');
+
       const finalList: CombinedListItem[] = [];
 
       coffeeIngredientsMap.forEach((value, name) => {

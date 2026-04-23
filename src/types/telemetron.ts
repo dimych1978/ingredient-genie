@@ -12,6 +12,8 @@ export interface Ingredient {
   unit: string;
   type: IngredientType;
   hasSizes?: boolean,
+  size?: 'big' | 'small',
+  packSize?: number,
   syrupOptions?: SyrupOption[];
 }
 

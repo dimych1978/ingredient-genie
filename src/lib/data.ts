@@ -1716,6 +1716,7 @@ export const machineIngredients: MachineIngredients = {
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
+      packSize: 100,
     },
     {
       name: 'размешиватели 105',
@@ -1769,12 +1770,14 @@ export const machineIngredients: MachineIngredients = {
       ],
       unit: 'шт',
       type: 'auto',
+      packSize: 50,
     },
     {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'small',
     },
     {
       name: 'размешиватели 125',
@@ -1821,7 +1824,6 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'checkbox',
     },
-    // Чекбоксы
     {
       name: 'стаканы',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
@@ -1899,12 +1901,15 @@ export const machineIngredients: MachineIngredients = {
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
+      size: 'big',
+      packSize: 50,
     },
     {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'big',
     },
     {
       name: 'размешиватели',
@@ -1989,12 +1994,15 @@ export const machineIngredients: MachineIngredients = {
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'auto',
+      size: 'big',
+      packSize: 50,
     },
     {
       name: 'крышки',
-      apiNames: ['Крышки', 'крышка', 'крышки 80'],
+      apiNames: ['Крышки', 'крышка', 'крышки 90'],
       unit: 'шт',
-      type: 'auto',
+      type: 'checkbox',
+      size: 'big',
     },
     {
       name: 'размешиватели',
@@ -2034,18 +2042,19 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'checkbox',
     },
-    // Чекбоксы
     {
       name: 'стаканы',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'small',
     },
     {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'small',
     },
     {
       name: 'размешиватели',
@@ -2104,18 +2113,19 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'checkbox',
     },
-    // Чекбоксы
     {
       name: 'стаканы',
       apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'small',
     },
     {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'small',
     },
     {
       name: 'размешиватели',
@@ -2176,6 +2186,7 @@ export const machineIngredients: MachineIngredients = {
       ],
       unit: 'шт',
       type: 'auto',
+      packSize: 100,
     },
     {
       name: 'размешиватели 105',
@@ -2227,6 +2238,7 @@ export const machineIngredients: MachineIngredients = {
       ],
       unit: 'шт',
       type: 'auto',
+      packSize: 50,
     },
     {
       name: 'размешиватели 105',
@@ -2274,12 +2286,14 @@ export const machineIngredients: MachineIngredients = {
       ],
       unit: 'шт',
       type: 'auto',
+      packSize: 50,
     },
     {
       name: 'крышки',
       apiNames: ['Крышки', 'крышка', 'крышки 80'],
       unit: 'шт',
       type: 'checkbox',
+      size: 'small',
     },
     {
       name: 'размешиватели 125',
@@ -2322,6 +2336,7 @@ export const machineIngredients: MachineIngredients = {
 
       unit: 'шт',
       type: 'auto',
+      packSize: 100,
     },
     {
       name: 'размешиватели 105',
@@ -2343,21 +2358,17 @@ export const PRODUCT_GROUPS: Record<string, string[]> = {
     'Лимонад "Добрый Кола Зеро" 0,5',
     'Лимонад "Добрый Кола Малина" 0,5',
     'Лимонад "Добрый Кола" 0,5',
-    'Лимонад "Добрый Спрайт" 0,5',
-    'Лимонад "Добрый Фанта" 0,5',
     'Лимонад "Добрый Апельсин 0,5',
     'Лимонад "Добрый Лимон Лайм" 0,5',
   ],
   'Лимонад "Добрый" ж/б 0,33': [
     'Лимонад "Добрый Кола " 0,33 ж/б',
     'Лимонад "Добрый Кола Зеро" 0,33 ж/б',
-    'Лимонад "Добрый Спрайт" 0,33 ж/б',
-    'Лимонад "Добрый Фанта" 0,33 ж/б',
     'Лимонад "Добрый Апельсин 0,33 ж/б',
     'Лимонад "Добрый Лимон Лайм" 0,33 ж/б',
   ],
   'Сок Добрый 0.33': ['Сок Добрый Мультифрукт 0,33', 'Сок Добрый Яблоко 0,33'],
-  'Сок Палпи 0.45': ['Сок Палпи Апельсин 0,45', 'Сок Палпи Вишня 0,45'],
+  'Сок Палпи  0.45': ['Сок Палпи Апельсин 0,45', 'Сок Палпи Вишня 0,45'],
   'Чай Рич 0,5': [
     'Чай Рич/Черноголовка Зеленый 0,5',
     'Чай Рич/Черноголовка Черный 0,5',
@@ -2394,10 +2405,8 @@ export const getIngredientConfig = (
   apiName: string,
   machineModel?: string,
 ): Ingredient | undefined => {
-  // Нормализуем название из API
   const normalizedApiName = apiName.toLowerCase().trim();
 
-  // Ищем модель в первую очередь
   if (machineModel) {
     const modelKeys = Object.keys(machineIngredients).sort(
       (a, b) => b.length - a.length,
@@ -2408,23 +2417,37 @@ export const getIngredientConfig = (
     );
 
     if (modelKey) {
-      const found = machineIngredients[modelKey].find(ingredient =>
+      // 🔥 Сначала ищем по ТОЧНОМУ СОВПАДЕНИЮ с name (приоритет!)
+      const foundByName = machineIngredients[modelKey].find(
+        ing => ing.name.toLowerCase() === normalizedApiName
+      );
+      if (foundByName) return foundByName;
+      
+      // Потом по apiNames
+      const foundByApi = machineIngredients[modelKey].find(ingredient =>
         ingredient.apiNames.some(
           name => name.toLowerCase().trim() === normalizedApiName,
         ),
       );
-      if (found) return found;
+      if (foundByApi) return foundByApi;
     }
   }
 
-  // Если не нашли в конкретной модели или модели нет, ищем по всем
+  // Глобальный поиск: сначала по name, потом по apiNames
   for (const modelKey in machineIngredients) {
-    const found = machineIngredients[modelKey].find(ingredient =>
+    const foundByName = machineIngredients[modelKey].find(
+      ing => ing.name.toLowerCase() === normalizedApiName
+    );
+    if (foundByName) return foundByName;
+  }
+  
+  for (const modelKey in machineIngredients) {
+    const foundByApi = machineIngredients[modelKey].find(ingredient =>
       ingredient.apiNames.some(
         name => name.toLowerCase().trim() === normalizedApiName,
       ),
     );
-    if (found) return found;
+    if (foundByApi) return foundByApi;
   }
 
   return undefined;
