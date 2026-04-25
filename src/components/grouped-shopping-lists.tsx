@@ -25,8 +25,8 @@ import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
   allMachines,
   getIngredientConfig,
-  getMachineType,
   GroupedShoppingListsProps,
+  machineIngredients,
   PRODUCT_GROUPS,
 } from '@/lib/data';
 import {
@@ -37,6 +37,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { SoundButton } from './ui/sound-button';
+import { differenceInDays, parseISO, isValid } from 'date-fns';
+import { useScheduleState } from './context/ScheduleStateContext';
 
 type CombinedListItem = {
   name: string;
@@ -45,7 +47,37 @@ type CombinedListItem = {
   isCoffeeIngredient: boolean;
   breakdown: Record<string, { name: string; amount: number }>;
   salesBreakdown?: Record<string, { name: string; amount: number }>;
+  expiryStatus?: 'ok' | 'critical' | 'empty';
 };
+
+const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
+// Кофейные ингредиенты — для них срок не показываем
+const ALL_COFFEE_INGREDIENTS = new Set(
+  Object.values(machineIngredients).flatMap(modelIngs =>
+    modelIngs.map(ing => normalize(ing.name)),
+  ),
+);
+
+// Добавляем динамические имена (стаканы большие/малые, крышки, сиропы)
+Object.values(machineIngredients).forEach(modelIngredients => {
+  modelIngredients.forEach(ing => {
+    if (ing.size) {
+      const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+      ALL_COFFEE_INGREDIENTS.add(
+        normalize(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`),
+      );
+    } else if (ing.hasSizes) {
+      const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+      ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} большие`));
+      ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} малые`));
+    } else if (ing.syrupOptions) {
+      ing.syrupOptions.forEach(syrup => {
+        ALL_COFFEE_INGREDIENTS.add(normalize(`сироп ${syrup.name}`));
+      });
+    }
+  });
+});
 
 export const GroupedShoppingLists = ({
   machineIds,
@@ -59,9 +91,19 @@ export const GroupedShoppingLists = ({
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeHint, setActiveHint] = useState<string | null>(null);
+  const [history, setHistory] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('search_history') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
+
+  const { expirationDates } = useScheduleState();
 
   const validMachineIds = useMemo(() => {
     const uniqueIds = Array.from(new Set(machineIds));
@@ -77,6 +119,30 @@ export const GroupedShoppingLists = ({
   const handleHintToggle = (name: string) => {
     setActiveHint(name);
     setTimeout(() => setActiveHint(null), 1000);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim() && !history.includes(value)) {
+      const next = [value, ...history].slice(0, 10);
+      setHistory(next);
+      localStorage.setItem('search_history', JSON.stringify(next));
+    }
+  };
+
+  const getExpiryStatus = (itemName: string) => {
+    // Кофейные ингредиенты без срока
+    if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
+
+    const dateStr = expirationDates?.[itemName];
+    if (!dateStr) return 'empty';
+
+    const expiryDate = parseISO(dateStr);
+    if (!isValid(expiryDate)) return 'empty';
+
+    const daysLeft = differenceInDays(expiryDate, new Date());
+    if (daysLeft <= 14) return 'critical';
+    return 'ok';
   };
 
   const getCupsName = (
@@ -670,6 +736,7 @@ export const GroupedShoppingLists = ({
             unit: value.unit,
             isCoffeeIngredient: value.isCoffeeIngredient ?? false,
             breakdown: value.breakdown,
+            expiryStatus: getExpiryStatus(name),
           });
         }
       });
@@ -791,9 +858,45 @@ export const GroupedShoppingLists = ({
                   ref={inputRef}
                   placeholder='Поиск в заявке...'
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={e => handleSearchChange(e.target.value)}
                   className='pl-9 pr-10 h-9'
                 />
+                {!searchQuery && history.length > 0 && (
+                  <div className='absolute top-full left-0 right-0 bg-background border rounded-md shadow-lg mt-1 z-50'>
+                    {history.slice(0, 5).map((item, i) => (
+                      <div
+                        key={i}
+                        className='flex items-center justify-between hover:bg-muted transition-colors'
+                      >
+                        <button
+                          className='w-full text-left px-3 py-2 text-xs'
+                          onClick={() => {
+                            setSearchQuery(item);
+                            inputRef.current?.focus();
+                          }}
+                        >
+                          {item}
+                        </button>
+                        <button
+                          className='px-2 py-2 text-muted-foreground hover:text-red-500 transition-colors'
+                          onClick={e => {
+                            e.stopPropagation();
+                            setHistory(prev => {
+                              const next = prev.filter(h => h !== item);
+                              localStorage.setItem(
+                                'search_history',
+                                JSON.stringify(next),
+                              );
+                              return next;
+                            });
+                          }}
+                        >
+                          <X className='h-3 w-3' />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {searchQuery && (
                   <button
                     onClick={clearSearch}
@@ -828,7 +931,10 @@ export const GroupedShoppingLists = ({
                   return (
                     <TableRow
                       key={item.name}
-                      className={cn(isGroup && 'bg-primary/5')}
+                      className={cn(
+                        isGroup && 'bg-primary/5',
+                        item.expiryStatus === 'critical' && 'bg-[#E90F44]/60',
+                      )}
                     >
                       <TableCell className='px-1 py-2 md:px-2 font-medium overflow-hidden'>
                         <div className='flex items-center gap-1 sm:gap-2 w-full'>
@@ -1000,7 +1106,9 @@ export const GroupedShoppingLists = ({
                               </p>
                             </div>
                             <div className='mt-4 space-y-1'>
-                              {Object.entries(item.salesBreakdown || item.breakdown)
+                              {Object.entries(
+                                item.salesBreakdown || item.breakdown,
+                              )
                                 .filter(
                                   ([, details]) =>
                                     Math.ceil(details.amount) !== 0,
@@ -1014,7 +1122,10 @@ export const GroupedShoppingLists = ({
                                       {details.name} (#{machineId})
                                     </span>
                                     <span className='font-mono text-right flex-shrink-0'>
-                                      {Math.ceil(details.amount)} шт.
+                                      {Math.ceil(details.amount)}{' '}
+                                      {details.name.includes('стакан')
+                                        ? `шт.`
+                                        : item.unit}
                                     </span>
                                   </div>
                                 ))}

@@ -218,6 +218,23 @@ export const InventoryManager = () => {
   const scrollPositionRef = useRef(0);
   const { getSalesByProducts } = useTelemetronApi();
 
+  const [history, setHistory] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('search_history') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim() && !history.includes(value)) {
+      const next = [value, ...history].slice(0, 10);
+      setHistory(next);
+      localStorage.setItem('search_history', JSON.stringify(next));
+    }
+  };
+
   const loadMasterCatalog = useCallback(
     async (force = false) => {
       // 1. Пытаемся взять из кеша, если не force
@@ -506,7 +523,7 @@ export const InventoryManager = () => {
 
   const handleHintToggle = (name: string) => {
     setActiveHint(name);
-    setTimeout(() => setActiveHint(null), 1000);
+    setTimeout(() => setActiveHint(null), 1500);
   };
 
   const handleConstituentHint = (name: string) => {
@@ -605,7 +622,14 @@ export const InventoryManager = () => {
                       {expirationDates[constituent] && (
                         <p className='text-xs text-muted-foreground'>
                           Срок до:{' '}
-                          <span className='font-mono text-red-500 font-bold'>
+                          <span
+                            className={cn(
+                              'font-mono font-bold',
+                              getExpiryStatus(constituent) === 'critical'
+                                ? 'text-red-500'
+                                : 'text-green-500',
+                            )}
+                          >
                             {format(
                               parseISO(expirationDates[constituent]),
                               'dd.MM.yy',
@@ -805,12 +829,19 @@ export const InventoryManager = () => {
                                   {expiryDate && !isGroup && (
                                     <p className='text-xs text-muted-foreground'>
                                       Срок до:{' '}
-                                      <span className='font-mono text-red-500 font-bold'>
+                                      <span
+                                        className={cn(
+                                          'font-mono font-bold',
+                                          expiryStatus === 'critical'
+                                            ? 'text-red-500'
+                                            : 'text-green-500',
+                                        )}
+                                      >
                                         {format(
                                           parseISO(expiryDate),
                                           'dd.MM.yy',
                                         )}
-                                      </span>
+                                      </span>{' '}
                                     </p>
                                   )}
                                   {isGroup && (
@@ -915,9 +946,45 @@ export const InventoryManager = () => {
                 ref={inputRef}
                 placeholder='Поиск по каталогу...'
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => handleSearchChange(e.target.value)}
                 className='pl-8 pr-24 h-9 text-xs'
               />
+              {!searchQuery && history.length > 0 && (
+                <div className='absolute bottom-full left-0 right-0 bg-background border rounded-md shadow-lg mb-1 z-50'>
+                  {history.slice(0, 5).map((item, i) => (
+                    <div
+                      key={i}
+                      className='flex items-center justify-between hover:bg-muted transition-colors'
+                    >
+                      <button
+                        className='w-full text-left px-3 py-2 text-xs'
+                        onClick={() => {
+                          setSearchQuery(item);
+                          inputRef.current?.focus();
+                        }}
+                      >
+                        {item}
+                      </button>
+                      <button
+                        className='px-2 py-2 text-muted-foreground hover:text-red-500 transition-colors'
+                        onClick={e => {
+                          e.stopPropagation();
+                          setHistory(prev => {
+                            const next = prev.filter(h => h !== item);
+                            localStorage.setItem(
+                              'search_history',
+                              JSON.stringify(next),
+                            );
+                            return next;
+                          });
+                        }}
+                      >
+                        <X className='h-3 w-3' />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {searchQuery && (
                 <div className='absolute right-12 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1'>
                   <span className='text-[9px] font-mono text-muted-foreground px-1 border-r mr-1'>
