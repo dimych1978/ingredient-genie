@@ -72,7 +72,6 @@ export const useClickSound = () => {
       const gain = ctx.createGain();
       const volume = 0.2;
       gain.gain.setValueAtTime(volume, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
 
       source.connect(filter);
       filter.connect(gain);
