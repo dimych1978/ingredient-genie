@@ -693,45 +693,6 @@ export const InventoryManager = () => {
               />
             </button>
           </div>
-          <div className='relative mt-2 flex items-center gap-2'>
-            <div className='relative flex-1'>
-              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none' />
-              <Input
-                ref={inputRef}
-                placeholder='Поиск по каталогу...'
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className='pl-8 pr-24 h-9 text-xs'
-              />
-              {searchQuery && (
-                <div className='absolute right-1 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1'>
-                  <span className='text-[9px] font-mono text-muted-foreground px-1 border-r mr-1'>
-                    {matches.length > 0
-                      ? `${matchIndex + 1}/${matches.length}`
-                      : '0/0'}
-                  </span>
-                  <button
-                    onClick={prevMatch}
-                    className='p-0.5 hover:text-foreground'
-                  >
-                    <ChevronUp className='w-3.5 h-3.5' />
-                  </button>
-                  <button
-                    onClick={nextMatch}
-                    className='p-0.5 hover:text-foreground'
-                  >
-                    <ChevronDown className='w-3.5 h-3.5' />
-                  </button>
-                  <button
-                    onClick={clearSearch}
-                    className='p-1.5 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'
-                  >
-                    <X className='w-3.5 h-3.5' />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
         </CardHeader>
         <CardContent className='pt-2 px-0 sm:px-6'>
           {loading && catalog.length === 0 ? (
@@ -946,6 +907,46 @@ export const InventoryManager = () => {
               </Table>
             </div>
           )}
+          <div className='sticky bottom-0 z-20 bg-background/95 backdrop-blur border-t py-3 px-2'>
+            {' '}
+            <div className='relative flex-1'>
+              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none' />
+              <Input
+                ref={inputRef}
+                placeholder='Поиск по каталогу...'
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className='pl-8 pr-24 h-9 text-xs'
+              />
+              {searchQuery && (
+                <div className='absolute right-12 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1'>
+                  <span className='text-[9px] font-mono text-muted-foreground px-1 border-r mr-1'>
+                    {matches.length > 0
+                      ? `${matchIndex + 1}/${matches.length}`
+                      : '0/0'}
+                  </span>
+                  <button
+                    onClick={prevMatch}
+                    className='p-0.5 hover:text-foreground'
+                  >
+                    <ChevronUp className='w-3.5 h-3.5' />
+                  </button>
+                  <button
+                    onClick={nextMatch}
+                    className='p-0.5 hover:text-foreground'
+                  >
+                    <ChevronDown className='w-3.5 h-3.5' />
+                  </button>
+                  <button
+                    onClick={clearSearch}
+                    className='p-1.5 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'
+                  >
+                    <X className='w-3.5 h-3.5' />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
