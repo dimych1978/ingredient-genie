@@ -874,6 +874,40 @@ export const ShoppingList = ({
                   </Button>
                 )}
                 <Button
+                  onClick={() => {
+                    const hasMarkedItems = shoppingList.some(
+                      item => item.type === 'auto' && item.status === 'partial',
+                    );
+
+                    const newStatus: 'none' | 'partial' = hasMarkedItems
+                      ? 'none'
+                      : 'partial';
+
+                    shoppingList.forEach((item, index) => {
+                      if (item.type === 'auto') {
+                        dispatch({
+                          type: 'UPDATE_ITEM_STATUS',
+                          payload: {
+                            index,
+                            status: newStatus,
+                            loadedAmount:
+                              newStatus === 'partial' ? item.amount : 0,
+                          },
+                        });
+                      }
+                    });
+                  }}
+                  variant='outline'
+                  className='border-yellow-600 text-yellow-300 hover:bg-yellow-900/50 flex-1'
+                >
+                  <CircleCheckBig className='mr-2 h-4 w-4' />
+                  {shoppingList.some(
+                    item => item.type === 'auto' && item.status === 'partial',
+                  )
+                    ? 'Отметить всё как незагруженное'
+                    : 'Отметить всё как пополненное'}
+                </Button>
+                <Button
                   onClick={downloadList}
                   variant='outline'
                   className='border-gray-600 text-gray-300 hover:bg-gray-800 flex-1'
@@ -926,11 +960,12 @@ export const ShoppingList = ({
                     const isKreaMachine = machine?.model
                       ?.toLowerCase()
                       .includes('krea');
-                      const ingredientConfig = getIngredientConfig(item.name, machine?.model);
-const hasSizes = ingredientConfig?.hasSizes === true;
-                    const isSpecialKreaItem =
-                      isKreaMachine &&
-                     hasSizes;
+                    const ingredientConfig = getIngredientConfig(
+                      item.name,
+                      machine?.model,
+                    );
+                    const hasSizes = ingredientConfig?.hasSizes === true;
+                    const isSpecialKreaItem = isKreaMachine && hasSizes;
                     const isCheckboxItem =
                       item.type === 'checkbox' && !isSpecialKreaItem;
                     const isSyrupItem = item.type === 'select';
