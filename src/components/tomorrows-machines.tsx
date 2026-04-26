@@ -855,7 +855,7 @@ export const TomorrowsMachines = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value='inventory' forceMount>
+        <TabsContent value='inventory'>
           <InventoryManager />
         </TabsContent>
       </Tabs>
