@@ -213,6 +213,7 @@ export const InventoryManager = () => {
   const [activeConstituent, setActiveConstituent] = useState<string | null>(
     null,
   );
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollPositionRef = useRef(0);
@@ -587,6 +588,17 @@ export const InventoryManager = () => {
       <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center justify-between'>
         {item}
         <Info className='h-3 w-3 opacity-40' />
+        <Button
+          variant='ghost'
+          size='icon'
+          className='h-6 w-6 rounded-full'
+          onClick={e => {
+            e.stopPropagation();
+            setActiveGroup(null);
+          }}
+        >
+          <X className='h-3 w-3 text-[#F44336]' />
+        </Button>
       </h4>
       <div className='grid gap-2'>
         {PRODUCT_GROUPS[item].map(constituent => (
@@ -766,7 +778,12 @@ export const InventoryManager = () => {
                       >
                         <TableCell className='px-0.5 text-center'>
                           {isGroup ? (
-                            <Popover>
+                            <Popover
+                              open={activeGroup === item}
+                              onOpenChange={open =>
+                                setActiveGroup(open ? item : null)
+                              }
+                            >
                               <PopoverTrigger asChild>
                                 <div className='flex justify-center cursor-pointer outline-none'>
                                   <div

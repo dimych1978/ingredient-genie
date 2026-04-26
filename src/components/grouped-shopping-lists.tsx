@@ -19,7 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Eye, Search, X, Info, Plus, Minus } from 'lucide-react';
+import {
+  Loader2,
+  Eye,
+  Search,
+  X,
+  Info,
+  Plus,
+  Minus,
+  Check,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
@@ -48,6 +57,7 @@ type CombinedListItem = {
   breakdown: Record<string, { name: string; amount: number }>;
   salesBreakdown?: Record<string, { name: string; amount: number }>;
   expiryStatus?: 'ok' | 'critical' | 'empty';
+  checkedMachines?: Record<string, boolean>;
 };
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -91,6 +101,8 @@ export const GroupedShoppingLists = ({
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeHint, setActiveHint] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+
   const [history, setHistory] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('search_history') || '[]');
@@ -118,7 +130,11 @@ export const GroupedShoppingLists = ({
 
   const handleHintToggle = (name: string) => {
     setActiveHint(name);
-    setTimeout(() => setActiveHint(null), 1000);
+    const item = combinedList.find(i => i.name === name);
+    // Для товаров с критическим сроком не закрываем попап автоматически
+    if (item?.expiryStatus !== 'critical') {
+      setTimeout(() => setActiveHint(null), 1500);
+    }
   };
 
   const handleSearchChange = (value: string) => {
@@ -729,6 +745,27 @@ export const GroupedShoppingLists = ({
 
       productMap.forEach((value, name) => {
         const totalAmount = Math.ceil(Math.max(0, value.amount));
+        const checkedMachinesKey = `checked_machines_${name}`;
+        const checkedMachinesDateKey = `checked_machines_date_${name}`;
+
+        let checkedMachines: Record<string, boolean> = {};
+
+        try {
+          const savedDate = localStorage.getItem(checkedMachinesDateKey);
+          const currentExpiryDate = expirationDates?.[name];
+
+          // Если срок изменился — сбрасываем чекбоксы
+          if (savedDate !== currentExpiryDate) {
+            localStorage.removeItem(checkedMachinesKey);
+            if (currentExpiryDate) {
+              localStorage.setItem(checkedMachinesDateKey, currentExpiryDate);
+            }
+          } else {
+            const saved = localStorage.getItem(checkedMachinesKey);
+            if (saved) checkedMachines = JSON.parse(saved);
+          }
+        } catch {}
+
         if (totalAmount > 0) {
           finalList.push({
             name: name,
@@ -737,6 +774,7 @@ export const GroupedShoppingLists = ({
             isCoffeeIngredient: value.isCoffeeIngredient ?? false,
             breakdown: value.breakdown,
             expiryStatus: getExpiryStatus(name),
+            checkedMachines,
           });
         }
       });
@@ -940,7 +978,12 @@ export const GroupedShoppingLists = ({
                         <div className='flex items-center gap-1 sm:gap-2 w-full'>
                           <div className='flex items-center gap-1 flex-shrink-0'>
                             {isGroup ? (
-                              <Popover>
+                              <Popover
+                                open={activeGroup === item.name}
+                                onOpenChange={open =>
+                                  setActiveGroup(open ? item.name : null)
+                                }
+                              >
                                 <PopoverTrigger asChild>
                                   <div className='relative cursor-pointer'>
                                     <Input
@@ -956,9 +999,20 @@ export const GroupedShoppingLists = ({
                                 </PopoverTrigger>
                                 <PopoverContent className='w-80'>
                                   <div className='space-y-3'>
-                                    <h4 className='font-medium text-sm leading-none border-b pb-2 flex items-center gap-2'>
+                                    <h4 className='font-medium text-sm leading-none border-b pb-2 flex justify-between items-center gap-2'>
                                       {item.name}
-                                      <Info className='h-3 w-3 text-primary' />
+                                      <Info className='h-3 w-3 text-primary' />{' '}
+                                      <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        className='h-6 w-6 rounded-full'
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          setActiveGroup(null);
+                                        }}
+                                      >
+                                        <X className='h-3 w-3 text-[#F44336]' />
+                                      </Button>
                                     </h4>
                                     <div className='grid gap-3'>
                                       {PRODUCT_GROUPS[item.name].map(
@@ -1068,8 +1122,78 @@ export const GroupedShoppingLists = ({
                                   {item.name}
                                 </span>
                               </PopoverTrigger>
-                              <PopoverContent className='w-auto max-w-[280px] p-2 text-xs bg-popover/95 backdrop-blur-sm shadow-xl'>
-                                {item.name}
+                              <PopoverContent className='w-80 p-3'>
+                                <div className='space-y-2'>
+                                  <div className='flex items-center justify-between border-b pb-2'>
+                                    <h4 className='font-medium text-sm leading-none border-b pb-2'>
+                                      Проверка срока: {item.name}
+                                    </h4>
+                                    <Button
+                                      variant='ghost'
+                                      size='icon'
+                                      className='h-6 w-6 rounded-full'
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        setActiveHint(null);
+                                      }}
+                                    >
+                                      <X className='h-3 w-3 text-[#F44336]' />
+                                    </Button>
+                                  </div>
+                                  <div className='grid gap-1'>
+                                    {Object.entries(item.breakdown).map(
+                                      ([machineId, details]) => (
+                                        <div
+                                          key={machineId}
+                                          className='flex items-center gap-2 p-1 rounded hover:bg-muted/20 cursor-pointer'
+                                          onClick={() => {
+                                            const key = `checked_machines_${item.name}`;
+                                            const updated = {
+                                              ...item.checkedMachines,
+                                              [machineId]:
+                                                !item.checkedMachines?.[
+                                                  machineId
+                                                ],
+                                            };
+                                            localStorage.setItem(
+                                              key,
+                                              JSON.stringify(updated),
+                                            );
+
+                                            setCombinedList(prev =>
+                                              prev.map(i =>
+                                                i.name === item.name
+                                                  ? {
+                                                      ...i,
+                                                      checkedMachines: updated,
+                                                    }
+                                                  : i,
+                                              ),
+                                            );
+                                          }}
+                                        >
+                                          <div
+                                            className={cn(
+                                              'h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0',
+                                              item.checkedMachines?.[machineId]
+                                                ? 'border-green-500 bg-green-500/20'
+                                                : 'border-red-500 bg-red-500/10',
+                                            )}
+                                          >
+                                            {item.checkedMachines?.[
+                                              machineId
+                                            ] && (
+                                              <Check className='h-3 w-3 text-green-500' />
+                                            )}
+                                          </div>
+                                          <span className='text-xs truncate'>
+                                            {details.name} (#{machineId})
+                                          </span>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
                               </PopoverContent>
                             </Popover>
                             {isGroup && (
