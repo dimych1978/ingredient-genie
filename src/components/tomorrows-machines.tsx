@@ -552,7 +552,7 @@ export const TomorrowsMachines = () => {
                   <PopoverTrigger asChild>
                     <Button
                       variant='outline'
-                      disabled={isLoading}
+                      // disabled={isLoading}
                       className='w-full sm:w-auto'
                     >
                       <CalendarIcon className='mr-2 h-4 w-4' />
@@ -739,9 +739,11 @@ export const TomorrowsMachines = () => {
                       className='w-full justify-between'
                       disabled={isLoading}
                     >
-                      {isLoading && machineIdsForDay.length === 0 ? (
-                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                      ) : machineToAdd ? (
+                      {
+                      // isLoading && machineIdsForDay.length === 0 ? (
+                      //   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      // ) : 
+                      machineToAdd ? (
                         unselectedMachines.find(
                           machine => machine.id === machineToAdd,
                         )?.name
@@ -853,7 +855,7 @@ export const TomorrowsMachines = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value='inventory'>
+        <TabsContent value='inventory' forceMount>
           <InventoryManager />
         </TabsContent>
       </Tabs>

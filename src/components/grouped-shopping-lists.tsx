@@ -100,8 +100,14 @@ export const GroupedShoppingLists = ({
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeHint, setActiveHint] = useState<string | null>(null);
-  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+
+  const [activeHints, setActiveHints] = useState<{
+    activeHint: string | null;
+    activeGroup: string | null;
+    activeDetail: string | null;
+  }>({ activeHint: null, activeGroup: null, activeDetail: null });
+
+  const { activeHint, activeGroup, activeDetail } = activeHints;
 
   const [history, setHistory] = useState<string[]>(() => {
     try {
@@ -129,11 +135,14 @@ export const GroupedShoppingLists = ({
   const machineIdsToProcessCount = machineIdsToProcess.length;
 
   const handleHintToggle = (name: string) => {
-    setActiveHint(name);
+    setActiveHints(prev => ({ ...prev, activeHint: name }));
     const item = combinedList.find(i => i.name === name);
     // Для товаров с критическим сроком не закрываем попап автоматически
     if (item?.expiryStatus !== 'critical') {
-      setTimeout(() => setActiveHint(null), 1500);
+      setTimeout(
+        () => setActiveHints(prev => ({ ...prev, activeHint: null })),
+        1500,
+      );
     }
   };
 
@@ -981,7 +990,10 @@ export const GroupedShoppingLists = ({
                               <Popover
                                 open={activeGroup === item.name}
                                 onOpenChange={open =>
-                                  setActiveGroup(open ? item.name : null)
+                                  setActiveHints(prev => ({
+                                    ...prev,
+                                    activeGroup: open ? item.name : null,
+                                  }))
                                 }
                               >
                                 <PopoverTrigger asChild>
@@ -1008,7 +1020,10 @@ export const GroupedShoppingLists = ({
                                         className='h-6 w-6 rounded-full'
                                         onClick={e => {
                                           e.stopPropagation();
-                                          setActiveGroup(null);
+                                          setActiveHints(prev => ({
+                                            ...prev,
+                                            activeGroup: null,
+                                          }));
                                         }}
                                       >
                                         <X className='h-3 w-3 text-[#F44336]' />
@@ -1110,7 +1125,16 @@ export const GroupedShoppingLists = ({
                             )}
                           </div>{' '}
                           <div className='flex flex-col min-w-0 flex-1'>
-                            <Popover open={activeHint === item.name}>
+                            <Popover
+                              open={activeHint === item.name}
+                              onOpenChange={open => {
+                                if (!open)
+                                  setActiveHints(prev => ({
+                                    ...prev,
+                                    activeHint: null,
+                                  }));
+                              }}
+                            >
                               <PopoverTrigger asChild>
                                 <span
                                   className={cn(
@@ -1134,7 +1158,10 @@ export const GroupedShoppingLists = ({
                                       className='h-6 w-6 rounded-full'
                                       onClick={e => {
                                         e.stopPropagation();
-                                        setActiveHint(null);
+                                        setActiveHints(prev => ({
+                                          ...prev,
+                                          activeHint: null,
+                                        }));
                                       }}
                                     >
                                       <X className='h-3 w-3 text-[#F44336]' />
@@ -1210,7 +1237,15 @@ export const GroupedShoppingLists = ({
                         </span>
                       </TableCell>
                       <TableCell className='px-1 py-2 md:px-2 text-right'>
-                        <Popover>
+                        <Popover
+                          open={activeDetail === item.name}
+                          onOpenChange={open =>
+                            setActiveHints(prev => ({
+                              ...prev,
+                              activeDetail: open ? item.name : null,
+                            }))
+                          }
+                        >
                           <PopoverTrigger asChild>
                             <Button
                               variant='ghost'
@@ -1222,9 +1257,25 @@ export const GroupedShoppingLists = ({
                           </PopoverTrigger>
                           <PopoverContent className='w-80'>
                             <div className='space-y-2'>
-                              <h4 className='font-medium leading-none'>
-                                Детализация
-                              </h4>
+                              <div className='font-medium text-sm leading-none border-b pb-2 flex justify-between items-center gap-2'>
+                                <h4 className='font-medium leading-none'>
+                                  Детализация
+                                </h4>{' '}
+                                <Button
+                                  variant='ghost'
+                                  size='icon'
+                                  className='h-6 w-6 rounded-full'
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setActiveHints(prev => ({
+                                      ...prev,
+                                      activeDetail: null,
+                                    }));
+                                  }}
+                                >
+                                  <X className='h-3 w-3 text-[#F44336]' />
+                                </Button>
+                              </div>
                               <p className='text-sm text-muted-foreground'>
                                 Разбивка для: <strong>{item.name}</strong>
                               </p>
