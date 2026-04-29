@@ -214,9 +214,12 @@ export const InventoryManager = () => {
     null,
   );
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollPositionRef = useRef(0);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { getSalesByProducts } = useTelemetronApi();
 
   const [history, setHistory] = useState<string[]>(() => {
@@ -229,11 +232,18 @@ export const InventoryManager = () => {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    if (value.trim() && !history.includes(value)) {
-      const next = [value, ...history].slice(0, 10);
-      setHistory(next);
-      localStorage.setItem('search_history', JSON.stringify(next));
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (value.trim() && !history.includes(value)) {
+        const next = [value, ...history].slice(0, 10);
+        setHistory(next);
+        localStorage.setItem('search_history', JSON.stringify(next));
+      }
+    }, 500);
   };
 
   const loadMasterCatalog = useCallback(
@@ -565,6 +575,7 @@ export const InventoryManager = () => {
 
   const clearSearch = () => {
     setSearchQuery('');
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -955,83 +966,76 @@ export const InventoryManager = () => {
               </Table>
             </div>
           )}
-          <div className='sticky bottom-0 z-20 bg-background/95 backdrop-blur border-t py-3 px-2'>
-            {' '}
-            <div className='relative flex-1'>
-              <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none' />
-              <Input
-                ref={inputRef}
-                placeholder='Поиск по каталогу...'
-                value={searchQuery}
-                onChange={e => handleSearchChange(e.target.value)}
-                className='pl-8 pr-24 h-9 text-xs'
-              />
-              {!searchQuery && history.length > 0 && (
-                <div className='absolute bottom-full left-0 right-0 bg-background border rounded-md shadow-lg mb-1 z-50'>
-                  {history.slice(0, 5).map((item, i) => (
-                    <div
-                      key={i}
-                      className='flex items-center justify-between hover:bg-muted transition-colors'
-                    >
-                      <button
-                        className='w-full text-left px-3 py-2 text-xs'
-                        onClick={() => {
-                          setSearchQuery(item);
-                          inputRef.current?.focus();
-                        }}
-                      >
-                        {item}
-                      </button>
-                      <button
-                        className='px-2 py-2 text-muted-foreground hover:text-red-500 transition-colors'
-                        onClick={e => {
-                          e.stopPropagation();
-                          setHistory(prev => {
-                            const next = prev.filter(h => h !== item);
-                            localStorage.setItem(
-                              'search_history',
-                              JSON.stringify(next),
-                            );
-                            return next;
-                          });
-                        }}
-                      >
-                        <X className='h-3 w-3' />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {searchQuery && (
-                <div className='absolute right-12 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1'>
-                  <span className='text-[9px] font-mono text-muted-foreground px-1 border-r mr-1'>
-                    {matches.length > 0
-                      ? `${matchIndex + 1}/${matches.length}`
-                      : '0/0'}
-                  </span>
-                  <button
-                    onClick={prevMatch}
-                    className='p-0.5 hover:text-foreground'
-                  >
-                    <ChevronUp className='w-3.5 h-3.5' />
-                  </button>
-                  <button
-                    onClick={nextMatch}
-                    className='p-0.5 hover:text-foreground'
-                  >
-                    <ChevronDown className='w-3.5 h-3.5' />
-                  </button>
-                  <button
-                    onClick={clearSearch}
-                    className='p-1.5 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'
-                  >
-                    <X className='w-3.5 h-3.5' />
-                  </button>
-                </div>
-              )}
-            </div>
+<div className='sticky bottom-0 z-20 bg-background/95 backdrop-blur border-t py-3 px-2'>
+  <div className='relative flex-1'>
+    <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none' />
+    <Input
+      ref={inputRef}
+      placeholder='Поиск по каталогу...'
+      value={searchQuery}
+      onChange={e => handleSearchChange(e.target.value)}
+      onFocus={() => !searchQuery && setShowHistory(true)}
+      onBlur={() => setTimeout(() => setShowHistory(false), 200)}
+      className='pl-8 pr-24 h-9 text-xs'
+    />
+    
+    {showHistory && !searchQuery && history.length > 0 && (
+      <div className='absolute bottom-full left-0 right-0 bg-background border rounded-md shadow-lg mb-1 z-50 max-h-48 overflow-y-auto'>
+        {history.slice(0, 10).map((item, i) => (
+          <div
+            key={i}
+            className='flex items-center justify-between hover:bg-muted transition-colors'
+          >
+            <button
+              className='w-full text-left px-3 py-2 text-xs'
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setSearchQuery(item);
+                setShowHistory(false);
+                inputRef.current?.focus();
+              }}
+            >
+              {item}
+            </button>
+            <button
+              className='px-2 py-2 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0'
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setHistory(prev => {
+                  const next = prev.filter(h => h !== item);
+                  localStorage.setItem('search_history', JSON.stringify(next));
+                  return next;
+                });
+              }}
+            >
+              <X className='h-3 w-3' />
+            </button>
           </div>
-        </CardContent>
+        ))}
+      </div>
+    )}
+    
+    {searchQuery && (
+      <div className='absolute right-12 top-1/2 -translate-y-1/2 flex items-center bg-background/80 backdrop-blur-sm rounded-md shadow-sm border px-1'>
+        <span className='text-[9px] font-mono text-muted-foreground px-1 border-r mr-1'>
+          {matches.length > 0
+            ? `${matchIndex + 1}/${matches.length}`
+            : '0/0'}
+        </span>
+        <button onClick={prevMatch} className='p-0.5 hover:text-foreground'>
+          <ChevronUp className='w-3.5 h-3.5' />
+        </button>
+        <button onClick={nextMatch} className='p-0.5 hover:text-foreground'>
+          <ChevronDown className='w-3.5 h-3.5' />
+        </button>
+        <button onClick={clearSearch} className='p-1.5 text-muted-foreground hover:text-red-500 transition-colors border-l ml-1'>
+          <X className='w-3.5 h-3.5' />
+        </button>
+      </div>
+    )}
+  </div>
+</div>        </CardContent>
       </Card>
     </div>
   );

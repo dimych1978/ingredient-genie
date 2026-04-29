@@ -117,7 +117,10 @@ export const GroupedShoppingLists = ({
     }
   });
 
+  const [showHistory, setShowHistory] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
 
@@ -148,11 +151,16 @@ export const GroupedShoppingLists = ({
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    if (value.trim() && !history.includes(value)) {
-      const next = [value, ...history].slice(0, 10);
-      setHistory(next);
-      localStorage.setItem('search_history', JSON.stringify(next));
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+    searchTimeoutRef.current = setTimeout(() => {
+      if (value.trim() && !history.includes(value)) {
+        const next = [value, ...history].slice(0, 10);
+        setHistory(next);
+        localStorage.setItem('search_history', JSON.stringify(next));
+      }
+    }, 500);
   };
 
   const getExpiryStatus = (itemName: string) => {
@@ -855,6 +863,8 @@ export const GroupedShoppingLists = ({
 
   const clearSearch = () => {
     setSearchQuery('');
+    setShowHistory(false);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -906,27 +916,34 @@ export const GroupedShoppingLists = ({
                   placeholder='Поиск в заявке...'
                   value={searchQuery}
                   onChange={e => handleSearchChange(e.target.value)}
+                  onFocus={() => !searchQuery && setShowHistory(true)}
+                  onBlur={() => setTimeout(() => setShowHistory(false), 200)}
                   className='pl-9 pr-10 h-9'
                 />
-                {!searchQuery && history.length > 0 && (
-                  <div className='absolute top-full left-0 right-0 bg-background border rounded-md shadow-lg mt-1 z-50'>
-                    {history.slice(0, 5).map((item, i) => (
+
+                {/* История выпадает вверх */}
+                {showHistory && !searchQuery && history.length > 0 && (
+                  <div className='absolute top-full left-0 right-0 bg-background border rounded-md shadow-lg mb-1 z-50 max-h-48 overflow-y-auto'>
+                    {history.slice(0, 10).map((item, i) => (
                       <div
                         key={i}
                         className='flex items-center justify-between hover:bg-muted transition-colors'
                       >
                         <button
                           className='w-full text-left px-3 py-2 text-xs'
-                          onClick={() => {
+                          onMouseDown={e => {
+                            e.preventDefault();
                             setSearchQuery(item);
+                            setShowHistory(false);
                             inputRef.current?.focus();
                           }}
                         >
                           {item}
                         </button>
                         <button
-                          className='px-2 py-2 text-muted-foreground hover:text-red-500 transition-colors'
-                          onClick={e => {
+                          className='px-2 py-2 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0'
+                          onMouseDown={e => {
+                            e.preventDefault();
                             e.stopPropagation();
                             setHistory(prev => {
                               const next = prev.filter(h => h !== item);
@@ -944,6 +961,7 @@ export const GroupedShoppingLists = ({
                     ))}
                   </div>
                 )}
+
                 {searchQuery && (
                   <button
                     onClick={clearSearch}
