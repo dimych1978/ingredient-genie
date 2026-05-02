@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  SetStateAction,
+} from 'react';
 import { allMachines, isSpecialMachine } from '@/lib/data';
 import {
   Card,
@@ -84,7 +90,10 @@ export const TomorrowsMachines = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [aaMachineIds, setAaMachineIds] = useState<Set<string>>(new Set());
   const [addMachineCalendarOpen, setAddMachineCalendarOpen] = useState(false);
-  const [calendarDayPicker, setCalendarDayPicker] = useState(false);
+  const [dayPicker, setDayPicker] = useState<{
+    calendarDayPicker: boolean;
+    machineDayPicker: boolean;
+  }>({ calendarDayPicker: false, machineDayPicker: false });
   const [servicedMachines, setServicedMachines] = useState<
     Record<string, boolean>
   >({});
@@ -99,6 +108,7 @@ export const TomorrowsMachines = () => {
     machineId: string | null;
     lastDate: Date | null;
   }>({ open: false, machineId: null, lastDate: null });
+  const { calendarDayPicker, machineDayPicker } = dayPicker;
 
   // --- DATA FETCHING AND SAVING ---
   const loadScheduleForDate = useCallback(
@@ -106,7 +116,7 @@ export const TomorrowsMachines = () => {
       setIsLoading(true);
       // Сбрасываем AA статусы при смене даты, чтобы не было старых данных при расчете счетчика
       setAaMachineIds(new Set());
-      
+
       try {
         const dateKey = format(date, 'yyyy-MM-dd');
 
@@ -125,13 +135,13 @@ export const TomorrowsMachines = () => {
         }
 
         const initialSpecialDates = await getSpecialMachineDates();
-        
+
         // Очищаем ID от дубликатов и несуществующих в справочнике аппаратов
         const rawIds = scheduleIds || [];
-        const loadedIds = Array.from(new Set(rawIds)).filter(id => 
-          allMachines.some(m => m.id === id)
+        const loadedIds = Array.from(new Set(rawIds)).filter(id =>
+          allMachines.some(m => m.id === id),
         );
-        
+
         const finalDates: Record<string, string> = {};
         const newAaMachineIds = new Set<string>();
 
@@ -527,11 +537,17 @@ export const TomorrowsMachines = () => {
     <div className='space-y-6'>
       <Tabs defaultValue='schedule' className='w-full'>
         <TabsList className='grid w-full grid-cols-2 h-12 mb-4'>
-          <TabsTrigger value='schedule' className='flex items-center gap-2 text-base'>
+          <TabsTrigger
+            value='schedule'
+            className='flex items-center gap-2 text-base'
+          >
             <ClipboardList className='h-5 w-5' />
             <span>Заявка</span>
           </TabsTrigger>
-          <TabsTrigger value='inventory' className='flex items-center gap-2 text-base'>
+          <TabsTrigger
+            value='inventory'
+            className='flex items-center gap-2 text-base'
+          >
             <Package className='h-5 w-5' />
             <span>Склад / Остатки</span>
           </TabsTrigger>
@@ -547,14 +563,12 @@ export const TomorrowsMachines = () => {
                 </div>
                 <Popover
                   open={calendarDayPicker}
-                  onOpenChange={setCalendarDayPicker}
+                  onOpenChange={open =>
+                    setDayPicker(prev => ({ ...prev, calendarDayPicker: open }))
+                  }
                 >
                   <PopoverTrigger asChild>
-                    <Button
-                      variant='outline'
-                      // disabled={isLoading}
-                      className='w-full sm:w-auto'
-                    >
+                    <Button variant='outline' className='w-full sm:w-auto'>
                       <CalendarIcon className='mr-2 h-4 w-4' />
                       {getFormattedDate(selectedDate)}
                     </Button>
@@ -566,7 +580,10 @@ export const TomorrowsMachines = () => {
                       onSelect={date => {
                         if (date) {
                           setSelectedDate(date);
-                          setCalendarDayPicker(false);
+                          setDayPicker({
+                            ...dayPicker,
+                            calendarDayPicker: false,
+                          });
                         }
                       }}
                       locale={ru}
@@ -653,7 +670,15 @@ export const TomorrowsMachines = () => {
                               <span className='text-sm font-medium'>
                                 {dateDisplay}
                               </span>
-                              <Popover>
+                              <Popover
+                                open={machineDayPicker}
+                                onOpenChange={open =>
+                                  setDayPicker(prev => ({
+                                    ...prev,
+                                    machineDayPicker: open,
+                                  }))
+                                }
+                              >
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant='ghost'
@@ -671,9 +696,14 @@ export const TomorrowsMachines = () => {
                                   <Calendar
                                     locale={ru}
                                     mode='single'
-                                    onSelect={date =>
-                                      handleCalendarSelect(date, machine.id)
-                                    }
+                                    onSelect={date => {
+                                      if (date)
+                                        handleCalendarSelect(date, machine.id);
+                                      setDayPicker({
+                                        ...dayPicker,
+                                        machineDayPicker: false,
+                                      });
+                                    }}
                                     selected={
                                       serviceDate
                                         ? new Date(serviceDate)
@@ -697,11 +727,14 @@ export const TomorrowsMachines = () => {
                             size='icon'
                             onClick={() => handleToggleServiced(machine.id)}
                             className={cn(
-                              isServiced && 'text-green-500 hover:text-green-400',
+                              isServiced &&
+                                'text-green-500 hover:text-green-400',
                             )}
                           >
                             <CheckCircle className='h-4 w-4' />
-                            <span className='sr-only'>Отметить обслуженным</span>
+                            <span className='sr-only'>
+                              Отметить обслуженным
+                            </span>
                           </Button>
                           <Button asChild variant='ghost' size='icon'>
                             <Link href={`/machines/${machine.id}`}>
@@ -739,17 +772,11 @@ export const TomorrowsMachines = () => {
                       className='w-full justify-between'
                       disabled={isLoading}
                     >
-                      {
-                      // isLoading && machineIdsForDay.length === 0 ? (
-                      //   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                      // ) : 
-                      machineToAdd ? (
-                        unselectedMachines.find(
-                          machine => machine.id === machineToAdd,
-                        )?.name
-                      ) : (
-                        'Выберите аппарат для добавления...'
-                      )}
+                      {machineToAdd
+                        ? unselectedMachines.find(
+                            machine => machine.id === machineToAdd,
+                          )?.name
+                        : 'Выберите аппарат для добавления...'}
                       <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                     </Button>
                   </PopoverTrigger>
@@ -831,7 +858,6 @@ export const TomorrowsMachines = () => {
                       disabled={date =>
                         date > new Date() || date < new Date('2020-01-01')
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -862,18 +888,25 @@ export const TomorrowsMachines = () => {
 
       <AlertDialog
         open={dialogState.open}
-        onOpenChange={open => !open && setDialogState(prev => ({ ...prev, open }))}
+        onOpenChange={open =>
+          !open && setDialogState(prev => ({ ...prev, open }))
+        }
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Подтверждение даты</AlertDialogTitle>
             <AlertDialogDescription>
-              Найдена дата последней инкассации для аппарата #{dialogState.machineId}:
+              Найдена дата последней инкассации для аппарата #
+              {dialogState.machineId}:
               <br />
-              <strong className="text-foreground">
-                {dialogState.lastDate && format(dialogState.lastDate, 'dd MMMM yyyy, HH:mm', { locale: ru })}
+              <strong className='text-foreground'>
+                {dialogState.lastDate &&
+                  format(dialogState.lastDate, 'dd MMMM yyyy, HH:mm', {
+                    locale: ru,
+                  })}
               </strong>
-              <br /><br />
+              <br />
+              <br />
               Использовать эту дату как начало периода?
             </AlertDialogDescription>
           </AlertDialogHeader>
