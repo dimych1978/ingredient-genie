@@ -103,6 +103,10 @@ export const useClickSound = () => {
         const volume = 0.2;
         gain.gain.setValueAtTime(volume, ctx.currentTime);
 
+        source.connect(filter);
+filter.connect(gain);
+gain.connect(ctx.destination);
+
         source.start();
       } catch (error) {
         // тихо падаем
