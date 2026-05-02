@@ -1165,7 +1165,7 @@ export const GroupedShoppingLists = ({
                                   {item.name}
                                 </span>
                               </PopoverTrigger>
-                              <PopoverContent className='w-[90vw] p-3'>
+                              <PopoverContent className='w-[80vw] p-3'>
                                 {item.expiryStatus === 'critical' ? (
                                   <div className='space-y-2'>
                                     <div className='flex items-center justify-between border-b pb-2'>
