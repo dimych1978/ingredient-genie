@@ -49,8 +49,36 @@ export const useClickSound = () => {
         const ctx = audioCtxRef.current;
         if (!ctx) return;
 
-        if (ctx.state !== 'running') {
-          ctx.resume().catch(() => {});
+        if (ctx.state === 'suspended') {
+          ctx
+            .resume()
+            .then(() => {
+              // Создаём все узлы заново внутри колбэка
+              const bufferSize = ctx.sampleRate * 0.008;
+              const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+              const data = buffer.getChannelData(0);
+              for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+              }
+
+              const source = ctx.createBufferSource();
+              source.buffer = buffer;
+
+              const filter = ctx.createBiquadFilter();
+              filter.type = 'bandpass';
+              filter.frequency.value = type === 'increment' ? 2000 : 700;
+              filter.Q.value = 1.0;
+
+              const gain = ctx.createGain();
+              gain.gain.setValueAtTime(0.2, ctx.currentTime);
+
+              source.connect(filter);
+              filter.connect(gain);
+              gain.connect(ctx.destination);
+              source.start();
+            })
+            .catch(() => {});
+          return;
         }
 
         // Шум
@@ -74,12 +102,6 @@ export const useClickSound = () => {
         const gain = ctx.createGain();
         const volume = 0.2;
         gain.gain.setValueAtTime(volume, ctx.currentTime);
-
-        source.onended = () => {
-          source.disconnect();
-          filter.disconnect();
-          gain.disconnect();
-        };
 
         source.start();
       } catch (error) {
