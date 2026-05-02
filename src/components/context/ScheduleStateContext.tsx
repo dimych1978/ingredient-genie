@@ -12,6 +12,12 @@ type ScheduleStateContextType = {
   expirationDates: Record<string, string>;
   setExpirationDates: Dispatch<SetStateAction<Record<string, string>>>;
   refreshExpirationDates: () => Promise<void>;
+  machineItemExpiry: Record<string, string>;
+  setMachineItemExpiryDate: (
+    machineId: string,
+    itemName: string,
+    date: Date | null,
+  ) => void;
 };
 
 const ScheduleStateContext = createContext<
@@ -20,6 +26,7 @@ const ScheduleStateContext = createContext<
 
 const STOCK_STORAGE_KEY = 'telemetron_stock_on_hand';
 const EXPIRY_STORAGE_KEY = 'telemetron_expiration_dates';
+const MACHINE_ITEM_EXPIRY_KEY = 'machine_item_expiry';
 
 export const ScheduleStateProvider = ({
   children,
@@ -28,7 +35,12 @@ export const ScheduleStateProvider = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [stockOnHand, setStockOnHand] = useState<Record<string, string>>({});
-  const [expirationDates, setExpirationDates] = useState<Record<string, string>>({});
+  const [expirationDates, setExpirationDates] = useState<
+    Record<string, string>
+  >({});
+  const [machineItemExpiry, setMachineItemExpiry] = useState<
+    Record<string, string>
+  >({});
   const [isInitialized, setIsInitialized] = useState(false);
 
   const refreshExpirationDates = async () => {
@@ -55,7 +67,7 @@ export const ScheduleStateProvider = ({
           console.error('Ошибка парсинга остатков:', error);
         }
       }
-      
+
       // Сначала грузим сроки из локалки для скорости
       const savedExpiry = localStorage.getItem(EXPIRY_STORAGE_KEY);
       if (savedExpiry) {
@@ -65,12 +77,12 @@ export const ScheduleStateProvider = ({
           console.error('Ошибка парсинга сроков из локалки:', error);
         }
       }
-      
+
       // Потом обновляем из Redis
       await refreshExpirationDates();
       setIsInitialized(true);
     };
-    
+
     init();
   }, []);
 
@@ -89,7 +101,7 @@ export const ScheduleStateProvider = ({
     }
   }, [expirationDates, isInitialized]);
 
-  // 4. Синхронизация остатков между вкладками (Оптимизировано: без лишних зависимостей)
+  // 4. Синхронизация остатков между вкладками
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (!e.newValue) return;
@@ -97,22 +109,33 @@ export const ScheduleStateProvider = ({
       if (e.key === STOCK_STORAGE_KEY) {
         try {
           const newData = JSON.parse(e.newValue);
-          setStockOnHand(prev => 
-            JSON.stringify(prev) !== e.newValue ? newData : prev
+          setStockOnHand(prev =>
+            JSON.stringify(prev) !== e.newValue ? newData : prev,
           );
         } catch (error) {
           console.error('Storage sync error (stock):', error);
         }
       }
-      
+
       if (e.key === EXPIRY_STORAGE_KEY) {
         try {
           const newData = JSON.parse(e.newValue);
-          setExpirationDates(prev => 
-            JSON.stringify(prev) !== e.newValue ? newData : prev
+          setExpirationDates(prev =>
+            JSON.stringify(prev) !== e.newValue ? newData : prev,
           );
         } catch (error) {
           console.error('Storage sync error (expiry):', error);
+        }
+      }
+
+      if (e.key === MACHINE_ITEM_EXPIRY_KEY) {
+        try {
+          const newData = JSON.parse(e.newValue);
+          setMachineItemExpiry(prev =>
+            JSON.stringify(prev) !== e.newValue ? newData : prev,
+          );
+        } catch (error) {
+          console.error('Storage sync error (machine expiry):', error);
         }
       }
     };
@@ -120,6 +143,48 @@ export const ScheduleStateProvider = ({
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Загрузка при инициализации
+  useEffect(() => {
+    const saved = localStorage.getItem(MACHINE_ITEM_EXPIRY_KEY);
+    if (saved) {
+      try {
+        setMachineItemExpiry(JSON.parse(saved));
+      } catch {
+        (e: unknown) => {
+          console.error(e instanceof Error ? e.message : e);
+        };
+      }
+    }
+  }, []);
+
+  // Сохранение при изменении
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem(
+        MACHINE_ITEM_EXPIRY_KEY,
+        JSON.stringify(machineItemExpiry),
+      );
+    }
+  }, [machineItemExpiry, isInitialized]);
+
+  // Функция для установки даты
+  const setMachineItemExpiryDate = (
+    machineId: string,
+    itemName: string,
+    date: Date | null,
+  ) => {
+    setMachineItemExpiry(prev => {
+      const next = { ...prev };
+      const key = `${machineId}_${itemName}`;
+      if (date) {
+        next[key] = date.toISOString();
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+  };
 
   return (
     <ScheduleStateContext.Provider
@@ -130,7 +195,9 @@ export const ScheduleStateProvider = ({
         setStockOnHand,
         expirationDates,
         setExpirationDates,
-        refreshExpirationDates
+        refreshExpirationDates,
+        machineItemExpiry,
+        setMachineItemExpiryDate,
       }}
     >
       {children}

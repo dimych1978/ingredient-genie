@@ -96,6 +96,7 @@ export const GroupedShoppingLists = ({
   stockOnHand,
   onStockChange,
 }: GroupedShoppingListsProps) => {
+  const { machineItemExpiry } = useScheduleState();
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
@@ -1164,81 +1165,99 @@ export const GroupedShoppingLists = ({
                                   {item.name}
                                 </span>
                               </PopoverTrigger>
-                              <PopoverContent className='w-80 p-3'>
-                                <div className='space-y-2'>
-                                  <div className='flex items-center justify-between border-b pb-2'>
-                                    <h4 className='font-medium text-sm leading-none border-b pb-2'>
-                                      Проверка срока: {item.name}
-                                    </h4>
-                                    <Button
-                                      variant='ghost'
-                                      size='icon'
-                                      className='h-6 w-6 rounded-full'
-                                      onClick={e => {
-                                        e.stopPropagation();
-                                        setActiveHints(prev => ({
-                                          ...prev,
-                                          activeHint: null,
-                                        }));
-                                      }}
-                                    >
-                                      <X className='h-3 w-3 text-[#F44336]' />
-                                    </Button>
+                              <PopoverContent className='w-full p-3'>
+                                {item.expiryStatus === 'critical' ? (
+                                  <div className='space-y-2'>
+                                    <div className='flex items-center justify-between border-b pb-2'>
+                                      <h4 className='font-medium text-sm'>
+                                        Проверка срока: {item.name}
+                                      </h4>
+                                      <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        className='h-6 w-6 rounded-full'
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          setActiveHints(prev => ({
+                                            ...prev,
+                                            activeHint: null,
+                                          }));
+                                        }}
+                                      >
+                                        <X className='h-3 w-3' />
+                                      </Button>
+                                    </div>
+                                    <div className='grid gap-1'>
+                                      {Object.entries(item.breakdown).map(
+                                        ([machineId, details]) => {
+                                          const expiryKey = `${machineId}_${item.name}`;
+                                          const expiryDateStr =
+                                            machineItemExpiry[expiryKey];
+                                          let isExpiryOk = false;
+                                          if (expiryDateStr) {
+                                            const expiryDate =
+                                              parseISO(expiryDateStr);
+                                            if (isValid(expiryDate)) {
+                                              const daysLeft = differenceInDays(
+                                                expiryDate,
+                                                new Date(),
+                                              );
+                                              isExpiryOk = daysLeft > 14;
+                                            }
+                                          }
+                                          return (
+                                            <div
+                                              key={machineId}
+                                              className={cn(
+                                                'flex items-center gap-2 p-1 rounded',
+                                                expiryDateStr
+                                                  ? isExpiryOk
+                                                    ? 'bg-green-500/10'
+                                                    : 'bg-red-500/10'
+                                                  : 'bg-red-500/10',
+                                              )}
+                                            >
+                                              <div
+                                                className={cn(
+                                                  'h-3 w-3 rounded-full flex-shrink-0',
+                                                  expiryDateStr
+                                                    ? isExpiryOk
+                                                      ? 'bg-green-500'
+                                                      : 'bg-red-500'
+                                                    : 'bg-red-500',
+                                                )}
+                                              />
+                                              <span className='text-xs truncate'>
+                                                {details.name} (#{machineId})
+                                              </span>
+                                              {expiryDateStr && (
+                                                <span
+                                                  className={cn(
+                                                    'text-[10px] ml-auto',
+                                                    isExpiryOk
+                                                      ? 'text-green-400'
+                                                      : 'text-red-400',
+                                                  )}
+                                                >
+                                                  {format(
+                                                    parseISO(expiryDateStr),
+                                                    'dd.MM.yy',
+                                                  )}
+                                                </span>
+                                              )}
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className='grid gap-1'>
-                                    {Object.entries(item.breakdown).map(
-                                      ([machineId, details]) => (
-                                        <div
-                                          key={machineId}
-                                          className='flex items-center gap-2 p-1 rounded hover:bg-muted/20 cursor-pointer'
-                                          onClick={() => {
-                                            const key = `checked_machines_${item.name}`;
-                                            const updated = {
-                                              ...item.checkedMachines,
-                                              [machineId]:
-                                                !item.checkedMachines?.[
-                                                  machineId
-                                                ],
-                                            };
-                                            localStorage.setItem(
-                                              key,
-                                              JSON.stringify(updated),
-                                            );
-
-                                            setCombinedList(prev =>
-                                              prev.map(i =>
-                                                i.name === item.name
-                                                  ? {
-                                                      ...i,
-                                                      checkedMachines: updated,
-                                                    }
-                                                  : i,
-                                              ),
-                                            );
-                                          }}
-                                        >
-                                          <div
-                                            className={cn(
-                                              'h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0',
-                                              item.checkedMachines?.[machineId]
-                                                ? 'border-green-500 bg-green-500/20'
-                                                : 'border-red-500 bg-red-500/10',
-                                            )}
-                                          >
-                                            {item.checkedMachines?.[
-                                              machineId
-                                            ] && (
-                                              <Check className='h-3 w-3 text-green-500' />
-                                            )}
-                                          </div>
-                                          <span className='text-xs truncate'>
-                                            {details.name} (#{machineId})
-                                          </span>
-                                        </div>
-                                      ),
-                                    )}
+                                ) : (
+                                  <div className='space-y-1'>
+                                    <p className='font-medium text-sm'>
+                                      {item.name}
+                                    </p>
                                   </div>
-                                </div>
+                                )}{' '}
                               </PopoverContent>
                             </Popover>
                             {isGroup && (

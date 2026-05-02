@@ -28,11 +28,11 @@ import {
   setSpecialMachineDate,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Loader2,
   ShoppingCart,
-  Calendar,
   Download,
   X,
   Save,
@@ -42,8 +42,9 @@ import {
   Bookmark,
   Plus,
   Minus,
+  CalendarDays,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { differenceInDays, format, isValid, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,6 +70,8 @@ import {
 import { usePlanogramData } from '@/hooks/usePlanogramData';
 import { ScrollNavButtons } from './scroll-nav-buttons';
 import { SoundButton } from './ui/sound-button';
+import { useScheduleState } from './context/ScheduleStateContext';
+import { ru } from 'date-fns/locale';
 
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
@@ -266,8 +269,15 @@ export const ShoppingList = ({
   markAsServiced,
 }: ShoppingListProps) => {
   const [state, dispatch] = useReducer(shoppingListReducer, initialState);
+
+  const { expirationDates, machineItemExpiry, setMachineItemExpiryDate } =
+    useScheduleState();
+
   const [machineIds, setMachineIds] = useState<string[]>(initialMachineIds);
   const [isPlanogramDataReady, setPlanogramDataReady] = useState(false);
+  const [expiryCalendarOpen, setExpiryCalendarOpen] = useState<
+    Record<string, boolean>
+  >({});
 
   const {
     loading,
@@ -737,6 +747,15 @@ export const ShoppingList = ({
     URL.revokeObjectURL(url);
   };
 
+  const getItemExpiryStatus = (itemName: string) => {
+    const dateStr = expirationDates?.[itemName];
+    if (!dateStr) return 'ok';
+    const expiryDate = parseISO(dateStr);
+    if (!isValid(expiryDate)) return 'ok';
+    const daysLeft = differenceInDays(expiryDate, new Date());
+    return daysLeft <= 14 ? 'critical' : 'ok';
+  };
+
   const extractProductName = (
     planogramName: string | null,
     itemName: string,
@@ -815,7 +834,7 @@ export const ShoppingList = ({
                         Дата начала периода
                       </Label>
                       <div className='flex items-center gap-2'>
-                        <Calendar className='h-4 w-4 text-gray-400' />
+                        <CalendarDays className='h-4 w-4 text-gray-400' />
                         <Input
                           id='dateFrom'
                           type='date'
@@ -985,6 +1004,8 @@ export const ShoppingList = ({
                             !isLastDuplicate &&
                             'animated-dash-full opacity-90',
                           isDuplicate && isLastDuplicate && 'holy-glow',
+                          getItemExpiryStatus(item.name) === 'critical' &&
+                            'border-red-500 bg-[#E90F44]/60',
                         )}
                       >
                         {/* Левый блок - информация о товаре */}
@@ -1066,7 +1087,58 @@ export const ShoppingList = ({
                                 </div>
                               )}
                           </div>
-
+                          {getItemExpiryStatus(item.name) === 'critical' && (
+                            <Popover
+                              open={expiryCalendarOpen[item.name]}
+                              onOpenChange={open =>
+                                setExpiryCalendarOpen(prev => ({
+                                  ...prev,
+                                  [item.name]: open,
+                                }))
+                              }
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-6 w-6 p-0 bg-red-500/20 text-red-500 hover:bg-red-500/30'
+                                >
+                                  <CalendarDays className='h-3.5 w-3.5' />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className='w-auto p-0'
+                                align='start'
+                              >
+                                <CalendarComponent
+                                  mode='single'
+                                  selected={
+                                    machineItemExpiry[
+                                      `${machineIds[0]}_${item.name}`
+                                    ]
+                                      ? new Date(
+                                          machineItemExpiry[
+                                            `${machineIds[0]}_${item.name}`
+                                          ],
+                                        )
+                                      : undefined
+                                  }
+                                  onSelect={date => {
+                                    setMachineItemExpiryDate(
+                                      machineIds[0],
+                                      item.name,
+                                      date ?? null,
+                                    );
+                                    setExpiryCalendarOpen(prev => ({
+                                      ...prev,
+                                      [item.name]: false,
+                                    }));
+                                  }}
+                                  locale={ru}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          )}
                           {isSpecialKreaItem ||
                           isSyrupItem ||
                           isCheckboxItem ? (
