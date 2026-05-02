@@ -219,7 +219,7 @@ export const InventoryManager = () => {
   const [activeConstituent, setActiveConstituent] = useState<string | null>(
     null,
   );
-  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState<{expiry: string | null; stock: string | null}>({expiry: null, stock: null});
   const [showHistory, setShowHistory] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -614,7 +614,7 @@ export const InventoryManager = () => {
           className='h-6 w-6 rounded-full'
           onClick={e => {
             e.stopPropagation();
-            setActiveGroup(null);
+            setActiveGroup({expiry: null, stock: null});
           }}
         >
           <X className='h-3 w-3 text-[#F44336]' />
@@ -799,9 +799,9 @@ export const InventoryManager = () => {
                         <TableCell className='px-0.5 text-center'>
                           {isGroup ? (
                             <Popover
-                              open={activeGroup === item}
+                              open={activeGroup.expiry === item}
                               onOpenChange={open =>
-                                setActiveGroup(open ? item : null)
+                                setActiveGroup(prev => ({ ...prev, expiry: open ? item : null }))
                               }
                             >
                               <PopoverTrigger asChild>
@@ -985,7 +985,8 @@ export const InventoryManager = () => {
                         </TableCell>
                         <TableCell className='px-0.5'>
                           {isGroup ? (
-                            <Popover>
+                            <Popover open={activeGroup.stock === item} onOpenChange={open => setActiveGroup(prev => ({ ...prev, stock: open ? item : null}))}
+>
                               <PopoverTrigger asChild>
                                 <div className='relative cursor-pointer px-1'>
                                   <Input
