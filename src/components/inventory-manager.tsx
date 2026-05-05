@@ -219,7 +219,10 @@ export const InventoryManager = () => {
   const [activeConstituent, setActiveConstituent] = useState<string | null>(
     null,
   );
-  const [activeGroup, setActiveGroup] = useState<{expiry: string | null; stock: string | null}>({expiry: null, stock: null});
+  const [activeGroup, setActiveGroup] = useState<{
+    expiry: string | null;
+    stock: string | null;
+  }>({ expiry: null, stock: null });
   const [showHistory, setShowHistory] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -614,7 +617,7 @@ export const InventoryManager = () => {
           className='h-6 w-6 rounded-full'
           onClick={e => {
             e.stopPropagation();
-            setActiveGroup({expiry: null, stock: null});
+            setActiveGroup({ expiry: null, stock: null });
           }}
         >
           <X className='h-3 w-3 text-[#F44336]' />
@@ -801,7 +804,10 @@ export const InventoryManager = () => {
                             <Popover
                               open={activeGroup.expiry === item}
                               onOpenChange={open =>
-                                setActiveGroup(prev => ({ ...prev, expiry: open ? item : null }))
+                                setActiveGroup(prev => ({
+                                  ...prev,
+                                  expiry: open ? item : null,
+                                }))
                               }
                             >
                               <PopoverTrigger asChild>
@@ -902,6 +908,16 @@ export const InventoryManager = () => {
                                           const machine = allMachines.find(
                                             m => m.id === machineId,
                                           );
+
+                                          const expiryDate = parseISO(dateStr);
+                                          const daysLeft = isValid(expiryDate)
+                                            ? differenceInDays(
+                                                expiryDate,
+                                                new Date(),
+                                              )
+                                            : 0;
+                                          const isExpiryCritical =
+                                            daysLeft <= 14;
                                           return (
                                             <div
                                               key={key}
@@ -911,7 +927,14 @@ export const InventoryManager = () => {
                                                 {machine?.name || machineId} (#
                                                 {machineId})
                                               </span>
-                                              <span className='font-mono text-red-500 font-bold flex-shrink-0'>
+                                              <span
+                                                className={cn(
+                                                  'font-mono font-bold flex-shrink-0',
+                                                  isExpiryCritical
+                                                    ? 'text-red-500'
+                                                    : 'text-green-500',
+                                                )}
+                                              >
                                                 {format(
                                                   parseISO(dateStr),
                                                   'dd.MM.yy',
@@ -985,8 +1008,15 @@ export const InventoryManager = () => {
                         </TableCell>
                         <TableCell className='px-0.5'>
                           {isGroup ? (
-                            <Popover open={activeGroup.stock === item} onOpenChange={open => setActiveGroup(prev => ({ ...prev, stock: open ? item : null}))}
->
+                            <Popover
+                              open={activeGroup.stock === item}
+                              onOpenChange={open =>
+                                setActiveGroup(prev => ({
+                                  ...prev,
+                                  stock: open ? item : null,
+                                }))
+                              }
+                            >
                               <PopoverTrigger asChild>
                                 <div className='relative cursor-pointer px-1'>
                                   <Input

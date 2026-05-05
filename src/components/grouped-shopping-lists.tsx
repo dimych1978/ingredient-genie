@@ -1334,9 +1334,11 @@ export const GroupedShoppingLists = ({
                                       {details.name} (#{machineId})
                                     </span>
                                     <span className='font-mono text-right flex-shrink-0'>
-                                      {Math.ceil(details.amount)}{' '}
-                                      {details.name.includes('стакан')
-                                        ? `шт.`
+                                      {!details.amount
+                                        ? 0
+                                        : Math.ceil(details.amount)}
+                                      {item?.name.includes('стакан')
+                                        ? ` шт.`
                                         : item.unit}
                                     </span>
                                   </div>

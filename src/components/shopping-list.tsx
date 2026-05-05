@@ -748,6 +748,19 @@ export const ShoppingList = ({
   };
 
   const getItemExpiryStatus = (itemName: string) => {
+    // Сначала проверяем machineItemExpiry для этого аппарата
+    const machineKey = `${machineIds[0]}_${itemName}`;
+    const machineDateStr = machineItemExpiry[machineKey];
+
+    if (machineDateStr) {
+      const expiryDate = parseISO(machineDateStr);
+      if (isValid(expiryDate)) {
+        const daysLeft = differenceInDays(expiryDate, new Date());
+        return daysLeft <= 14 ? 'critical' : 'ok';
+      }
+    }
+
+    // Если нет даты в machineItemExpiry — смотрим expirationDates
     const dateStr = expirationDates?.[itemName];
     if (!dateStr) return 'ok';
     const expiryDate = parseISO(dateStr);
@@ -1089,11 +1102,11 @@ export const ShoppingList = ({
                           </div>
                           {getItemExpiryStatus(item.name) === 'critical' && (
                             <Popover
-                              open={expiryCalendarOpen[item.name]}
+                              open={expiryCalendarOpen[`${item.name}_${index}`]}
                               onOpenChange={open =>
                                 setExpiryCalendarOpen(prev => ({
                                   ...prev,
-                                  [item.name]: open,
+                                  [`${item.name}_${index}`]: open,
                                 }))
                               }
                             >
@@ -1131,7 +1144,7 @@ export const ShoppingList = ({
                                     );
                                     setExpiryCalendarOpen(prev => ({
                                       ...prev,
-                                      [item.name]: false,
+                                      [`${item.name}_${index}`]: false,
                                     }));
                                   }}
                                   locale={ru}
