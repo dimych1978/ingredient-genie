@@ -373,7 +373,10 @@ export const GroupedShoppingLists = ({
           (machine.model.toLowerCase().includes('krea') ||
             machine.model.toLowerCase().includes('jetinno'))
         ) {
-          continue;
+          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          if (name !== 'сироп' || !ingredientConfig?.syrupOptions) {
+            continue;
+          }
         }
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ
