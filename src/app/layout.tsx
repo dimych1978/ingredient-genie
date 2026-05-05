@@ -67,13 +67,13 @@ export default function RootLayout({
         />
       </head>
       <body className='font-body antialiased'>
-        <Providers>
-          <div className='min-h-screen bg-background'>
-            <div className='mx-auto w-full max-w-7xl px-3 sm:px-4'>
-              {children}
+          <Providers>
+            <div className='min-h-screen bg-background'>
+              <div className='mx-auto w-full max-w-7xl px-3 sm:px-4'>
+                {children}
+              </div>
             </div>
-          </div>
-        </Providers>
+          </Providers>
         <Toaster />
       </body>
     </html>

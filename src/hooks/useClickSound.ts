@@ -104,8 +104,8 @@ export const useClickSound = () => {
         gain.gain.setValueAtTime(volume, ctx.currentTime);
 
         source.connect(filter);
-filter.connect(gain);
-gain.connect(ctx.destination);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
 
         source.start();
       } catch (error) {
