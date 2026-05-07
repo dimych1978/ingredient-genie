@@ -709,11 +709,11 @@ export const TomorrowsMachines = () => {
                                         ? new Date(serviceDate)
                                         : undefined
                                     }
-                                    disabled={date =>
-                                      date > new Date() ||
-                                      date < new Date('2020-01-01')
-                                    }
-                                    initialFocus
+                                    // disabled={date =>
+                                    //   date > new Date() ||
+                                    //   date < new Date('2020-01-01')
+                                    // }
+                                    // initialFocus
                                   />
                                 </PopoverContent>
                               </Popover>
@@ -855,9 +855,9 @@ export const TomorrowsMachines = () => {
                         setAddMachineCalendarOpen(false);
                       }}
                       locale={ru}
-                      disabled={date =>
-                        date > new Date() || date < new Date('2020-01-01')
-                      }
+                      // disabled={date =>
+                      //   date > new Date() || date < new Date('2020-01-01')
+                      // }
                     />
                   </PopoverContent>
                 </Popover>
