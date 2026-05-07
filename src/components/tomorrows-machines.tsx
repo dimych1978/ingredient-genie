@@ -92,8 +92,8 @@ export const TomorrowsMachines = () => {
   const [addMachineCalendarOpen, setAddMachineCalendarOpen] = useState(false);
   const [dayPicker, setDayPicker] = useState<{
     calendarDayPicker: boolean;
-    machineDayPicker: boolean;
-  }>({ calendarDayPicker: false, machineDayPicker: false });
+    machineDayPicker: string | null;
+  }>({ calendarDayPicker: false, machineDayPicker: null });
   const [servicedMachines, setServicedMachines] = useState<
     Record<string, boolean>
   >({});
@@ -671,11 +671,11 @@ export const TomorrowsMachines = () => {
                                 {dateDisplay}
                               </span>
                               <Popover
-                                open={machineDayPicker}
+                                open={machineDayPicker === machine.id}
                                 onOpenChange={open =>
                                   setDayPicker(prev => ({
                                     ...prev,
-                                    machineDayPicker: open,
+                                    machineDayPicker: open ? machine.id : null,
                                   }))
                                 }
                               >
@@ -701,7 +701,7 @@ export const TomorrowsMachines = () => {
                                         handleCalendarSelect(date, machine.id);
                                       setDayPicker({
                                         ...dayPicker,
-                                        machineDayPicker: false,
+                                        machineDayPicker: null,
                                       });
                                     }}
                                     selected={
