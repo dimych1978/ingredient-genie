@@ -848,9 +848,15 @@ export const GroupedShoppingLists = ({
     const constituents = PRODUCT_GROUPS[groupName];
     if (!constituents) return stockOnHand[groupName] || '';
 
-    return constituents
-      .reduce((sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0), 0)
-      .toString();
+    const sum = constituents.reduce((acc, constituent) => {
+      const realKey =
+        Object.keys(stockOnHand).find(
+          key => normalize(key) === normalize(constituent),
+        ) || constituent;
+      return acc + (parseInt(stockOnHand[realKey] || '0') || 0);
+    }, 0);
+
+    return sum.toString();
   };
 
   const handleGroupStockChange = (constituentName: string, value: string) => {
@@ -1053,58 +1059,65 @@ export const GroupedShoppingLists = ({
                                     </h4>
                                     <div className='grid gap-3'>
                                       {PRODUCT_GROUPS[item.name].map(
-                                        constituent => (
-                                          <div
-                                            key={constituent}
-                                            className='flex items-center justify-between gap-2'
-                                          >
-                                            <span className='text-xs text-muted-foreground leading-tight flex-1'>
-                                              {constituent}
-                                            </span>
-                                            <div className='flex items-center gap-1'>
-                                              <SoundButton
-                                                variant='outline'
-                                                size='icon'
-                                                className='h-7 w-7 rounded-full'
-                                                onClick={() =>
-                                                  handleStep(constituent, -1)
-                                                }
-                                              >
-                                                <Minus className='h-3 w-3' />
-                                              </SoundButton>
-                                              <Input
-                                                type='number'
-                                                value={
-                                                  stockOnHand[constituent] ===
-                                                  '0'
-                                                    ? ''
-                                                    : stockOnHand[
-                                                        constituent
-                                                      ] || ''
-                                                }
-                                                onChange={e =>
-                                                  handleGroupStockChange(
-                                                    constituent,
-                                                    e.target.value,
-                                                  )
-                                                }
-                                                placeholder='0'
-                                                className='h-8 w-12 text-center text-xs'
-                                                inputMode='numeric'
-                                              />
-                                              <SoundButton
-                                                variant='outline'
-                                                size='icon'
-                                                className='h-7 w-7 rounded-full'
-                                                onClick={() =>
-                                                  handleStep(constituent, 1)
-                                                }
-                                              >
-                                                <Plus className='h-3 w-3' />
-                                              </SoundButton>
+                                        constituent => {
+                                          const realKey =
+                                            Object.keys(stockOnHand).find(
+                                              key =>
+                                                normalize(key) ===
+                                                normalize(constituent),
+                                            ) || constituent;
+
+                                          return (
+                                            <div
+                                              key={constituent}
+                                              className='flex items-center justify-between gap-2'
+                                            >
+                                              <span className='text-xs text-muted-foreground leading-tight flex-1'>
+                                                {constituent}
+                                              </span>
+                                              <div className='flex items-center gap-1'>
+                                                <SoundButton
+                                                  variant='outline'
+                                                  size='icon'
+                                                  className='h-7 w-7 rounded-full'
+                                                  onClick={() =>
+                                                    handleStep(realKey, -1)
+                                                  }
+                                                >
+                                                  <Minus className='h-3 w-3' />
+                                                </SoundButton>
+                                                <Input
+                                                  type='number'
+                                                  value={
+                                                    stockOnHand[realKey] === '0'
+                                                      ? ''
+                                                      : stockOnHand[realKey] ||
+                                                        ''
+                                                  }
+                                                  onChange={e =>
+                                                    handleGroupStockChange(
+                                                      realKey,
+                                                      e.target.value,
+                                                    )
+                                                  }
+                                                  placeholder='0'
+                                                  className='h-8 w-12 text-center text-xs'
+                                                  inputMode='numeric'
+                                                />
+                                                <SoundButton
+                                                  variant='outline'
+                                                  size='icon'
+                                                  className='h-7 w-7 rounded-full'
+                                                  onClick={() =>
+                                                    handleStep(realKey, 1)
+                                                  }
+                                                >
+                                                  <Plus className='h-3 w-3' />
+                                                </SoundButton>
+                                              </div>
                                             </div>
-                                          </div>
-                                        ),
+                                          );
+                                        },
                                       )}
                                     </div>{' '}
                                   </div>
@@ -1340,7 +1353,8 @@ export const GroupedShoppingLists = ({
                                       {!details.amount
                                         ? 0
                                         : Math.ceil(details.amount)}
-                                      {item?.name.includes('стакан')
+                                      {item?.name.includes('стакан') ||
+                                      item?.name.includes('размешивател')
                                         ? ` шт.`
                                         : item.unit}
                                     </span>

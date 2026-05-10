@@ -558,9 +558,14 @@ export const InventoryManager = () => {
     const constituents = PRODUCT_GROUPS[groupName];
     if (!constituents) return stockOnHand[groupName] || '';
 
-    return constituents
-      .reduce((sum, name) => sum + (parseInt(stockOnHand[name] || '0') || 0), 0)
-      .toString();
+    const sum = constituents.reduce((acc, constituent) => {
+      const realKey =
+        Object.keys(stockOnHand).find(
+          key => normalize(key) === normalize(constituent),
+        ) || constituent;
+      return acc + (parseInt(stockOnHand[realKey] || '0') || 0);
+    }, 0);
+    return sum.toString();
   };
 
   const getExpiryStatus = (itemName: string) => {
@@ -624,103 +629,113 @@ export const InventoryManager = () => {
         </Button>
       </h4>
       <div className='grid gap-2'>
-        {PRODUCT_GROUPS[item].map(constituent => (
-          <div
-            key={constituent}
-            className='flex items-center justify-between gap-2 p-1 rounded hover:bg-muted/20 min-w-0'
-          >
-            <div className='flex items-center gap-1.5 flex-1 min-w-0'>
-              {mode === 'expiry' && (
-                <ExpiryPicker
-                  itemName={constituent}
-                  status={getExpiryStatus(constituent)}
-                  dateStr={expirationDates[constituent]}
-                  onDateSelect={d => handleExpiryChange(constituent, d)}
-                />
-              )}
-              <div className='flex flex-col min-w-0'>
-                <Popover
-                  open={activeConstituent === constituent}
-                  onOpenChange={open => !open && setActiveConstituent(null)}
-                >
-                  <PopoverTrigger asChild>
-                    <span
-                      className='text-[11px] text-muted-foreground leading-tight truncate cursor-pointer'
-                      onClick={() => handleConstituentHint(constituent)}
-                    >
-                      {constituent}
-                    </span>
-                  </PopoverTrigger>
-                  <PopoverContent className='w-auto max-w-[280px] p-3 bg-popover/95 backdrop-blur-sm shadow-xl'>
-                    <div className='space-y-1'>
-                      <p className='font-medium text-sm'>{constituent}</p>
-                      {expirationDates[constituent] && (
-                        <p className='text-xs text-muted-foreground'>
-                          Срок до:{' '}
-                          <span
-                            className={cn(
-                              'font-mono font-bold',
-                              getExpiryStatus(constituent) === 'critical'
-                                ? 'text-red-500'
-                                : 'text-green-500',
-                            )}
-                          >
-                            {format(
-                              parseISO(expirationDates[constituent]),
-                              'dd.MM.yy',
-                            )}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                {mode === 'expiry' && expirationDates[constituent] && (
-                  <span className='text-[9px] font-mono text-muted-foreground'>
-                    до{' '}
-                    {format(parseISO(expirationDates[constituent]), 'dd.MM.yy')}
-                  </span>
+        {PRODUCT_GROUPS[item].map(constituent => {
+          const realKey =
+            Object.keys(stockOnHand).find(
+              key => normalize(key) === normalize(constituent),
+            ) || constituent;
+
+          return (
+            <div
+              key={constituent}
+              className='flex items-center justify-between gap-2 p-1 rounded hover:bg-muted/20 min-w-0'
+            >
+              <div className='flex items-center gap-1.5 flex-1 min-w-0'>
+                {mode === 'expiry' && (
+                  <ExpiryPicker
+                    itemName={constituent}
+                    status={getExpiryStatus(constituent)}
+                    dateStr={expirationDates[constituent]}
+                    onDateSelect={d => handleExpiryChange(constituent, d)}
+                  />
                 )}
+                <div className='flex flex-col min-w-0'>
+                  <Popover
+                    open={activeConstituent === constituent}
+                    onOpenChange={open => !open && setActiveConstituent(null)}
+                  >
+                    <PopoverTrigger asChild>
+                      <span
+                        className='text-[11px] text-muted-foreground leading-tight truncate cursor-pointer'
+                        onClick={() => handleConstituentHint(constituent)}
+                      >
+                        {constituent}
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent className='w-auto max-w-[280px] p-3 bg-popover/95 backdrop-blur-sm shadow-xl'>
+                      <div className='space-y-1'>
+                        <p className='font-medium text-sm'>{constituent}</p>
+                        {expirationDates[constituent] && (
+                          <p className='text-xs text-muted-foreground'>
+                            Срок до:{' '}
+                            <span
+                              className={cn(
+                                'font-mono font-bold',
+                                getExpiryStatus(constituent) === 'critical'
+                                  ? 'text-red-500'
+                                  : 'text-green-500',
+                              )}
+                            >
+                              {format(
+                                parseISO(expirationDates[constituent]),
+                                'dd.MM.yy',
+                              )}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {mode === 'expiry' && expirationDates[constituent] && (
+                    <span className='text-[9px] font-mono text-muted-foreground'>
+                      до{' '}
+                      {format(
+                        parseISO(expirationDates[constituent]),
+                        'dd.MM.yy',
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
+              {mode === 'stock' && (
+                <div className='flex items-center gap-1'>
+                  <SoundButton
+                    variant='outline'
+                    size='icon'
+                    className='h-6 w-6 rounded-full p-1.5'
+                    soundType='decrement'
+                    onClick={() => handleStep(realKey, -1)}
+                  >
+                    <Minus className='h-2.5 w-2.5' />
+                  </SoundButton>
+                  <Input
+                    type='number'
+                    value={
+                      stockOnHand[realKey] === '0'
+                        ? ''
+                        : stockOnHand[realKey] || ''
+                    }
+                    onChange={e => handleStockChange(realKey, e.target.value)}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                    className='h-7 w-10 text-center text-[11px] p-0'
+                    inputMode='numeric'
+                    placeholder='0'
+                  />
+                  <SoundButton
+                    variant='outline'
+                    size='icon'
+                    className='h-6 w-6 rounded-full p-1.5'
+                    soundType='increment'
+                    onClick={() => handleStep(realKey, 1)}
+                  >
+                    <Plus className='h-2.5 w-2.5' />
+                  </SoundButton>
+                </div>
+              )}
             </div>
-            {mode === 'stock' && (
-              <div className='flex items-center gap-1'>
-                <SoundButton
-                  variant='outline'
-                  size='icon'
-                  className='h-6 w-6 rounded-full p-1.5'
-                  soundType='decrement'
-                  onClick={() => handleStep(constituent, -1)}
-                >
-                  <Minus className='h-2.5 w-2.5' />
-                </SoundButton>
-                <Input
-                  type='number'
-                  value={
-                    stockOnHand[constituent] === '0'
-                      ? ''
-                      : stockOnHand[constituent] || ''
-                  }
-                  onChange={e => handleStockChange(constituent, e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  className='h-7 w-10 text-center text-[11px] p-0'
-                  inputMode='numeric'
-                  placeholder='0'
-                />
-                <SoundButton
-                  variant='outline'
-                  size='icon'
-                  className='h-6 w-6 rounded-full p-1.5'
-                  soundType='increment'
-                  onClick={() => handleStep(constituent, 1)}
-                >
-                  <Plus className='h-2.5 w-2.5' />
-                </SoundButton>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
