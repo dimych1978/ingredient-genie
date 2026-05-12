@@ -21,6 +21,7 @@ import type {
   ShoppingListItem,
 } from '@/types/telemetron';
 import {
+  getLastSaveTime,
   getLoadingOverrides,
   saveLastSaveTime,
   saveLoadingOverrides,
@@ -76,6 +77,7 @@ import { ru } from 'date-fns/locale';
 interface ShoppingListItemWithStatus extends ShoppingListItem {
   status: 'none' | 'partial';
   loadedAmount?: number;
+  previousLoaded?: number;
   checked?: boolean;
   checkedType?: 'big' | 'small';
   selectedSyrups?: string[];
@@ -107,6 +109,7 @@ type ShoppingListState = {
   coffeeProductNumbers: string[];
   salesThisPeriod: Map<string, number>;
   hasLoaded: boolean;
+  lastSaveTime: string | null;
 };
 
 type ShoppingListAction =
@@ -144,6 +147,7 @@ type ShoppingListAction =
       type: 'UPDATE_ITEM_SYRUPS';
       payload: { index: number; selectedSyrups: string[] };
     }
+  | { type: 'SET_LAST_SAVE_TIME'; payload: string | null }
   | {
       type: 'UPDATE_ITEM_SIZES';
       payload: { index: number; selectedSizes: ('big' | 'small')[] };
@@ -159,6 +163,7 @@ const initialState: ShoppingListState = {
   coffeeProductNumbers: [],
   salesThisPeriod: new Map(),
   hasLoaded: false,
+  lastSaveTime: null,
 };
 
 function shoppingListReducer(
@@ -184,6 +189,8 @@ function shoppingListReducer(
         hasLoaded: true,
       };
     }
+    case 'SET_LAST_SAVE_TIME':
+      return { ...state, lastSaveTime: action.payload };
     case 'SET_PLANOGRAM_DATA':
       return {
         ...state,
@@ -267,6 +274,7 @@ export const ShoppingList = ({
   onTimestampUpdate,
   sort = 'grouped',
   markAsServiced,
+  specialMachineDates,
 }: ShoppingListProps) => {
   const [state, dispatch] = useReducer(shoppingListReducer, initialState);
 
@@ -288,6 +296,7 @@ export const ShoppingList = ({
     coffeeProductNumbers,
     salesThisPeriod,
     hasLoaded,
+    lastSaveTime,
   } = state;
 
   const machineIdsString = useMemo(() => machineIds.join(', '), [machineIds]);
@@ -425,6 +434,12 @@ export const ShoppingList = ({
         m => m.id === machineIdsRef.current[0],
       );
 
+      let lastSaveTime: string | null = null;
+      if (machineIdsRef.current.length === 1) {
+        lastSaveTime = await getLastSaveTime(machineIdsRef.current[0]);
+        dispatch({ type: 'SET_LAST_SAVE_TIME', payload: lastSaveTime });
+      }
+
       for (const vmId of machineIdsRef.current) {
         try {
           const salesData: TelemetronSalesResponse =
@@ -472,6 +487,7 @@ export const ShoppingList = ({
             ...item,
             status,
             loadedAmount,
+            previousLoaded: override?.loadedAmount ?? undefined,
             checked: override?.checked ?? false,
             checkedType: override?.checkedType,
             selectedSyrups: override?.selectedSyrups || [],
@@ -1184,6 +1200,22 @@ export const ShoppingList = ({
                                       'ru-RU',
                                     )} ${item.unit}`}
                               </div>
+                              {!isSpecialMachine(machine) &&
+                                machine &&
+                                item.previousLoaded &&
+                                item.previousLoaded > 0 &&
+                                item.status === 'none' &&
+                                lastSaveTime &&
+                                specialMachineDates?.[machineIds[0]] &&
+                                new Date(lastSaveTime) >
+                                  new Date(
+                                    specialMachineDates[machineIds[0]],
+                                  ) && (
+                                  <div className='text-sm text-cyan-400 mt-1'>
+                                    Загружено ранее: {item.previousLoaded}{' '}
+                                    {item.unit}
+                                  </div>
+                                )}
                             </>
                           )}
                         </div>
