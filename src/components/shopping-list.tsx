@@ -710,16 +710,20 @@ export const ShoppingList = ({
       const result = await saveLoadingOverrides(overridesToSave);
 
       const machine = allMachines.find(m => m.id === machineId);
+      const now = new Date();
+      const newTimestamp = now.toISOString();
+
       if (machine && (isSpecialMachine(machine) || markAsServiced)) {
-        const now = new Date();
-        const newTimestamp = now.toISOString();
         await setSpecialMachineDate(machineId, newTimestamp);
         await saveTelemetronPress(machineId, newTimestamp);
-        await saveLastSaveTime(machineId, newTimestamp);
 
         if (onTimestampUpdate) {
           onTimestampUpdate(newTimestamp);
         }
+      }
+
+      if (machine) {
+        await saveLastSaveTime(machineId, newTimestamp);
       }
 
       if (result.success) {
@@ -1202,7 +1206,7 @@ export const ShoppingList = ({
                               </div>
                               {!isSpecialMachine(machine) &&
                                 machine &&
-                                item.previousLoaded &&
+                                typeof item.previousLoaded === 'number' &&
                                 item.previousLoaded > 0 &&
                                 item.status === 'none' &&
                                 lastSaveTime &&

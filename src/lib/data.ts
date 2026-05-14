@@ -157,10 +157,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Krea Touch',
   },
   {
-    id: '58727',
+    id: '58735',
     name: 'Авторазборка Иномарок 122',
     location: 'Авторазборка Иномарок 122\nул. Заводская, д.10 стр.7',
-    model: 'Necta Colibri',
+    model: 'Necta Kikko Max',
   },
   {
     id: '58695',
@@ -469,10 +469,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Krea Touch',
   },
   {
-    id: '58735',
+    id: '68475',
     name: 'Державинский лицей 234',
     location: 'Державинский лицей кофе\nул. Чернышевского, 14А',
-    model: 'Necta Kikko Max',
+    model: 'Jetinno, JL300',
   },
   {
     id: '57184',

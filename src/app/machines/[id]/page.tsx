@@ -56,7 +56,7 @@ export default function MachineStatusPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [effectiveStartDate, setEffectiveStartDate] = useState<string | null>(
-    null
+    null,
   );
   const [isServiced, setIsServiced] = useState(false);
   const [isManualDate, setIsManualDate] = useState(false);
@@ -133,7 +133,7 @@ export default function MachineStatusPage() {
       setEffectiveStartDate(isoDate);
       setHasUnsavedDate(true);
     },
-    [id, machineData, toast]
+    [id, machineData, toast],
   );
 
   const refreshTimestamp = useCallback(async (newTimestamp: string) => {
@@ -306,7 +306,7 @@ export default function MachineStatusPage() {
             </div>
           )}
           <ShoppingList
-          key={`${id}-${effectiveStartDate}`}
+            key={`${id}-${effectiveStartDate}`}
             machineIds={[id]}
             title={`Что брать к аппарату #${id}`}
             description={
@@ -314,15 +314,13 @@ export default function MachineStatusPage() {
                 ? 'Аппарат обслужен - следующий расчёт будет от текущей даты'
                 : 'Список расходников на основе продаж'
             }
-            dateFrom={new Date (effectiveStartDate)}
+            dateFrom={new Date(effectiveStartDate)}
             showControls={false}
             forceLoad={true}
-            specialMachineDates={
-              isSpecialMachine(machineData) ? { [id]: effectiveStartDate } : {}
-            }
+            specialMachineDates={{ [id]: effectiveStartDate }}
             onDateChange={handleManualDateChange}
             onTimestampUpdate={refreshTimestamp}
-            markAsServiced={isServiced} 
+            markAsServiced={isServiced}
           />
         </div>
       </div>
