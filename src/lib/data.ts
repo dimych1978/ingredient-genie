@@ -949,12 +949,6 @@ export const allMachines: Machine[] = [
     model: 'Necta Krea Touch',
   },
   {
-    id: '55112',
-    name: 'Офис (из Акватика кофе) 253',
-    location: 'Без места установки',
-    model: 'Necta Opera',
-  },
-  {
     id: '33401',
     name: 'Офис (из Лемана Про зона касс) 185',
     location: 'Без места установки',
