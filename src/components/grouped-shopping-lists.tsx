@@ -295,15 +295,14 @@ export const GroupedShoppingLists = ({
             );
 
             if (config) {
-              if (config.name.includes('крышк')) return;
-
-              if (
-                config.name.includes('размешивател') &&
-                config.type === 'checkbox'
-              )
+              if (config.name === 'крышки' || config.name.includes('крышк'))
                 return;
 
-              if (config.name.includes('стакан') && config.type === 'checkbox')
+              if (
+                (config.name === 'размешиватели' ||
+                  config.name.includes('размешивател')) &&
+                config.type === 'checkbox'
+              )
                 return;
 
               if (
@@ -1287,11 +1286,7 @@ export const GroupedShoppingLists = ({
                       </TableCell>
                       <TableCell className='px-1 py-2 md:px-2 text-right text-xs sm:text-sm overflow-hidden'>
                         <span className='whitespace-nowrap'>
-                          {item.amount}{' '}
-                          {item.name.includes('стакан') ||
-                          item.name.includes('размешивател')
-                            ? 'уп.'
-                            : item.unit}
+                          {item.amount} {item.unit}
                         </span>
                       </TableCell>
                       <TableCell className='px-1 py-2 md:px-2 text-right'>
@@ -1346,7 +1341,9 @@ export const GroupedShoppingLists = ({
                                   ([, details]) =>
                                     Math.ceil(details.amount) !== 0,
                                 )
-                                .map(([machineId, details]) => (
+                                .map(([machineId, details]) => {
+                                (machineId === '41373' || machineId === '58910' || machineId === '64179' ) && console.log('machineId', machineId, 'details', details, 'item', item);
+                                  return (
                                   <div
                                     key={machineId}
                                     className='flex justify-between items-center text-sm'
@@ -1364,7 +1361,7 @@ export const GroupedShoppingLists = ({
                                         : item.unit}
                                     </span>
                                   </div>
-                                ))}
+                                )})}
                             </div>
                           </PopoverContent>
                         </Popover>

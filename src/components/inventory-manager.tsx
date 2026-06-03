@@ -900,7 +900,7 @@ export const InventoryManager = () => {
                                     </Button>
                                   </div>
 
-                                  {expiryStatus === 'critical' ? (
+                                  {expiryStatus === 'critical'  && expiryDate ? (
                                     <div className='space-y-1'>
                                       <p className='text-xs text-muted-foreground'>
                                         Срок до:{' '}
