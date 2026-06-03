@@ -157,10 +157,10 @@ export const allMachines: Machine[] = [
     model: 'Necta Krea Touch',
   },
   {
-    id: '58735',
-    name: 'Автосервис Точка кофе 234',
-    location: 'Автосервис Точка кофе 234\nул. Ригачина, д.64 стр.4',
-    model: 'Necta Kikko Max',
+    id: '55112',
+    name: 'Авторазборка Иномарок 122',
+    location: 'Авторазборка Иномарок 122\nул. Заводская, д.10 стр.7',
+    model: 'Necta Opera',
   },
   {
     id: '58695',
@@ -947,12 +947,6 @@ export const allMachines: Machine[] = [
     name: 'ОРЭС корнер 39',
     location: 'ОРЭС корнер\nул. Кирова, 47Б',
     model: 'Necta Krea Touch',
-  },
-  {
-    id: '55112',
-    name: 'Офис (из Акватика кофе) 253',
-    location: 'Без места установки',
-    model: 'Necta Opera',
   },
   {
     id: '33401',
