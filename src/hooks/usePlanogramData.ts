@@ -80,7 +80,7 @@ export const usePlanogramData = () => {
       // 3. Загружаем продажи за 30 дней (период планограммы)
       const dateTo = new Date();
       const dateFrom = new Date();
-      dateFrom.setDate(dateFrom.getDate() - 30);
+      dateFrom.setDate(dateFrom.getDate() - 365);
 
       let salesData: TelemetronSalesResponse;
 
