@@ -2459,3 +2459,15 @@ export const getIngredientConfig = (
 
   return undefined;
 };
+
+// Кастомная планограмма с номерами, выбивающимися из общей логики порядка product_number
+export const customPlanogramMapping: Record<string, { shelf: number; order: string[] }[]> = {
+  '33351': [
+    { shelf: 1, order: ['70',] },
+    { shelf: 2, order: ['71', '72'] },
+    { shelf: 3, order: ['73', '74'] },
+    { shelf: 4, order: ['75', '76']},
+    { shelf: 5, order: ['77', '78']},
+    { shelf: 6, order: ['79', '80']},
+  ],
+};
