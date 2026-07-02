@@ -673,7 +673,7 @@ export const allMachines: Machine[] = [
     model: 'Crane Crane 167',
   },
   {
-    id: '58906',
+    id: '46059',
     name: 'Космос отель корнер 233',
     location: 'Космос отель корнер 233\nул. Куйбышева, д. 26',
     model: 'Necta Krea Touch',
@@ -1439,9 +1439,9 @@ export const allMachines: Machine[] = [
     model: 'TCN, CSC-10G',
   },
   {
-    id: '46059',
-    name: 'Фитнес Империя на Древлянке корнер',
-    location: 'Фитнес Империя корнер\nЛососинское шоссе, д.26',
+    id: '58096',
+    name: 'Офис (из Космос отель корнер 233)',
+    location: 'Без места установки',
     model: 'Necta Krea Touch',
   },
   {
