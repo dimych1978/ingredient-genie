@@ -48,6 +48,7 @@ import { cn } from '@/lib/utils';
 import { SoundButton } from './ui/sound-button';
 import { differenceInDays, parseISO, isValid } from 'date-fns';
 import { useScheduleState } from './context/ScheduleStateContext';
+import { useStockCounter } from '@/hooks/useStockCounter';
 
 type CombinedListItem = {
   name: string;
@@ -97,6 +98,7 @@ export const GroupedShoppingLists = ({
   onStockChange,
 }: GroupedShoppingListsProps) => {
   const { machineItemExpiry } = useScheduleState();
+    const { getValue, setValue, increment, decrement } = useStockCounter();
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
@@ -859,17 +861,17 @@ export const GroupedShoppingLists = ({
     return sum.toString();
   };
 
-  const handleGroupStockChange = (constituentName: string, value: string) => {
-    if (/^\d{0,3}$/.test(value)) {
-      onStockChange(constituentName, value);
-    }
-  };
+  // const handleGroupStockChange = (constituentName: string, value: string) => {
+  //   if (/^\d{0,3}$/.test(value)) {
+  //     onStockChange(constituentName, value);
+  //   }
+  // };
 
-  const handleStep = (name: string, delta: number) => {
-    const current = parseInt(stockOnHand[name] || '0') || 0;
-    const next = Math.max(0, current + delta);
-    onStockChange(name, next.toString());
-  };
+  // const handleStep = (name: string, delta: number) => {
+  //   const current = parseInt(stockOnHand[name] || '0') || 0;
+  //   const next = Math.max(0, current + delta);
+  //   onStockChange(name, next.toString());
+  // };
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -1077,43 +1079,32 @@ export const GroupedShoppingLists = ({
                                               </span>
                                               <div className='flex items-center gap-1'>
                                                 <SoundButton
-                                                  variant='outline'
-                                                  size='icon'
-                                                  className='h-7 w-7 rounded-full'
-                                                  onClick={() =>
-                                                    handleStep(realKey, -1)
-                                                  }
-                                                >
-                                                  <Minus className='h-3 w-3' />
-                                                </SoundButton>
-                                                <Input
-                                                  type='number'
-                                                  value={
-                                                    stockOnHand[realKey] === '0'
-                                                      ? ''
-                                                      : stockOnHand[realKey] ||
-                                                        ''
-                                                  }
-                                                  onChange={e =>
-                                                    handleGroupStockChange(
-                                                      realKey,
-                                                      e.target.value,
-                                                    )
-                                                  }
-                                                  placeholder='0'
-                                                  className='h-8 w-12 text-center text-xs'
-                                                  inputMode='numeric'
-                                                />
-                                                <SoundButton
-                                                  variant='outline'
-                                                  size='icon'
-                                                  className='h-7 w-7 rounded-full'
-                                                  onClick={() =>
-                                                    handleStep(realKey, 1)
-                                                  }
-                                                >
-                                                  <Plus className='h-3 w-3' />
-                                                </SoundButton>
+  variant='outline'
+  size='icon'
+  className='h-7 w-7 rounded-full'
+  onClick={() => decrement(realKey)}
+>
+  <Minus className='h-3 w-3' />
+</SoundButton>
+<Input
+  type='number'
+  value={getValue(realKey) === 0 ? '' : getValue(realKey)}
+  onChange={e => {
+    const val = parseInt(e.target.value) || 0;
+    setValue(realKey, val);
+  }}
+  placeholder='0'
+  className='h-8 w-12 text-center text-xs'
+  inputMode='numeric'
+/>
+<SoundButton
+  variant='outline'
+  size='icon'
+  className='h-7 w-7 rounded-full'
+  onClick={() => increment(realKey)}
+>
+  <Plus className='h-3 w-3' />
+</SoundButton>
                                               </div>
                                             </div>
                                           );
@@ -1125,7 +1116,7 @@ export const GroupedShoppingLists = ({
                               </Popover>
                             ) : (
                               <>
-                                <SoundButton
+                                {/* <SoundButton
                                   variant='ghost'
                                   size='icon'
                                   className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
@@ -1155,7 +1146,37 @@ export const GroupedShoppingLists = ({
                                   onClick={() => handleStep(item.name, 1)}
                                 >
                                   <Plus className='h-3 w-3' />
-                                </SoundButton>
+                                </SoundButton> */}
+                             
+  <SoundButton
+    variant='ghost'
+    size='icon'
+    className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
+    soundType='decrement'
+    onClick={() => decrement(item.name)}
+  >
+    <Minus className='h-3 w-3' />
+  </SoundButton>
+  <Input
+    type='number'
+    value={getValue(item.name) === 0 ? '' : getValue(item.name)}
+    onChange={e => {
+      const val = parseInt(e.target.value) || 0;
+      setValue(item.name, val);
+    }}
+    className='h-8 w-10 sm:w-12 text-center p-1'
+    placeholder='0'
+  />
+  <SoundButton
+    variant='ghost'
+    size='icon'
+    className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
+    soundType='increment'
+    onClick={() => increment(item.name)}
+  >
+    <Plus className='h-3 w-3' />
+  </SoundButton>
+
                               </>
                             )}
                           </div>{' '}

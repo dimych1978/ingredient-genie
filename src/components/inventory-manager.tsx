@@ -52,6 +52,7 @@ import { format, differenceInDays, parseISO, isValid, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Ingredient, TelemetronSaleItem } from '@/types/telemetron';
 import { SoundButton } from './ui/sound-button';
+import { useStockCounter } from '@/hooks/useStockCounter';
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 const ALL_CONSTITUENTS_NORMALIZED = new Set(
@@ -230,6 +231,9 @@ export const InventoryManager = () => {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { getSalesByProducts } = useTelemetronApi();
+
+  const { getValue, setValue, increment, decrement } = useStockCounter();
+
 
   const [history, setHistory] = useState<string[]>(() => {
     try {
@@ -501,25 +505,25 @@ export const InventoryManager = () => {
     scrollToMatch(matchIndex);
   }, [matchIndex, matches, scrollToMatch]);
 
-  const handleStockChange = (itemName: string, value: string) => {
-    if (/^\d{0,3}$/.test(value)) {
-      setStockOnHand(prev => {
-        const next = { ...prev, [itemName]: value };
+  // const handleStockChange = (itemName: string, value: string) => {
+  //   if (/^\d{0,3}$/.test(value)) {
+  //     setStockOnHand(prev => {
+  //       const next = { ...prev, [itemName]: value };
 
-        Object.entries(PRODUCT_GROUPS).forEach(([groupName, constituents]) => {
-          if (constituents.includes(itemName)) {
-            const sum = constituents.reduce(
-              (acc, c) => acc + (parseInt(next[c] || '0') || 0),
-              0,
-            );
-            next[groupName] = sum.toString();
-          }
-        });
+  //       Object.entries(PRODUCT_GROUPS).forEach(([groupName, constituents]) => {
+  //         if (constituents.includes(itemName)) {
+  //           const sum = constituents.reduce(
+  //             (acc, c) => acc + (parseInt(next[c] || '0') || 0),
+  //             0,
+  //           );
+  //           next[groupName] = sum.toString();
+  //         }
+  //       });
 
-        return next;
-      });
-    }
-  };
+  //       return next;
+  //     });
+  //   }
+  // };
 
   const handleExpiryChange = (itemName: string, date: Date | undefined) => {
     setExpirationDates(prev => ({
@@ -539,11 +543,11 @@ export const InventoryManager = () => {
     }, 50);
   };
 
-  const handleStep = (itemName: string, delta: number) => {
-    const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
-    const newValue = Math.max(0, currentValue + delta);
-    handleStockChange(itemName, newValue.toString());
-  };
+  // const handleStep = (itemName: string, delta: number) => {
+  //   const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
+  //   const newValue = Math.max(0, currentValue + delta);
+  //   // handleStockChange(itemName, newValue.toString());
+  // };
 
   const handleHintToggle = (name: string) => {
     setActiveHint(name);
@@ -703,7 +707,7 @@ export const InventoryManager = () => {
               </div>
               {mode === 'stock' && (
                 <div className='flex items-center gap-1'>
-                  <SoundButton
+                  {/* <SoundButton
                     variant='outline'
                     size='icon'
                     className='h-6 w-6 rounded-full p-1.5'
@@ -734,7 +738,38 @@ export const InventoryManager = () => {
                     onClick={() => handleStep(realKey, 1)}
                   >
                     <Plus className='h-2.5 w-2.5' />
-                  </SoundButton>
+                  </SoundButton> */}
+                  <SoundButton
+  variant='outline'
+  size='icon'
+  className='h-6 w-6 rounded-full p-1.5'
+  soundType='decrement'
+  onClick={() => decrement(realKey)}
+>
+  <Minus className='h-2.5 w-2.5' />
+</SoundButton>
+
+<Input
+  type='number'
+  value={getValue(realKey) === 0 ? '' : getValue(realKey)}
+  onChange={e => {
+    const val = parseInt(e.target.value) || 0;
+    setValue(realKey, val);
+  }}
+  className='h-7 w-10 text-center text-[11px] p-0'
+  inputMode='numeric'
+  placeholder='0'
+/>
+
+<SoundButton
+  variant='outline'
+  size='icon'
+  className='h-6 w-6 rounded-full p-1.5'
+  soundType='increment'
+  onClick={() => increment(realKey)}
+>
+  <Plus className='h-2.5 w-2.5' />
+</SoundButton>
                 </div>
               )}
             </div>
@@ -1057,41 +1092,39 @@ export const InventoryManager = () => {
                               </PopoverContent>
                             </Popover>
                           ) : (
-                            <div className='flex items-center gap-0.5 sm:gap-2 justify-center'>
-                              <SoundButton
-                                variant='outline'
-                                size='icon'
-                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
-                                soundType='decrement'
-                                onClick={() => handleStep(item, -1)}
-                              >
-                                <Minus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
-                              </SoundButton>
-                              <Input
-                                type='number'
-                                value={
-                                  stockOnHand[item] === '0'
-                                    ? ''
-                                    : stockOnHand[item] || ''
-                                }
-                                onChange={e =>
-                                  handleStockChange(item, e.target.value)
-                                }
-                                className='h-7 w-9 sm:w-12 text-center p-0 text-[11px]'
-                                inputMode='numeric'
-                                placeholder='0'
-                              />
-                              <SoundButton
-                                variant='outline'
-                                size='icon'
-                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
-                                soundType='increment'
-                                onClick={() => handleStep(item, 1)}
-                              >
-                                <Plus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
-                              </SoundButton>
-                            </div>
-                          )}
+<div className='flex items-center gap-0.5 sm:gap-2 justify-center'>
+  <SoundButton
+    variant='outline'
+    size='icon'
+    className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
+    soundType='decrement'
+    onClick={() => decrement(item)}
+  >
+    <Minus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
+  </SoundButton>
+  <Input
+    type='number'
+    value={getValue(item) === 0 ? '' : getValue(item)}
+    onChange={e => {
+      const val = parseInt(e.target.value) || 0;
+      setValue(item, val);
+    }}
+    onFocus={handleInputFocus}
+    onBlur={handleInputBlur}
+    className='h-7 w-9 sm:w-12 text-center p-0 text-[11px]'
+    inputMode='numeric'
+    placeholder='0'
+  />
+  <SoundButton
+    variant='outline'
+    size='icon'
+    className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
+    soundType='increment'
+    onClick={() => increment(item)}
+  >
+    <Plus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
+  </SoundButton>
+</div>                          )}
                         </TableCell>
                       </TableRow>
                     );
