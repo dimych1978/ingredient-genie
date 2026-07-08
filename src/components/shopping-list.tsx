@@ -65,7 +65,7 @@ import {
   allMachines,
   alternativeDisplayNames,
   getIngredientConfig,
-  getMachineType,
+  ALL_COFFEE_INGREDIENTS,
   isSpecialMachine,
 } from '@/lib/data';
 import { usePlanogramData } from '@/hooks/usePlanogramData';
@@ -152,6 +152,8 @@ type ShoppingListAction =
       type: 'UPDATE_ITEM_SIZES';
       payload: { index: number; selectedSizes: ('big' | 'small')[] };
     };
+
+const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 const initialState: ShoppingListState = {
   loading: false,
@@ -1120,7 +1122,9 @@ export const ShoppingList = ({
                                 </div>
                               )}
                           </div>
-                          {getItemExpiryStatus(item.name) === 'critical' && (
+                          {!ALL_COFFEE_INGREDIENTS?.has(
+                            normalize(item.name),
+                          ) && (
                             <Popover
                               open={expiryCalendarOpen[`${item.name}_${index}`]}
                               onOpenChange={open =>
@@ -1134,7 +1138,17 @@ export const ShoppingList = ({
                                 <Button
                                   variant='ghost'
                                   size='sm'
-                                  className='h-6 w-6 p-0 bg-red-500/20 text-red-500 hover:bg-red-500/30'
+                                  className={cn(
+                                    'h-6 w-6 p-0 transition-colors',
+                                    getItemExpiryStatus(item.name) ===
+                                      'critical'
+                                      ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
+                                      : machineItemExpiry[
+                                            `${machineIds[0]}_${item.name}`
+                                          ]
+                                        ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
+                                        : 'text-gray-400 hover:bg-gray-700/50',
+                                  )}
                                 >
                                   <CalendarDays className='h-3.5 w-3.5' />
                                 </Button>
@@ -1146,6 +1160,17 @@ export const ShoppingList = ({
                                 <CalendarComponent
                                   mode='single'
                                   selected={
+                                    machineItemExpiry[
+                                      `${machineIds[0]}_${item.name}`
+                                    ]
+                                      ? new Date(
+                                          machineItemExpiry[
+                                            `${machineIds[0]}_${item.name}`
+                                          ],
+                                        )
+                                      : undefined
+                                  }
+                                  defaultMonth={
                                     machineItemExpiry[
                                       `${machineIds[0]}_${item.name}`
                                     ]

@@ -8,6 +8,7 @@ import {
   PRODUCT_GROUPS,
   machineIngredients,
   allMachines,
+  ALL_COFFEE_INGREDIENTS,
 } from '@/lib/data';
 import { useTelemetronApi } from '@/hooks/useTelemetronApi';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
@@ -79,19 +80,19 @@ const getDisplayNames = (ing: Ingredient) => {
   return result;
 };
 
-const ALL_COFFEE_INGREDIENTS = new Set(
-  Object.values(machineIngredients).flatMap(modelIngs =>
-    modelIngs.map(ing => normalize(ing.name)),
-  ),
-);
+// const ALL_COFFEE_INGREDIENTS = new Set(
+//   Object.values(machineIngredients).flatMap(modelIngs =>
+//     modelIngs.map(ing => normalize(ing.name)),
+//   ),
+// );
 
-Object.values(machineIngredients).forEach(modelIngredients => {
-  modelIngredients.forEach(ing => {
-    getDisplayNames(ing).forEach((name: string) =>
-      ALL_COFFEE_INGREDIENTS.add(normalize(name)),
-    );
-  });
-});
+// Object.values(machineIngredients).forEach(modelIngredients => {
+//   modelIngredients.forEach(ing => {
+//     getDisplayNames(ing).forEach((name: string) =>
+//       ALL_COFFEE_INGREDIENTS.add(normalize(name)),
+//     );
+//   });
+// });
 
 interface ExpiryPickerProps {
   itemName: string;

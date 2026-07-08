@@ -2378,6 +2378,32 @@ export const machineIngredients: MachineIngredients = {
   ],
 };
 
+const normalizeForData = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
+export const ALL_COFFEE_INGREDIENTS = new Set(
+  Object.values(machineIngredients).flatMap(modelIngs =>
+    modelIngs.map(ing => normalizeForData(ing.name))
+  )
+);
+
+// Добавляем динамические имена (стаканы большие/малые, крышки, сиропы)
+Object.values(machineIngredients).forEach(modelIngredients => {
+  modelIngredients.forEach(ing => {
+    if (ing.size) {
+      const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+      ALL_COFFEE_INGREDIENTS.add(normalizeForData(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`));
+    } else if (ing.hasSizes) {
+      const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+      ALL_COFFEE_INGREDIENTS.add(normalizeForData(`${prefix} большие`));
+      ALL_COFFEE_INGREDIENTS.add(normalizeForData(`${prefix} малые`));
+    } else if (ing.syrupOptions) {
+      ing.syrupOptions.forEach(syrup => {
+        ALL_COFFEE_INGREDIENTS.add(normalizeForData(`сироп ${syrup.name}`));
+      });
+    }
+  });
+});
+
 export const PRODUCT_GROUPS: Record<string, string[]> = {
   'Лимонад "Добрый" 0,5': [
     'Лимонад "Добрый Кола Зеро" 0,5',

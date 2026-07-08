@@ -32,6 +32,7 @@ import {
 import { format } from 'date-fns';
 import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
+  ALL_COFFEE_INGREDIENTS,
   allMachines,
   getIngredientConfig,
   GroupedShoppingListsProps,
@@ -63,32 +64,32 @@ type CombinedListItem = {
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
-// Кофейные ингредиенты — для них срок не показываем
-const ALL_COFFEE_INGREDIENTS = new Set(
-  Object.values(machineIngredients).flatMap(modelIngs =>
-    modelIngs.map(ing => normalize(ing.name)),
-  ),
-);
+// // Кофейные ингредиенты — для них срок не показываем
+// const ALL_COFFEE_INGREDIENTS = new Set(
+//   Object.values(machineIngredients).flatMap(modelIngs =>
+//     modelIngs.map(ing => normalize(ing.name)),
+//   ),
+// );
 
-// Добавляем динамические имена (стаканы большие/малые, крышки, сиропы)
-Object.values(machineIngredients).forEach(modelIngredients => {
-  modelIngredients.forEach(ing => {
-    if (ing.size) {
-      const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
-      ALL_COFFEE_INGREDIENTS.add(
-        normalize(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`),
-      );
-    } else if (ing.hasSizes) {
-      const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
-      ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} большие`));
-      ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} малые`));
-    } else if (ing.syrupOptions) {
-      ing.syrupOptions.forEach(syrup => {
-        ALL_COFFEE_INGREDIENTS.add(normalize(`сироп ${syrup.name}`));
-      });
-    }
-  });
-});
+// // Добавляем динамические имена (стаканы большие/малые, крышки, сиропы)
+// Object.values(machineIngredients).forEach(modelIngredients => {
+//   modelIngredients.forEach(ing => {
+//     if (ing.size) {
+//       const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+//       ALL_COFFEE_INGREDIENTS.add(
+//         normalize(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`),
+//       );
+//     } else if (ing.hasSizes) {
+//       const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
+//       ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} большие`));
+//       ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} малые`));
+//     } else if (ing.syrupOptions) {
+//       ing.syrupOptions.forEach(syrup => {
+//         ALL_COFFEE_INGREDIENTS.add(normalize(`сироп ${syrup.name}`));
+//       });
+//     }
+//   });
+// });
 
 export const GroupedShoppingLists = ({
   machineIds,
