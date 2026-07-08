@@ -98,7 +98,7 @@ export const GroupedShoppingLists = ({
   onStockChange,
 }: GroupedShoppingListsProps) => {
   const { machineItemExpiry } = useScheduleState();
-    const { getValue, setValue, increment, decrement } = useStockCounter();
+  const { getValue, setValue, increment, decrement } = useStockCounter();
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [combinedList, setCombinedList] = useState<CombinedListItem[]>([]);
@@ -861,18 +861,6 @@ export const GroupedShoppingLists = ({
     return sum.toString();
   };
 
-  // const handleGroupStockChange = (constituentName: string, value: string) => {
-  //   if (/^\d{0,3}$/.test(value)) {
-  //     onStockChange(constituentName, value);
-  //   }
-  // };
-
-  // const handleStep = (name: string, delta: number) => {
-  //   const current = parseInt(stockOnHand[name] || '0') || 0;
-  //   const next = Math.max(0, current + delta);
-  //   onStockChange(name, next.toString());
-  // };
-
   const clearSearch = () => {
     setSearchQuery('');
     setShowHistory(false);
@@ -1079,32 +1067,43 @@ export const GroupedShoppingLists = ({
                                               </span>
                                               <div className='flex items-center gap-1'>
                                                 <SoundButton
-  variant='outline'
-  size='icon'
-  className='h-7 w-7 rounded-full'
-  onClick={() => decrement(realKey)}
->
-  <Minus className='h-3 w-3' />
-</SoundButton>
-<Input
-  type='number'
-  value={getValue(realKey) === 0 ? '' : getValue(realKey)}
-  onChange={e => {
-    const val = parseInt(e.target.value) || 0;
-    setValue(realKey, val);
-  }}
-  placeholder='0'
-  className='h-8 w-12 text-center text-xs'
-  inputMode='numeric'
-/>
-<SoundButton
-  variant='outline'
-  size='icon'
-  className='h-7 w-7 rounded-full'
-  onClick={() => increment(realKey)}
->
-  <Plus className='h-3 w-3' />
-</SoundButton>
+                                                  variant='outline'
+                                                  size='icon'
+                                                  className='h-7 w-7 rounded-full'
+                                                  onClick={() =>
+                                                    decrement(realKey)
+                                                  }
+                                                >
+                                                  <Minus className='h-3 w-3' />
+                                                </SoundButton>
+                                                <Input
+                                                  type='number'
+                                                  value={
+                                                    getValue(realKey) === 0
+                                                      ? ''
+                                                      : getValue(realKey)
+                                                  }
+                                                  onChange={e => {
+                                                    const val =
+                                                      parseInt(
+                                                        e.target.value,
+                                                      ) || 0;
+                                                    setValue(realKey, val);
+                                                  }}
+                                                  placeholder='0'
+                                                  className='h-8 w-12 text-center text-xs'
+                                                  inputMode='numeric'
+                                                />
+                                                <SoundButton
+                                                  variant='outline'
+                                                  size='icon'
+                                                  className='h-7 w-7 rounded-full'
+                                                  onClick={() =>
+                                                    increment(realKey)
+                                                  }
+                                                >
+                                                  <Plus className='h-3 w-3' />
+                                                </SoundButton>
                                               </div>
                                             </div>
                                           );
@@ -1116,25 +1115,26 @@ export const GroupedShoppingLists = ({
                               </Popover>
                             ) : (
                               <>
-                                {/* <SoundButton
+                                <SoundButton
                                   variant='ghost'
                                   size='icon'
                                   className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
                                   soundType='decrement'
-                                  onClick={() => handleStep(item.name, -1)}
+                                  onClick={() => decrement(item.name)}
                                 >
                                   <Minus className='h-3 w-3' />
                                 </SoundButton>
                                 <Input
                                   type='number'
                                   value={
-                                    stockOnHand[item.name] === '0'
+                                    getValue(item.name) === 0
                                       ? ''
-                                      : stockOnHand[item.name] || ''
+                                      : getValue(item.name)
                                   }
-                                  onChange={e =>
-                                    onStockChange(item.name, e.target.value)
-                                  }
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value) || 0;
+                                    setValue(item.name, val);
+                                  }}
                                   className='h-8 w-10 sm:w-12 text-center p-1'
                                   placeholder='0'
                                 />
@@ -1143,40 +1143,10 @@ export const GroupedShoppingLists = ({
                                   size='icon'
                                   className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
                                   soundType='increment'
-                                  onClick={() => handleStep(item.name, 1)}
+                                  onClick={() => increment(item.name)}
                                 >
                                   <Plus className='h-3 w-3' />
-                                </SoundButton> */}
-                             
-  <SoundButton
-    variant='ghost'
-    size='icon'
-    className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
-    soundType='decrement'
-    onClick={() => decrement(item.name)}
-  >
-    <Minus className='h-3 w-3' />
-  </SoundButton>
-  <Input
-    type='number'
-    value={getValue(item.name) === 0 ? '' : getValue(item.name)}
-    onChange={e => {
-      const val = parseInt(e.target.value) || 0;
-      setValue(item.name, val);
-    }}
-    className='h-8 w-10 sm:w-12 text-center p-1'
-    placeholder='0'
-  />
-  <SoundButton
-    variant='ghost'
-    size='icon'
-    className='h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground'
-    soundType='increment'
-    onClick={() => increment(item.name)}
-  >
-    <Plus className='h-3 w-3' />
-  </SoundButton>
-
+                                </SoundButton>
                               </>
                             )}
                           </div>{' '}
@@ -1363,26 +1333,37 @@ export const GroupedShoppingLists = ({
                                     Math.ceil(details.amount) !== 0,
                                 )
                                 .map(([machineId, details]) => {
-                                (machineId === '41373' || machineId === '58910' || machineId === '64179' ) && console.log('machineId', machineId, 'details', details, 'item', item);
+                                  (machineId === '41373' ||
+                                    machineId === '58910' ||
+                                    machineId === '64179') &&
+                                    console.log(
+                                      'machineId',
+                                      machineId,
+                                      'details',
+                                      details,
+                                      'item',
+                                      item,
+                                    );
                                   return (
-                                  <div
-                                    key={machineId}
-                                    className='flex justify-between items-center text-sm'
-                                  >
-                                    <span className='truncate pr-2'>
-                                      {details.name} (#{machineId})
-                                    </span>
-                                    <span className='font-mono text-right flex-shrink-0'>
-                                      {!details.amount
-                                        ? 0
-                                        : Math.ceil(details.amount)}
-                                      {item?.name.includes('стакан') ||
-                                      item?.name.includes('размешивател')
-                                        ? ` шт.`
-                                        : item.unit}
-                                    </span>
-                                  </div>
-                                )})}
+                                    <div
+                                      key={machineId}
+                                      className='flex justify-between items-center text-sm'
+                                    >
+                                      <span className='truncate pr-2'>
+                                        {details.name} (#{machineId})
+                                      </span>
+                                      <span className='font-mono text-right flex-shrink-0'>
+                                        {!details.amount
+                                          ? 0
+                                          : Math.ceil(details.amount)}
+                                        {item?.name.includes('стакан') ||
+                                        item?.name.includes('размешивател')
+                                          ? ` шт.`
+                                          : item.unit}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </PopoverContent>
                         </Popover>

@@ -234,7 +234,6 @@ export const InventoryManager = () => {
 
   const { getValue, setValue, increment, decrement } = useStockCounter();
 
-
   const [history, setHistory] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('search_history') || '[]');
@@ -505,26 +504,6 @@ export const InventoryManager = () => {
     scrollToMatch(matchIndex);
   }, [matchIndex, matches, scrollToMatch]);
 
-  // const handleStockChange = (itemName: string, value: string) => {
-  //   if (/^\d{0,3}$/.test(value)) {
-  //     setStockOnHand(prev => {
-  //       const next = { ...prev, [itemName]: value };
-
-  //       Object.entries(PRODUCT_GROUPS).forEach(([groupName, constituents]) => {
-  //         if (constituents.includes(itemName)) {
-  //           const sum = constituents.reduce(
-  //             (acc, c) => acc + (parseInt(next[c] || '0') || 0),
-  //             0,
-  //           );
-  //           next[groupName] = sum.toString();
-  //         }
-  //       });
-
-  //       return next;
-  //     });
-  //   }
-  // };
-
   const handleExpiryChange = (itemName: string, date: Date | undefined) => {
     setExpirationDates(prev => ({
       ...prev,
@@ -542,12 +521,6 @@ export const InventoryManager = () => {
       window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
     }, 50);
   };
-
-  // const handleStep = (itemName: string, delta: number) => {
-  //   const currentValue = parseInt(stockOnHand[itemName] || '0') || 0;
-  //   const newValue = Math.max(0, currentValue + delta);
-  //   // handleStockChange(itemName, newValue.toString());
-  // };
 
   const handleHintToggle = (name: string) => {
     setActiveHint(name);
@@ -707,25 +680,23 @@ export const InventoryManager = () => {
               </div>
               {mode === 'stock' && (
                 <div className='flex items-center gap-1'>
-                  {/* <SoundButton
+                  \{' '}
+                  <SoundButton
                     variant='outline'
                     size='icon'
                     className='h-6 w-6 rounded-full p-1.5'
                     soundType='decrement'
-                    onClick={() => handleStep(realKey, -1)}
+                    onClick={() => decrement(realKey)}
                   >
                     <Minus className='h-2.5 w-2.5' />
                   </SoundButton>
                   <Input
                     type='number'
-                    value={
-                      stockOnHand[realKey] === '0'
-                        ? ''
-                        : stockOnHand[realKey] || ''
-                    }
-                    onChange={e => handleStockChange(realKey, e.target.value)}
-                    onFocus={handleInputFocus}
-                    onBlur={handleInputBlur}
+                    value={getValue(realKey) === 0 ? '' : getValue(realKey)}
+                    onChange={e => {
+                      const val = parseInt(e.target.value) || 0;
+                      setValue(realKey, val);
+                    }}
                     className='h-7 w-10 text-center text-[11px] p-0'
                     inputMode='numeric'
                     placeholder='0'
@@ -735,41 +706,10 @@ export const InventoryManager = () => {
                     size='icon'
                     className='h-6 w-6 rounded-full p-1.5'
                     soundType='increment'
-                    onClick={() => handleStep(realKey, 1)}
+                    onClick={() => increment(realKey)}
                   >
                     <Plus className='h-2.5 w-2.5' />
-                  </SoundButton> */}
-                  <SoundButton
-  variant='outline'
-  size='icon'
-  className='h-6 w-6 rounded-full p-1.5'
-  soundType='decrement'
-  onClick={() => decrement(realKey)}
->
-  <Minus className='h-2.5 w-2.5' />
-</SoundButton>
-
-<Input
-  type='number'
-  value={getValue(realKey) === 0 ? '' : getValue(realKey)}
-  onChange={e => {
-    const val = parseInt(e.target.value) || 0;
-    setValue(realKey, val);
-  }}
-  className='h-7 w-10 text-center text-[11px] p-0'
-  inputMode='numeric'
-  placeholder='0'
-/>
-
-<SoundButton
-  variant='outline'
-  size='icon'
-  className='h-6 w-6 rounded-full p-1.5'
-  soundType='increment'
-  onClick={() => increment(realKey)}
->
-  <Plus className='h-2.5 w-2.5' />
-</SoundButton>
+                  </SoundButton>
                 </div>
               )}
             </div>
@@ -939,7 +879,7 @@ export const InventoryManager = () => {
                                     </Button>
                                   </div>
 
-                                  {expiryStatus === 'critical'  && expiryDate ? (
+                                  {expiryStatus === 'critical' && expiryDate ? (
                                     <div className='space-y-1'>
                                       <p className='text-xs text-muted-foreground'>
                                         Срок до:{' '}
@@ -1092,39 +1032,42 @@ export const InventoryManager = () => {
                               </PopoverContent>
                             </Popover>
                           ) : (
-<div className='flex items-center gap-0.5 sm:gap-2 justify-center'>
-  <SoundButton
-    variant='outline'
-    size='icon'
-    className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
-    soundType='decrement'
-    onClick={() => decrement(item)}
-  >
-    <Minus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
-  </SoundButton>
-  <Input
-    type='number'
-    value={getValue(item) === 0 ? '' : getValue(item)}
-    onChange={e => {
-      const val = parseInt(e.target.value) || 0;
-      setValue(item, val);
-    }}
-    onFocus={handleInputFocus}
-    onBlur={handleInputBlur}
-    className='h-7 w-9 sm:w-12 text-center p-0 text-[11px]'
-    inputMode='numeric'
-    placeholder='0'
-  />
-  <SoundButton
-    variant='outline'
-    size='icon'
-    className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
-    soundType='increment'
-    onClick={() => increment(item)}
-  >
-    <Plus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
-  </SoundButton>
-</div>                          )}
+                            <div className='flex items-center gap-0.5 sm:gap-2 justify-center'>
+                              <SoundButton
+                                variant='outline'
+                                size='icon'
+                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
+                                soundType='decrement'
+                                onClick={() => decrement(item)}
+                              >
+                                <Minus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
+                              </SoundButton>
+                              <Input
+                                type='number'
+                                value={
+                                  getValue(item) === 0 ? '' : getValue(item)
+                                }
+                                onChange={e => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  setValue(item, val);
+                                }}
+                                onFocus={handleInputFocus}
+                                onBlur={handleInputBlur}
+                                className='h-7 w-9 sm:w-12 text-center p-0 text-[11px]'
+                                inputMode='numeric'
+                                placeholder='0'
+                              />
+                              <SoundButton
+                                variant='outline'
+                                size='icon'
+                                className='h-6 w-6 sm:h-7 sm:w-7 rounded-full p-1.5'
+                                soundType='increment'
+                                onClick={() => increment(item)}
+                              >
+                                <Plus className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
+                              </SoundButton>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -1214,7 +1157,7 @@ export const InventoryManager = () => {
                 </div>
               )}
             </div>
-          </div>{' '}
+          </div>
         </CardContent>
       </Card>
     </div>
