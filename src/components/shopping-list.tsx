@@ -1143,9 +1143,12 @@ export const ShoppingList = ({
                                     getItemExpiryStatus(item.name) ===
                                       'critical'
                                       ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
-                                      : machineItemExpiry[
+                                      : getItemExpiryStatus(item.name) ===
+                                            'ok' &&
+                                          (machineItemExpiry[
                                             `${machineIds[0]}_${item.name}`
-                                          ]
+                                          ] ||
+                                            expirationDates?.[item.name])
                                         ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
                                         : 'text-gray-400 hover:bg-gray-700/50',
                                   )}
@@ -1159,28 +1162,24 @@ export const ShoppingList = ({
                               >
                                 <CalendarComponent
                                   mode='single'
-                                  selected={
-                                    machineItemExpiry[
-                                      `${machineIds[0]}_${item.name}`
-                                    ]
-                                      ? new Date(
-                                          machineItemExpiry[
-                                            `${machineIds[0]}_${item.name}`
-                                          ],
-                                        )
-                                      : undefined
-                                  }
-                                  defaultMonth={
-                                    machineItemExpiry[
-                                      `${machineIds[0]}_${item.name}`
-                                    ]
-                                      ? new Date(
-                                          machineItemExpiry[
-                                            `${machineIds[0]}_${item.name}`
-                                          ],
-                                        )
-                                      : undefined
-                                  }
+                                  selected={(() => {
+                                    const machineKey = `${machineIds[0]}_${item.name}`;
+                                    const dateStr =
+                                      machineItemExpiry[machineKey] ??
+                                      expirationDates?.[item.name];
+                                    return dateStr
+                                      ? new Date(dateStr)
+                                      : undefined;
+                                  })()}
+                                  defaultMonth={(() => {
+                                    const machineKey = `${machineIds[0]}_${item.name}`;
+                                    const dateStr =
+                                      machineItemExpiry[machineKey] ??
+                                      expirationDates?.[item.name];
+                                    return dateStr
+                                      ? new Date(dateStr)
+                                      : new Date();
+                                  })()}
                                   onSelect={date => {
                                     setMachineItemExpiryDate(
                                       machineIds[0],

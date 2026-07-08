@@ -2406,7 +2406,7 @@ Object.values(machineIngredients).forEach(modelIngredients => {
 
 export const PRODUCT_GROUPS: Record<string, string[]> = {
   'Лимонад "Добрый" 0,5': [
-    'Лимонад "Добрый Кола Зеро" 0,5',
+    'Лимонад "Добрый  Кола Зеро" 0,5',
     'Лимонад "Добрый Кола Малина" 0,5',
     'Лимонад "Добрый Кола" 0,5',
     'Лимонад "Добрый Апельсин" 0,5',
