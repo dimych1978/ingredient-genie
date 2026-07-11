@@ -5,8 +5,47 @@ export type Machine = {
   location: string;
   model?: string;
 };
+
 export type MachineIngredients = {
   [model: string]: Ingredient[];
+};
+
+export const COFFEE_TYPES = {
+  kamora: {
+    name: 'кофе камора',
+    apiNames: ['Кофе зерновой', 'кофе',],
+    machines: ['krea', 'koro', 'phedra', 'jetinno'], 
+  },
+  jardin: {
+    name: 'кофе жардин',
+    apiNames: ['Кофе зерновой', 'Кофе',],
+    machines: ['opera', 'kikko', 'saeco', 'colibri'], 
+  },
+};
+
+// Функция для определения сорта кофе по модели аппарата
+export const getCoffeeType = (machineModel?: string): 'kamora' | 'jardin' => {
+  if (!machineModel) return 'jardin';
+  
+  const modelLower = machineModel.toLowerCase();
+  const kamoraModels = COFFEE_TYPES.kamora.machines;
+  const jardinModels = COFFEE_TYPES.jardin.machines;
+  
+  // Проверяем, содержит ли модель аппарата ключевые слова для Каморы
+  if (kamoraModels.some(m => modelLower.includes(m))) {
+    return 'kamora';
+  }
+    if (jardinModels.some(m => modelLower.includes(m))) {
+    return 'jardin';
+  }
+
+  return 'jardin';
+};
+
+// Получить название кофе для аппарата
+export const getCoffeeName = (machineModel?: string): string => {
+  const type = getCoffeeType(machineModel);
+  return COFFEE_TYPES[type].name;
 };
 
 export interface GroupedShoppingListsProps {
@@ -1811,7 +1850,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'кофе',
-      apiNames: ['Кофе зерновой, кофе'],
+      apiNames: ['Кофе зерновой', 'кофе'],
       unit: 'г',
       type: 'auto',
     },
@@ -1882,7 +1921,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'кофе',
-      apiNames: ['Кофе зерновой, кофе'],
+      apiNames: ['Кофе зерновой', 'кофе'],
       unit: 'г',
       type: 'auto',
     },
@@ -1955,7 +1994,7 @@ export const machineIngredients: MachineIngredients = {
     },
     {
       name: 'кофе',
-      apiNames: ['Кофе зерновой, кофе'],
+      apiNames: ['Кофе зерновой', 'кофе'],
       unit: 'г',
       type: 'auto',
     },
@@ -2458,6 +2497,14 @@ export const getIngredientConfig = (
   machineModel?: string,
 ): Ingredient | undefined => {
   const normalizedApiName = apiName.toLowerCase().trim();
+   if (normalizedApiName === 'кофе' || normalizedApiName === 'кофе зерновой') {
+    return {
+      name: 'кофе',
+      apiNames: ['Кофе зерновой', 'Кофе'],
+      unit: 'г',
+      type: 'auto',
+    };
+  }
 
   if (machineModel) {
     const modelKeys = Object.keys(machineIngredients).sort(
