@@ -2443,6 +2443,9 @@ Object.values(machineIngredients).forEach(modelIngredients => {
   });
 });
 
+ALL_COFFEE_INGREDIENTS.add('кофе камора');
+ALL_COFFEE_INGREDIENTS.add('кофе жардин');
+
 export const PRODUCT_GROUPS: Record<string, string[]> = {
   'Лимонад "Добрый" 0,5': [
     'Лимонад "Добрый  Кола Зеро" 0,5',
