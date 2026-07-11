@@ -62,6 +62,7 @@ export interface LoadingOverride {
   checkedType?: 'big' | 'small';
   selectedSyrups?: string[];
   selectedSizes?: ('big' | 'small')[];
+  previousDeficitTimestamp: string | null;
 }
 
 export type LoadingOverrides = Record<string, LoadingOverride>;

@@ -82,6 +82,7 @@ interface ShoppingListItemWithStatus extends ShoppingListItem {
   checkedType?: 'big' | 'small';
   selectedSyrups?: string[];
   selectedSizes?: ('big' | 'small')[];
+  previousDeficitTimestamp: string | null;
 }
 
 interface ShoppingListProps {
@@ -494,6 +495,7 @@ export const ShoppingList = ({
             checkedType: override?.checkedType,
             selectedSyrups: override?.selectedSyrups || [],
             selectedSizes: override?.selectedSizes || [],
+            previousDeficitTimestamp: override?.timestamp ?? null,
           };
         },
       );
@@ -684,6 +686,7 @@ export const ShoppingList = ({
           checked: item.checked,
           selectedSizes: item.selectedSizes,
           selectedSyrups: item.selectedSyrups,
+          previousDeficitTimestamp: item.previousDeficitTimestamp,
         };
 
         if (item.type === 'checkbox') {
@@ -995,22 +998,68 @@ export const ShoppingList = ({
                       );
                     }
                     if (hasDeficit) {
+                      const deficitText = `Недогруз: ${deficit} ${item.unit}`;
                       infoParts.push(
-                        <span
-                          key='deficit'
-                          className='font-semibold text-yellow-400'
-                        >{`Недогруз: ${deficit} ${item.unit}`}</span>,
-                      );
-                    }
-                    if (hasSurplus) {
-                      infoParts.push(
-                        <span
-                          key='surplus'
-                          className='font-semibold text-cyan-400'
-                        >{`Излишек: ${Math.abs(deficit)} ${item.unit}`}</span>,
+                        <Popover key='deficit'>
+                          <PopoverTrigger asChild>
+                            <span className='font-semibold text-yellow-400 cursor-pointer hover:underline'>
+                              {deficitText}
+                            </span>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-auto p-3 text-sm bg-gray-800 border-gray-700 text-white'>
+                            <div className='space-y-1'>
+                              <p className='text-yellow-400 font-semibold'>
+                                Недогруз
+                              </p>
+                              <p className='text-gray-300'>
+                                Зафиксирован:{' '}
+                                {item.previousDeficitTimestamp
+                                  ? format(
+                                      parseISO(item.previousDeficitTimestamp),
+                                      'dd.MM.yyyy HH:mm',
+                                    )
+                                  : 'дата неизвестна'}
+                              </p>
+                              <p className='text-xs text-gray-400 mt-1'>
+                                Значение: {deficit} {item.unit}
+                              </p>
+                            </div>
+                          </PopoverContent>
+                        </Popover>,
                       );
                     }
 
+                    if (hasSurplus) {
+                      const surplusText = `Излишек: ${Math.abs(deficit)} ${item.unit}`;
+                      infoParts.push(
+                        <Popover key='surplus'>
+                          <PopoverTrigger asChild>
+                            <span className='font-semibold text-cyan-400 cursor-pointer hover:underline'>
+                              {surplusText}
+                            </span>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-auto p-3 text-sm bg-gray-800 border-gray-700 text-white'>
+                            <div className='space-y-1'>
+                              <p className='text-cyan-400 font-semibold'>
+                                Излишек
+                              </p>
+                              <p className='text-gray-300'>
+                                Зафиксирован:{' '}
+                                {item.previousDeficitTimestamp
+                                  ? format(
+                                      parseISO(item.previousDeficitTimestamp),
+                                      'dd.MM.yyyy HH:mm',
+                                    )
+                                  : 'дата неизвестна'}
+                              </p>
+                              <p className='text-xs text-gray-400 mt-1'>
+                                Значение: {Math.abs(deficit)} {item.unit}
+                              </p>
+                            </div>
+                          </PopoverContent>
+                        </Popover>,
+                      );
+                    }
                     const isKreaMachine = machine?.model
                       ?.toLowerCase()
                       .includes('krea');
