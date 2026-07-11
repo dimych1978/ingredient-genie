@@ -1,11 +1,31 @@
 // hooks/useStockCounter.ts
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
 
 export const useStockCounter = () => {
   const { stockOnHand, setStockOnHand } = useScheduleState();
   const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
   const pendingUpdates = useRef<Record<string, number>>({});
+
+   // Синхронизация: при изменении stockOnHand извне (другая вкладка) сбрасываем локальные значения для тех товаров, которые изменились
+  useEffect(() => {
+    setLocalCounts(prev => {
+      const next = { ...prev };
+      let hasChanges = false;
+      
+      // Проверяем каждый локальный товар
+      Object.keys(next).forEach(name => {
+        const globalValue = parseInt(stockOnHand[name] || '0') || 0;
+        // Если глобальное значение отличается от локального — обновляем
+        if (next[name] !== globalValue) {
+          next[name] = globalValue;
+          hasChanges = true;
+        }
+      });
+      
+      return hasChanges ? next : prev;
+    });
+  }, [stockOnHand]);
 
   // Получить текущее значение (из локального или глобального)
   const getValue = useCallback(
