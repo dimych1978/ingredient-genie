@@ -13,29 +13,29 @@ export type MachineIngredients = {
 export const COFFEE_TYPES = {
   kamora: {
     name: 'кофе камора',
-    apiNames: ['Кофе зерновой', 'кофе',],
-    machines: ['krea', 'koro', 'phedra', 'jetinno'], 
+    apiNames: ['Кофе зерновой', 'кофе'],
+    machines: ['krea', 'koro', 'phedra', 'jetinno'],
   },
   jardin: {
     name: 'кофе жардин',
-    apiNames: ['Кофе зерновой', 'Кофе',],
-    machines: ['opera', 'kikko', 'saeco', 'colibri'], 
+    apiNames: ['Кофе зерновой', 'Кофе'],
+    machines: ['opera', 'kikko', 'saeco', 'colibri'],
   },
 };
 
 // Функция для определения сорта кофе по модели аппарата
 export const getCoffeeType = (machineModel?: string): 'kamora' | 'jardin' => {
   if (!machineModel) return 'jardin';
-  
+
   const modelLower = machineModel.toLowerCase();
   const kamoraModels = COFFEE_TYPES.kamora.machines;
   const jardinModels = COFFEE_TYPES.jardin.machines;
-  
+
   // Проверяем, содержит ли модель аппарата ключевые слова для Каморы
   if (kamoraModels.some(m => modelLower.includes(m))) {
     return 'kamora';
   }
-    if (jardinModels.some(m => modelLower.includes(m))) {
+  if (jardinModels.some(m => modelLower.includes(m))) {
     return 'jardin';
   }
 
@@ -2417,12 +2417,13 @@ export const machineIngredients: MachineIngredients = {
   ],
 };
 
-const normalizeForData = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+const normalizeForData = (s: string) =>
+  s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 export const ALL_COFFEE_INGREDIENTS = new Set(
   Object.values(machineIngredients).flatMap(modelIngs =>
-    modelIngs.map(ing => normalizeForData(ing.name))
-  )
+    modelIngs.map(ing => normalizeForData(ing.name)),
+  ),
 );
 
 // Добавляем динамические имена (стаканы большие/малые, крышки, сиропы)
@@ -2430,7 +2431,11 @@ Object.values(machineIngredients).forEach(modelIngredients => {
   modelIngredients.forEach(ing => {
     if (ing.size) {
       const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
-      ALL_COFFEE_INGREDIENTS.add(normalizeForData(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`));
+      ALL_COFFEE_INGREDIENTS.add(
+        normalizeForData(
+          `${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`,
+        ),
+      );
     } else if (ing.hasSizes) {
       const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
       ALL_COFFEE_INGREDIENTS.add(normalizeForData(`${prefix} большие`));
@@ -2500,7 +2505,7 @@ export const getIngredientConfig = (
   machineModel?: string,
 ): Ingredient | undefined => {
   const normalizedApiName = apiName.toLowerCase().trim();
-   if (normalizedApiName === 'кофе' || normalizedApiName === 'кофе зерновой') {
+  if (normalizedApiName === 'кофе' || normalizedApiName === 'кофе зерновой') {
     return {
       name: 'кофе',
       apiNames: ['Кофе зерновой', 'Кофе'],
@@ -2556,13 +2561,16 @@ export const getIngredientConfig = (
 };
 
 // Кастомная планограмма с номерами, выбивающимися из общей логики порядка product_number
-export const customPlanogramMapping: Record<string, { shelf: number; order: string[] }[]> = {
+export const customPlanogramMapping: Record<
+  string,
+  { shelf: number; order: string[] }[]
+> = {
   '33351': [
-    { shelf: 1, order: ['70',] },
+    { shelf: 1, order: ['70'] },
     { shelf: 2, order: ['71', '72'] },
     { shelf: 3, order: ['73', '74'] },
-    { shelf: 4, order: ['75', '76']},
-    { shelf: 5, order: ['77', '78']},
-    { shelf: 6, order: ['79', '80']},
+    { shelf: 4, order: ['75', '76'] },
+    { shelf: 5, order: ['77', '78'] },
+    { shelf: 6, order: ['79', '80'] },
   ],
 };

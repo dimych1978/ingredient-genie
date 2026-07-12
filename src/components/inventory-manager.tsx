@@ -267,6 +267,7 @@ export const InventoryManager = () => {
         let parsed = JSON.parse(cachedCatalog);
 
         const stopWords = [
+          'Кофе',
           'Амаретто',
           'Лимонад "Добрый" 0,5 в ассорт.',
           'Лимонад "Добрый" ж/б 0,33 в ассорт.',
@@ -336,7 +337,8 @@ export const InventoryManager = () => {
             getDisplayNames(ing).forEach(name => ingredientsSet.add(name));
           });
         });
-
+        ingredientsSet.add('кофе камора');
+        ingredientsSet.add('кофе жардин');
         // Загружаем продажи из мастер-аппаратов
         const promises = MASTER_MACHINE_IDS.map(async id => {
           try {
@@ -399,6 +401,7 @@ export const InventoryManager = () => {
         const fullCatalog = [...sortedIngredients, ...sortedSnacks];
 
         const stopWords = [
+          'Кофе',
           'Лимонад "Добрый" 0,5 в ассорт.',
           'Лимонад "Добрый" ж/б 0,33 в ассорт.',
           'Лимонад "Добрый Фанта" 0,5',

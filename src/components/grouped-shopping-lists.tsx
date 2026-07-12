@@ -34,6 +34,7 @@ import type { TelemetronSaleItem } from '@/types/telemetron';
 import {
   ALL_COFFEE_INGREDIENTS,
   allMachines,
+  getCoffeeType,
   getIngredientConfig,
   GroupedShoppingListsProps,
   machineIngredients,
@@ -190,6 +191,11 @@ export const GroupedShoppingLists = ({
     const config =
       ingredientConfig || getIngredientConfig(apiName, machineModel);
     if (!config) return apiName;
+
+    if (config.name === 'кофе' || config.name.includes('кофе')) {
+      const coffeeType = getCoffeeType(machineModel);
+      return coffeeType === 'kamora' ? 'кофе камора' : 'кофе жардин';
+    }
 
     if (config.size) {
       const prefix = config.name.includes('крышк') ? 'крышки' : 'стаканы';
@@ -477,7 +483,6 @@ export const GroupedShoppingLists = ({
                 (sum, b) => sum + b.amount,
                 0,
               );
-              console.log('machineName', machine.name, current);
             }
             continue;
           }
@@ -670,6 +675,30 @@ export const GroupedShoppingLists = ({
           adjustedCarryOver = Math.ceil(carryOver / ingredientConfig.packSize);
         }
 
+        // 🔥 Если это кофе — отправляем в coffeeIngredientsMap с правильным названием
+        if (name.includes('кофе')) {
+          const coffeeName = getCupsName(
+            name,
+            machine?.model,
+            ingredientConfig,
+          );
+          const current = coffeeIngredientsMap.get(coffeeName) || {
+            amount: 0,
+            unit: ingredientConfig?.unit ?? 'г',
+            breakdown: {} as Record<string, { name: string; amount: number }>,
+            isCoffeeIngredient: true,
+          };
+          current.amount += adjustedCarryOver;
+          const machineBreakdown = current.breakdown[machineIdFromFile] || {
+            name: machine.name,
+            amount: 0,
+          };
+          machineBreakdown.amount += adjustedCarryOver;
+          current.breakdown[machineIdFromFile] = machineBreakdown;
+          coffeeIngredientsMap.set(coffeeName, current);
+          continue;
+        }
+
         if (ingredientConfig) {
           const current = coffeeIngredientsMap.get(ingredientConfig.name) || {
             amount: 0,
@@ -685,6 +714,7 @@ export const GroupedShoppingLists = ({
           machineBreakdown.amount += adjustedCarryOver;
           current.breakdown[machineIdFromFile] = machineBreakdown;
           coffeeIngredientsMap.set(ingredientConfig.name, current);
+          continue;
         } else {
           const current = productMap.get(name) || {
             amount: 0,
