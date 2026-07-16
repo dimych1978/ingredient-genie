@@ -6,103 +6,120 @@ export const useStockCounter = () => {
   const { stockOnHand, setStockOnHand } = useScheduleState();
   const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
   const pendingUpdates = useRef<Record<string, number>>({});
+  const rafId = useRef<number | null>(null);
 
-   // Синхронизация: при изменении stockOnHand извне (другая вкладка) сбрасываем локальные значения для тех товаров, которые изменились
+  // Синхронизация локальных значений с глобальными при изменении извне
   useEffect(() => {
     setLocalCounts(prev => {
       const next = { ...prev };
-      let hasChanges = false;
-      
-      // Проверяем каждый локальный товар
+      let changed = false;
       Object.keys(next).forEach(name => {
-        const globalValue = parseInt(stockOnHand[name] || '0') || 0;
-        // Если глобальное значение отличается от локального — обновляем
-        if (next[name] !== globalValue) {
-          next[name] = globalValue;
-          hasChanges = true;
+        const globalVal = parseInt(stockOnHand[name] || '0') || 0;
+        if (next[name] !== globalVal) {
+          next[name] = globalVal;
+          changed = true;
         }
       });
-      
-      return hasChanges ? next : prev;
+      return changed ? next : prev;
     });
   }, [stockOnHand]);
 
-  // Получить текущее значение (из локального или глобального)
-  const getValue = useCallback(
-    (name: string) => {
-      const localValue = localCounts[name];
-      if (localValue !== undefined) return localValue;
+  const getValue = useCallback((name: string) => {
+    const local = localCounts[name];
+    if (local !== undefined) return local;
+    return parseInt(stockOnHand[name] || '0') || 0;
+  }, [localCounts, stockOnHand]);
 
-      const globalValue = parseInt(stockOnHand[name] || '0');
-      return isNaN(globalValue) ? 0 : globalValue;
-    },
-    [localCounts, stockOnHand],
-  );
+  const setValue = useCallback((name: string, value: number) => {
+    const clamped = Math.max(0, value);
+    setLocalCounts(prev => {
+      const current = prev[name] !== undefined ? prev[name] : parseInt(stockOnHand[name] || '0') || 0;
+      if (current === clamped) return prev;
+      const next = { ...prev, [name]: clamped };
+      return next;
+    });
+    // Накопление для отправки в контекст
+    pendingUpdates.current[name] = clamped;
+    if (rafId.current === null) {
+      rafId.current = requestAnimationFrame(() => {
+        const updates = { ...pendingUpdates.current };
+        pendingUpdates.current = {};
+        rafId.current = null;
+        if (Object.keys(updates).length > 0) {
+          setStockOnHand(prev => {
+            const next = { ...prev };
+            Object.entries(updates).forEach(([key, val]) => {
+              next[key] = val.toString();
+            });
+            return next;
+          });
+        }
+      });
+    }
+  }, [stockOnHand, setStockOnHand]);
 
-  // Установить значение (мгновенно UI + отложенная синхронизация)
-  const setValue = useCallback(
-    (name: string, value: number) => {
-      const clampedValue = Math.max(0, value);
-      const current = getValue(name);
-
-      if (current === clampedValue) return;
-
-      // 1. Мгновенно обновляем UI
-      setLocalCounts(prev => ({ ...prev, [name]: clampedValue }));
-
-      // 2. Накопливаем обновление
-      pendingUpdates.current[name] = clampedValue;
-
-      // 3. Отправляем батчем через requestAnimationFrame
-      if (!pendingUpdates.current._raf) {
-        pendingUpdates.current._raf = requestAnimationFrame(() => {
+  const increment = useCallback((name: string) => {
+    setLocalCounts(prev => {
+      const current = prev[name] !== undefined ? prev[name] : parseInt(stockOnHand[name] || '0') || 0;
+      const newVal = current + 1;
+      pendingUpdates.current[name] = newVal;
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(() => {
           const updates = { ...pendingUpdates.current };
-          delete updates._raf;
-
+          pendingUpdates.current = {};
+          rafId.current = null;
           if (Object.keys(updates).length > 0) {
             setStockOnHand(prev => {
               const next = { ...prev };
-              Object.entries(updates).forEach(([key, value]) => {
-                next[key] = value.toString();
+              Object.entries(updates).forEach(([key, val]) => {
+                next[key] = val.toString();
               });
               return next;
             });
           }
-
-          pendingUpdates.current = {};
         });
       }
-    },
-    [getValue, setStockOnHand],
-  );
+      return { ...prev, [name]: newVal };
+    });
+  }, [stockOnHand, setStockOnHand]);
 
-  // Инкремент
-  const increment = useCallback(
-    (name: string) => {
-      const current = getValue(name);
-      setValue(name, current + 1);
-    },
-    [getValue, setValue],
-  );
+  const decrement = useCallback((name: string) => {
+    setLocalCounts(prev => {
+      const current = prev[name] !== undefined ? prev[name] : parseInt(stockOnHand[name] || '0') || 0;
+      const newVal = Math.max(0, current - 1);
+      pendingUpdates.current[name] = newVal;
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(() => {
+          const updates = { ...pendingUpdates.current };
+          pendingUpdates.current = {};
+          rafId.current = null;
+          if (Object.keys(updates).length > 0) {
+            setStockOnHand(prev => {
+              const next = { ...prev };
+              Object.entries(updates).forEach(([key, val]) => {
+                next[key] = val.toString();
+              });
+              return next;
+            });
+          }
+        });
+      }
+      return { ...prev, [name]: newVal };
+    });
+  }, [stockOnHand, setStockOnHand]);
 
-  // Декремент
-  const decrement = useCallback(
-    (name: string) => {
-      const current = getValue(name);
-      setValue(name, current - 1);
-    },
-    [getValue, setValue],
-  );
-
-  // Сброс локального состояния
   const reset = useCallback(() => {
     setLocalCounts({});
     pendingUpdates.current = {};
+    if (rafId.current !== null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
   }, []);
 
   return {
     getValue,
-    setValue, 
+    setValue,
     increment,
     decrement,
     reset,
