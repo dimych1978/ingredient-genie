@@ -53,7 +53,7 @@ export const useTelemetronApi = () => {
   const getSalesByProducts = useCallback(
     (vmId: string, dateFrom: string, dateTo: string) => {
       return apiRequest(
-        `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFrom}&date_to=${dateTo}`
+        `reports/sales-by-products?vm_id=${vmId}&sale_type=4&date_from=${dateFrom}&date_to=${dateTo}&is_split_by_cells=true`
       );
     },
     [apiRequest]
