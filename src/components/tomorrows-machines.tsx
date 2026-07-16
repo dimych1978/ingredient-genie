@@ -73,9 +73,10 @@ import { useScheduleCache } from '@/components/context/ScheduleCacheContext';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
 import { ScrollNavButtons } from './scroll-nav-buttons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useStockCounter } from '@/hooks/useStockCounter';
 
 export const TomorrowsMachines = () => {
-  const { selectedDate, setSelectedDate, stockOnHand, setStockOnHand } =
+  const { selectedDate, setSelectedDate } =
     useScheduleState();
 
   const [machineIdsForDay, setMachineIdsForDay] = useState<string[]>([]);
@@ -101,6 +102,8 @@ export const TomorrowsMachines = () => {
   const { scheduleCache, setScheduleCache } = useScheduleCache();
   const { toast } = useToast();
   const { getMachineOverview, getSalesByProducts } = useTelemetronApi();
+  const { getValue, setValue, increment, decrement } = useStockCounter();
+
 
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [dialogState, setDialogState] = useState<{
@@ -518,11 +521,11 @@ export const TomorrowsMachines = () => {
     });
   };
 
-  const handleStockChange = (itemName: string, value: string) => {
-    if (/^\d{0,2}$/.test(value)) {
-      setStockOnHand(prev => ({ ...prev, [itemName]: value }));
-    }
-  };
+  // const handleStockChange = (itemName: string, value: string) => {
+  //   if (/^\d{0,2}$/.test(value)) {
+  //     setStockOnHand(prev => ({ ...prev, [itemName]: value }));
+  //   }
+  // };
 
   const getFormattedDate = (date: Date) => {
     return date.toLocaleDateString('ru-RU', {
@@ -872,8 +875,8 @@ export const TomorrowsMachines = () => {
                     machineIds={machineIdsForDay}
                     specialMachineDates={specialMachineDates}
                     aaMachineIds={aaMachineIds}
-                    stockOnHand={stockOnHand}
-                    onStockChange={handleStockChange}
+                    // stockOnHand={stockOnHand}
+                    // onStockChange={handleStockChange}
                   />
                 </div>
               )}

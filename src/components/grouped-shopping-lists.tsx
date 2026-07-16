@@ -96,8 +96,8 @@ export const GroupedShoppingLists = ({
   machineIds,
   specialMachineDates,
   aaMachineIds,
-  stockOnHand,
-  onStockChange,
+  // stockOnHand,
+  // onStockChange,
 }: GroupedShoppingListsProps) => {
   const { machineItemExpiry } = useScheduleState();
   const { getValue, setValue, increment, decrement } = useStockCounter();
@@ -875,18 +875,14 @@ export const GroupedShoppingLists = ({
 
       return false;
     });
-  }, [combinedList, searchQuery, stockOnHand]);
+  }, [combinedList, searchQuery]);
 
   const getGroupTotal = (groupName: string) => {
     const constituents = PRODUCT_GROUPS[groupName];
-    if (!constituents) return stockOnHand[groupName] || '';
+    if (!constituents) return '';
 
     const sum = constituents.reduce((acc, constituent) => {
-      const realKey =
-        Object.keys(stockOnHand).find(
-          key => normalize(key) === normalize(constituent),
-        ) || constituent;
-      return acc + (parseInt(stockOnHand[realKey] || '0') || 0);
+            return acc + getValue(constituent)
     }, 0);
 
     return sum.toString();
@@ -1081,12 +1077,7 @@ export const GroupedShoppingLists = ({
                                     <div className='grid gap-3'>
                                       {PRODUCT_GROUPS[item.name].map(
                                         constituent => {
-                                          const realKey =
-                                            Object.keys(stockOnHand).find(
-                                              key =>
-                                                normalize(key) ===
-                                                normalize(constituent),
-                                            ) || constituent;
+                                          const realKey = constituent;
 
                                           return (
                                             <div

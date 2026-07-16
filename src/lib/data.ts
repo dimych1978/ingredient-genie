@@ -52,8 +52,8 @@ export interface GroupedShoppingListsProps {
   machineIds: string[];
   specialMachineDates: Record<string, string>;
   aaMachineIds: Set<string>;
-  stockOnHand: Record<string, string>;
-  onStockChange: (itemName: string, value: string) => void;
+  // stockOnHand: Record<string, string>;
+  // onStockChange: (itemName: string, value: string) => void;
 }
 
 export const allMachines: Machine[] = [
