@@ -207,8 +207,8 @@ const ExpiryPicker = ({
 
 export const InventoryManager = () => {
   const {
-    stockOnHand,
-    setStockOnHand,
+    // stockOnHand,
+    // setStockOnHand,
     expirationDates,
     setExpirationDates,
     machineItemExpiry,
@@ -541,14 +541,11 @@ export const InventoryManager = () => {
 
   const getGroupTotal = (groupName: string) => {
     const constituents = PRODUCT_GROUPS[groupName];
-    if (!constituents) return stockOnHand[groupName] || '';
+    if (!constituents) return '';
 
     const sum = constituents.reduce((acc, constituent) => {
-      const realKey =
-        Object.keys(stockOnHand).find(
-          key => normalize(key) === normalize(constituent),
-        ) || constituent;
-      return acc + (parseInt(stockOnHand[realKey] || '0') || 0);
+      
+      return acc + getValue(constituent);
     }, 0);
     return sum.toString();
   };
@@ -615,10 +612,7 @@ export const InventoryManager = () => {
       </h4>
       <div className='grid gap-2'>
         {PRODUCT_GROUPS[item].map(constituent => {
-          const realKey =
-            Object.keys(stockOnHand).find(
-              key => normalize(key) === normalize(constituent),
-            ) || constituent;
+          const realKey = constituent;
 
           return (
             <div
