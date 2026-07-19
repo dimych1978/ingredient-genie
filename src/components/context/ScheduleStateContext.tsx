@@ -138,6 +138,12 @@ export const ScheduleStateProvider = ({
           console.error('Storage sync error (machine expiry):', error);
         }
       }
+      console.log(
+  'STORAGE EVENT',
+  e.key,
+  e.newValue
+);
+
     };
 
     window.addEventListener('storage', handleStorageChange);

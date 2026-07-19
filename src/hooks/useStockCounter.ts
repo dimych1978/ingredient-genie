@@ -1,120 +1,210 @@
 // hooks/useStockCounter.ts
-import { useState, useCallback, useRef, useEffect } from 'react';
+
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { useScheduleState } from '@/components/context/ScheduleStateContext';
+
+type Counts = Record<string, number>;
+
+const FLUSH_DELAY = 1000;
 
 export const useStockCounter = () => {
   const { stockOnHand, setStockOnHand } = useScheduleState();
-  const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
-  const pendingUpdates = useRef<Record<string, number>>({});
-  const rafId = useRef<number | null>(null);
 
-  // Синхронизация локальных значений с глобальными при изменении извне
+  /**
+   * Локальное быстрое хранилище.
+   * Здесь всегда актуальные значения для UI.
+   */
+  const countsRef = useRef<Counts>({});
+
+  /**
+   * Какие ключи были изменены пользователем
+   * и ждут отправки в Context.
+   */
+  const dirtyRef = useRef<Set<string>>(new Set());
+
+  /**
+   * Таймер debounce
+   */
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Был ли первый импорт из Context
+   */
+  const initializedRef = useRef(false);
+
+  /**
+   * Просто заставляет компонент перечитать ref.
+   */
+  const [, forceRender] = useReducer(value => value + 1, 0);
+
+  /**
+   * Первичная загрузка из Context
+   */
   useEffect(() => {
-    setLocalCounts(prev => {
-      const next = { ...prev };
-      let changed = false;
-      Object.keys(next).forEach(name => {
-        const globalVal = parseInt(stockOnHand[name] || '0') || 0;
-        if (next[name] !== globalVal) {
-          next[name] = globalVal;
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
+    if (initializedRef.current || Object.keys(stockOnHand).length === 0) return;
+
+    let changed = false;
+    Object.entries(stockOnHand).forEach(([key, value]) => {
+      if (!dirtyRef.current.has(key)) {
+        countsRef.current[key] = Number(value) || 0;
+        changed = true;
+      }
     });
+    initializedRef.current = true;
+
+    if (changed) forceRender();
   }, [stockOnHand]);
 
-  const getValue = useCallback((name: string) => {
-    const local = localCounts[name];
-    if (local !== undefined) return local;
-    return parseInt(stockOnHand[name] || '0') || 0;
-  }, [localCounts, stockOnHand]);
+  /**
+   * Запись накопленных изменений наружу
+   */
+  const flush = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
 
-  const setValue = useCallback((name: string, value: number) => {
-    const clamped = Math.max(0, value);
-    setLocalCounts(prev => {
-      const current = prev[name] !== undefined ? prev[name] : parseInt(stockOnHand[name] || '0') || 0;
-      if (current === clamped) return prev;
-      const next = { ...prev, [name]: clamped };
+    if (dirtyRef.current.size === 0) {
+      return;
+    }
+
+    const changedKeys = Array.from(dirtyRef.current);
+
+    setStockOnHand(prev => {
+      const next = {
+        ...prev,
+      };
+
+      changedKeys.forEach(key => {
+        next[key] = String(countsRef.current[key] ?? 0);
+      });
+
       return next;
     });
-    // Накопление для отправки в контекст
-    pendingUpdates.current[name] = clamped;
-    if (rafId.current === null) {
-      rafId.current = requestAnimationFrame(() => {
-        const updates = { ...pendingUpdates.current };
-        pendingUpdates.current = {};
-        rafId.current = null;
-        if (Object.keys(updates).length > 0) {
-          setStockOnHand(prev => {
-            const next = { ...prev };
-            Object.entries(updates).forEach(([key, val]) => {
-              next[key] = val.toString();
-            });
-            return next;
-          });
-        }
-      });
+
+    changedKeys.forEach(key => {
+      dirtyRef.current.delete(key);
+    });
+  }, [setStockOnHand]);
+
+  /**
+   * Планирование сохранения
+   */
+  const scheduleFlush = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
     }
-  }, [stockOnHand, setStockOnHand]);
 
-  const increment = useCallback((name: string) => {
-    setLocalCounts(prev => {
-      const current = prev[name] !== undefined ? prev[name] : parseInt(stockOnHand[name] || '0') || 0;
-      const newVal = current + 1;
-      pendingUpdates.current[name] = newVal;
-      if (rafId.current === null) {
-        rafId.current = requestAnimationFrame(() => {
-          const updates = { ...pendingUpdates.current };
-          pendingUpdates.current = {};
-          rafId.current = null;
-          if (Object.keys(updates).length > 0) {
-            setStockOnHand(prev => {
-              const next = { ...prev };
-              Object.entries(updates).forEach(([key, val]) => {
-                next[key] = val.toString();
-              });
-              return next;
-            });
-          }
-        });
+    timerRef.current = setTimeout(flush, FLUSH_DELAY);
+  }, [flush]);
+
+  useEffect(() => {
+    return () => {
+      flush();
+    };
+  }, [flush]);
+
+  /**
+   * Изменение одного значения
+   */
+  const updateValue = useCallback(
+    (name: string, value: number) => {
+      const nextValue = Math.max(0, value);
+
+      const current = countsRef.current[name] ?? 0;
+
+      if (current === nextValue) {
+        return;
       }
-      return { ...prev, [name]: newVal };
-    });
-  }, [stockOnHand, setStockOnHand]);
 
-  const decrement = useCallback((name: string) => {
-    setLocalCounts(prev => {
-      const current = prev[name] !== undefined ? prev[name] : parseInt(stockOnHand[name] || '0') || 0;
-      const newVal = Math.max(0, current - 1);
-      pendingUpdates.current[name] = newVal;
-      if (rafId.current === null) {
-        rafId.current = requestAnimationFrame(() => {
-          const updates = { ...pendingUpdates.current };
-          pendingUpdates.current = {};
-          rafId.current = null;
-          if (Object.keys(updates).length > 0) {
-            setStockOnHand(prev => {
-              const next = { ...prev };
-              Object.entries(updates).forEach(([key, val]) => {
-                next[key] = val.toString();
-              });
-              return next;
-            });
-          }
-        });
+      countsRef.current[name] = nextValue;
+
+      dirtyRef.current.add(name);
+
+      forceRender();
+
+      scheduleFlush();
+    },
+    [scheduleFlush],
+  );
+
+  const getValue = useCallback((name: string) => {
+    return countsRef.current[name] ?? 0;
+  }, []);
+
+  const setValue = useCallback(
+    (name: string, value: number) => {
+      updateValue(name, value);
+    },
+    [updateValue],
+  );
+
+  const increment = useCallback(
+    (name: string) => {
+      updateValue(name, (countsRef.current[name] ?? 0) + 1);
+    },
+    [updateValue],
+  );
+
+  const decrement = useCallback(
+    (name: string) => {
+      updateValue(name, Math.max(0, (countsRef.current[name] ?? 0) - 1));
+    },
+    [updateValue],
+  );
+
+  /**
+   * Синхронизация извне
+   **/
+  useEffect(() => {
+    if (!initializedRef.current) {
+      return;
+    }
+
+    let changed = false;
+    Object.entries(stockOnHand).forEach(([key, value]) => {
+      if (!dirtyRef.current.has(key)) {
+        countsRef.current[key] = Number(value) || 0;
+        changed = true;
       }
-      return { ...prev, [name]: newVal };
     });
-  }, [stockOnHand, setStockOnHand]);
+    if (changed) forceRender();
+  }, [stockOnHand]);
 
+  /**
+   * Полный сброс локального состояния
+   */
   const reset = useCallback(() => {
-    setLocalCounts({});
-    pendingUpdates.current = {};
-    if (rafId.current !== null) {
-      cancelAnimationFrame(rafId.current);
-      rafId.current = null;
+    countsRef.current = {};
+
+    dirtyRef.current.clear();
+
+    initializedRef.current = false;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
+
+    forceRender();
+  }, []);
+
+  /**
+   * Принудительно сохранить
+   */
+  const flushNow = useCallback(() => {
+    flush();
+  }, [flush]);
+
+  /**
+   * Очистка
+   */
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, []);
 
   return {
@@ -123,5 +213,6 @@ export const useStockCounter = () => {
     increment,
     decrement,
     reset,
+    flush: flushNow,
   };
 };
