@@ -83,6 +83,7 @@ interface ShoppingListItemWithStatus extends ShoppingListItem {
   selectedSyrups?: string[];
   selectedSizes?: ('big' | 'small')[];
   previousDeficitTimestamp: string | null;
+  checkboxTimestamp?: string | null;
 }
 
 interface ShoppingListProps {
@@ -496,6 +497,7 @@ export const ShoppingList = ({
             selectedSyrups: override?.selectedSyrups || [],
             selectedSizes: override?.selectedSizes || [],
             previousDeficitTimestamp: override?.timestamp ?? null,
+            checkboxTimestamp: override?.checkboxTimestamp ?? null,
           };
         },
       );
@@ -693,6 +695,9 @@ export const ShoppingList = ({
           override.checked = item.checked ?? false;
           override.checkedType = item.checkedType;
           override.selectedSizes = item.selectedSizes || [];
+          override.checkboxTimestamp = item.checked
+            ? new Date().toISOString()
+            : null;
         }
 
         if (item.type === 'select') {
@@ -1431,6 +1436,17 @@ export const ShoppingList = ({
                               >
                                 {item.checked ? 'Не надо' : 'Нужно'}
                               </span>
+                              {item.checked && item.checkboxTimestamp && (
+                                <span
+                                  className='text-[10px] text-gray-400 ml-1 cursor-pointer hover:text-gray-300'
+                                  title='Дата когда был отмечен'
+                                >
+                                  {format(
+                                    parseISO(item.checkboxTimestamp),
+                                    'dd.MM.yy HH:mm',
+                                  )}
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <>

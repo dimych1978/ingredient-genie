@@ -52,8 +52,6 @@ export interface GroupedShoppingListsProps {
   machineIds: string[];
   specialMachineDates: Record<string, string>;
   aaMachineIds: Set<string>;
-  // stockOnHand: Record<string, string>;
-  // onStockChange: (itemName: string, value: string) => void;
 }
 
 export const allMachines: Machine[] = [
@@ -626,6 +624,12 @@ export const allMachines: Machine[] = [
     name: 'Железнодорожный вокзал 226',
     location: 'Железнодорожный вокзал\nплощадь Гагарина, д. 3',
     model: 'Necta Opera',
+  },
+  {
+    id: '69686',
+    name: 'Железнодорожный вокзал 1 этаж',
+    location: 'Железнодорожный вокзал\nплощадь Гагарина, д. 3',
+    model: 'Jetinno, JL300',
   },
   {
     id: '54591',
@@ -1654,6 +1658,8 @@ export const MASTER_MACHINE_IDS = [
   '39496',
   '33412',
   '38566',
+  '33351',
+  '65645',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -1840,6 +1846,12 @@ export const machineIngredients: MachineIngredients = {
       packSize: 100,
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+        {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   'krea touch': [
     {
@@ -2566,6 +2578,14 @@ export const customPlanogramMapping: Record<
   { shelf: number; order: string[] }[]
 > = {
   '33351': [
+    { shelf: 1, order: ['70'] },
+    { shelf: 2, order: ['71', '72'] },
+    { shelf: 3, order: ['73', '74'] },
+    { shelf: 4, order: ['75', '76'] },
+    { shelf: 5, order: ['77', '78'] },
+    { shelf: 6, order: ['79', '80'] },
+  ],
+  '33471': [
     { shelf: 1, order: ['70'] },
     { shelf: 2, order: ['71', '72'] },
     { shelf: 3, order: ['73', '74'] },

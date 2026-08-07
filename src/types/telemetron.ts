@@ -63,6 +63,7 @@ export interface LoadingOverride {
   selectedSyrups?: string[];
   selectedSizes?: ('big' | 'small')[];
   previousDeficitTimestamp: string | null;
+  checkboxTimestamp?: string | null;
 }
 
 export type LoadingOverrides = Record<string, LoadingOverride>;
