@@ -1784,6 +1784,12 @@ export const machineIngredients: MachineIngredients = {
       packSize: 100,
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   opera: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
@@ -1846,7 +1852,7 @@ export const machineIngredients: MachineIngredients = {
       packSize: 100,
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
-        {
+    {
       name: 'ёршик',
       apiNames: [],
       unit: 'шт',
@@ -1910,7 +1916,12 @@ export const machineIngredients: MachineIngredients = {
       unit: 'шт',
       type: 'checkbox',
     },
-    // Селектор для сиропа
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
     {
       name: 'сироп',
       apiNames: ['Сироп'],
@@ -1983,7 +1994,12 @@ export const machineIngredients: MachineIngredients = {
       unit: 'шт',
       type: 'checkbox',
     },
-    // Селектор для сиропа
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
     {
       name: 'сироп',
       apiNames: ['Сироп'],
@@ -2076,6 +2092,12 @@ export const machineIngredients: MachineIngredients = {
       unit: 'шт',
       type: 'checkbox',
     },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   koro: [
     {
@@ -2140,6 +2162,12 @@ export const machineIngredients: MachineIngredients = {
         { id: 'coconut', name: 'кокос', selected: false },
         { id: 'caramel', name: 'карамель', selected: false },
       ],
+    },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
     },
   ],
   phedra: [
@@ -2212,6 +2240,12 @@ export const machineIngredients: MachineIngredients = {
         { id: 'caramel', name: 'карамель', selected: false },
       ],
     },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   kikko: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
@@ -2266,6 +2300,12 @@ export const machineIngredients: MachineIngredients = {
       type: 'auto',
       packSize: 100,
     },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   saeco: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
@@ -2315,6 +2355,12 @@ export const machineIngredients: MachineIngredients = {
       packSize: 100,
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   'Saeco Cristallo 600 EVO ТТТ': [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
@@ -2371,6 +2417,12 @@ export const machineIngredients: MachineIngredients = {
       packSize: 100,
     },
     { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
+    },
   ],
   colibri: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
@@ -2425,6 +2477,12 @@ export const machineIngredients: MachineIngredients = {
       unit: 'г',
       type: 'auto',
       packSize: 100,
+    },
+    {
+      name: 'ёршик',
+      apiNames: [],
+      unit: 'шт',
+      type: 'checkbox',
     },
   ],
 };
