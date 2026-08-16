@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn, handleDateInput } from '@/lib/utils';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   MASTER_MACHINE_IDS,
@@ -94,25 +94,7 @@ const ExpiryPicker = ({
   onDateSelect,
 }: ExpiryPickerProps) => {
   const isCoffee = ALL_COFFEE_INGREDIENTS.has(normalize(itemName));
-  const [localManualInput, setLocalManualInput] = useState(
-    dateStr ? format(parseISO(dateStr), 'dd.MM.yy') : '',
-  );
   const [open, setOpen] = useState(false);
-
-  const handleManualInput = (val: string) => {
-    setLocalManualInput(val);
-    const cleaned = val.replace(/\D/g, '').slice(0, 6);
-
-    if (cleaned.length === 6) {
-      const parsedDate = parse(cleaned, 'ddMMyy', new Date());
-      if (isValid(parsedDate)) {
-        onDateSelect(parsedDate);
-        setOpen(false);
-      }
-    } else if (cleaned.length === 0) {
-      onDateSelect(undefined);
-    }
-  };
 
   if (isCoffee) {
     return (
@@ -146,44 +128,16 @@ const ExpiryPicker = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className='w-auto p-0' align='start'>
-        <div className='p-3 border-b bg-muted/30 space-y-3'>
-          <div className='flex items-center justify-between'>
-            <span className='text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate max-w-[150px]'>
-              {itemName}
-            </span>
-            {dateStr && (
-              <Button
-                variant='ghost'
-                size='sm'
-                className='h-6 text-[10px] text-destructive px-2'
-                onClick={() => {
-                  onDateSelect(undefined);
-                  setLocalManualInput('');
-                }}
-              >
-                Сбросить
-              </Button>
-            )}
-          </div>
-          <div className='flex items-center gap-2'>
-            <Keyboard className='h-3.5 w-3.5 text-muted-foreground' />
-            <Input
-              placeholder='ДД.ММ.ГГ'
-              value={localManualInput}
-              onChange={e => handleManualInput(e.target.value)}
-              className='h-8 text-xs font-mono'
-            />
-          </div>
-        </div>
         <Calendar
           mode='single'
+          dateStr={dateStr}
           selected={dateStr ? parseISO(dateStr) : undefined}
           defaultMonth={dateStr ? parseISO(dateStr) : undefined}
           onSelect={date => {
             onDateSelect(date);
-            if (date) setLocalManualInput(format(date, 'dd.MM.yy'));
-            else setLocalManualInput('');
           }}
+          onDateSelect={onDateSelect}
+          onClose={() => setOpen(false)}
           locale={ru}
         />
       </PopoverContent>
@@ -198,7 +152,7 @@ export const InventoryManager = () => {
     expirationDates,
     setExpirationDates,
     machineItemExpiry,
-    setMachineItemExpiryDate
+    setMachineItemExpiryDate,
   } = useScheduleState();
   const [catalog, setCatalog] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -495,38 +449,38 @@ export const InventoryManager = () => {
     scrollToMatch(matchIndex);
   }, [matchIndex, matches, scrollToMatch]);
 
-const handleExpiryChange = (itemName: string, date: Date | undefined) => {
-  // Сохраняем на складе
-  setExpirationDates(prev => ({
-    ...prev,
-    [itemName]: date ? date.toISOString() : '',
-  }));
+  const handleExpiryChange = (itemName: string, date: Date | undefined) => {
+    // Сохраняем на складе
+    setExpirationDates(prev => ({
+      ...prev,
+      [itemName]: date ? date.toISOString() : '',
+    }));
 
-  // Если дата не установлена — выходим
-  if (!date) return;
+    // Если дата не установлена — выходим
+    if (!date) return;
 
-  const newDate = date;
+    const newDate = date;
 
-  // Все аппараты с ручной датой для этого товара
-  const machineKeys = Object.keys(machineItemExpiry).filter(key =>
-    key.endsWith(`_${itemName}`)
-  );
+    // Все аппараты с ручной датой для этого товара
+    const machineKeys = Object.keys(machineItemExpiry).filter(key =>
+      key.endsWith(`_${itemName}`),
+    );
 
-  // Обновляем только те, у которых дата раньше новой
-  machineKeys.forEach(key => {
-    const machineId = key.split('_')[0];
-    const currentDateStr = machineItemExpiry[key];
-    if (!currentDateStr) return;
+    // Обновляем только те, у которых дата раньше новой
+    machineKeys.forEach(key => {
+      const machineId = key.split('_')[0];
+      const currentDateStr = machineItemExpiry[key];
+      if (!currentDateStr) return;
 
-    const currentDate = parseISO(currentDateStr);
-    if (!isValid(currentDate)) return;
+      const currentDate = parseISO(currentDateStr);
+      if (!isValid(currentDate)) return;
 
-    // ✅ Если ручная дата раньше новой — продлеваем
-    if (currentDate < newDate) {
-      setMachineItemExpiryDate(machineId, itemName, newDate);
-    }
-  });
-};
+      // ✅ Если ручная дата раньше новой — продлеваем
+      if (currentDate < newDate) {
+        setMachineItemExpiryDate(machineId, itemName, newDate);
+      }
+    });
+  };
 
   const handleInputFocus = () => {
     scrollPositionRef.current = window.scrollY;
@@ -536,7 +490,7 @@ const handleExpiryChange = (itemName: string, date: Date | undefined) => {
     // Небольшая задержка, чтобы клавиатура успела скрыться
     setTimeout(() => {
       window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
-    }, 50);
+    }, 100);
   };
 
   const handleHintToggle = (name: string) => {
@@ -557,51 +511,50 @@ const handleExpiryChange = (itemName: string, date: Date | undefined) => {
     if (!constituents) return '';
 
     const sum = constituents.reduce((acc, constituent) => {
-      
       return acc + getValue(constituent);
     }, 0);
     return sum.toString();
   };
 
-const getExpiryStatus = (itemName: string) => {
-  // Кофейные ингредиенты без срока
-  if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
+  const getExpiryStatus = (itemName: string) => {
+    // Кофейные ингредиенты без срока
+    if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
 
-  // 1. Проверяем все аппараты с ручной датой
-  const machineKeys = Object.keys(machineItemExpiry).filter(key =>
-    key.endsWith(`_${itemName}`)
-  );
+    // 1. Проверяем все аппараты с ручной датой
+    const machineKeys = Object.keys(machineItemExpiry).filter(key =>
+      key.endsWith(`_${itemName}`),
+    );
 
-  let hasMachineDate = false;
-  let isAnyCritical = false;
+    let hasMachineDate = false;
+    let isAnyCritical = false;
 
-  machineKeys.forEach(key => {
-    const dateStr = machineItemExpiry[key];
-    if (!dateStr) return;
-    hasMachineDate = true;
+    machineKeys.forEach(key => {
+      const dateStr = machineItemExpiry[key];
+      if (!dateStr) return;
+      hasMachineDate = true;
+      const expiryDate = parseISO(dateStr);
+      if (!isValid(expiryDate)) return;
+      const daysLeft = differenceInDays(expiryDate, new Date());
+      if (daysLeft <= 14) {
+        isAnyCritical = true;
+      }
+    });
+
+    // Если есть критический срок в любом аппарате — возвращаем 'critical'
+    if (isAnyCritical) return 'critical';
+
+    // Если есть даты в аппаратах, но все они > 14 дней — 'ok'
+    if (hasMachineDate) return 'ok';
+
+    // 2. Если нет дат в аппаратах — проверяем дату со склада
+    const dateStr = expirationDates[itemName];
+    if (!dateStr) return 'empty';
     const expiryDate = parseISO(dateStr);
-    if (!isValid(expiryDate)) return;
+    if (!isValid(expiryDate)) return 'empty';
     const daysLeft = differenceInDays(expiryDate, new Date());
-    if (daysLeft <= 14) {
-      isAnyCritical = true;
-    }
-  });
-
-  // Если есть критический срок в любом аппарате — возвращаем 'critical'
-  if (isAnyCritical) return 'critical';
-
-  // Если есть даты в аппаратах, но все они > 14 дней — 'ok'
-  if (hasMachineDate) return 'ok';
-
-  // 2. Если нет дат в аппаратах — проверяем дату со склада
-  const dateStr = expirationDates[itemName];
-  if (!dateStr) return 'empty';
-  const expiryDate = parseISO(dateStr);
-  if (!isValid(expiryDate)) return 'empty';
-  const daysLeft = differenceInDays(expiryDate, new Date());
-  if (daysLeft <= 14) return 'critical';
-  return 'ok';
-};
+    if (daysLeft <= 14) return 'critical';
+    return 'ok';
+  };
 
   const clearSearch = () => {
     setSearchQuery('');

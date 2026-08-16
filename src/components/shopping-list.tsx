@@ -29,7 +29,10 @@ import {
   setSpecialMachineDate,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import {
+  Calendar,
+  Calendar as CalendarComponent,
+} from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Loader2,
@@ -44,6 +47,7 @@ import {
   Plus,
   Minus,
   CalendarDays,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 import { differenceInDays, format, isValid, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -1214,8 +1218,15 @@ export const ShoppingList = ({
                                 className='w-auto p-0'
                                 align='start'
                               >
-                                <CalendarComponent
+                                <Calendar
                                   mode='single'
+                                  dateStr={(() => {
+                                    const machineKey = `${machineIds[0]}_${item.name}`;
+                                    return (
+                                      machineItemExpiry[machineKey] ??
+                                      expirationDates?.[item.name]
+                                    );
+                                  })()}
                                   selected={(() => {
                                     const machineKey = `${machineIds[0]}_${item.name}`;
                                     const dateStr =
@@ -1240,6 +1251,23 @@ export const ShoppingList = ({
                                       item.name,
                                       date ?? null,
                                     );
+                                    setExpiryCalendarOpen(prev => ({
+                                      ...prev,
+                                      [`${item.name}_${index}`]: false,
+                                    }));
+                                  }}
+                                  onDateSelect={date => {
+                                    setMachineItemExpiryDate(
+                                      machineIds[0],
+                                      item.name,
+                                      date ?? null,
+                                    );
+                                    setExpiryCalendarOpen(prev => ({
+                                      ...prev,
+                                      [`${item.name}_${index}`]: false,
+                                    }));
+                                  }}
+                                  onClose={() => {
                                     setExpiryCalendarOpen(prev => ({
                                       ...prev,
                                       [`${item.name}_${index}`]: false,
