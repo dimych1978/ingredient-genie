@@ -168,20 +168,41 @@ export const GroupedShoppingLists = ({
     }, 500);
   };
 
-  const getExpiryStatus = (itemName: string) => {
-    // Кофейные ингредиенты без срока
-    if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
+const getExpiryStatus = (itemName: string) => {
+  if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
 
-    const dateStr = expirationDates?.[itemName];
-    if (!dateStr) return 'empty';
+  // 1. Проверяем все аппараты с ручной датой для этого товара
+  const machineKeys = Object.keys(machineItemExpiry).filter(key =>
+    key.endsWith(`_${itemName}`)
+  );
 
+  let hasMachineDate = false;
+  let isAnyCritical = false;
+
+  machineKeys.forEach(key => {
+    const dateStr = machineItemExpiry[key];
+    if (!dateStr) return;
+    hasMachineDate = true;
     const expiryDate = parseISO(dateStr);
-    if (!isValid(expiryDate)) return 'empty';
-
+    if (!isValid(expiryDate)) return;
     const daysLeft = differenceInDays(expiryDate, new Date());
-    if (daysLeft <= 14) return 'critical';
-    return 'ok';
-  };
+    if (daysLeft <= 14) {
+      isAnyCritical = true;
+    }
+  });
+
+  if (isAnyCritical) return 'critical';
+  if (hasMachineDate) return 'ok';
+
+  // 2. Если нет дат в аппаратах — проверяем дату со склада
+  const dateStr = expirationDates?.[itemName];
+  if (!dateStr) return 'empty';
+  const expiryDate = parseISO(dateStr);
+  if (!isValid(expiryDate)) return 'empty';
+  const daysLeft = differenceInDays(expiryDate, new Date());
+  if (daysLeft <= 14) return 'critical';
+  return 'ok';
+};
 
   const getCupsName = (
     apiName: string,
@@ -856,6 +877,8 @@ export const GroupedShoppingLists = ({
     getMachineOverview,
     getSalesByProducts,
     showList,
+    expirationDates,
+    machineItemExpiry,
   ]);
 
   const filteredList = useMemo(() => {
@@ -875,7 +898,7 @@ export const GroupedShoppingLists = ({
 
       return false;
     });
-  }, [combinedList, searchQuery]);
+  }, [combinedList, searchQuery, machineItemExpiry]);
 
   const getGroupTotal = (groupName: string) => {
     const constituents = PRODUCT_GROUPS[groupName];
