@@ -1,6 +1,10 @@
 'use client';
 
-import { cn, handleDateInput } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import {
+  getExpiryStatus as getExpiryStatusBase,
+  resolveExpiryDate,
+} from '@/lib/expiry-utils';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   MASTER_MACHINE_IDS,
@@ -147,8 +151,6 @@ const ExpiryPicker = ({
 
 export const InventoryManager = () => {
   const {
-    // stockOnHand,
-    // setStockOnHand,
     expirationDates,
     setExpirationDates,
     machineItemExpiry,
@@ -516,66 +518,12 @@ export const InventoryManager = () => {
     return sum.toString();
   };
 
-  // const getExpiryStatus = (itemName: string) => {
-  //   // Кофейные ингредиенты без срока
-  //   if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
-
-  //   // 1. Проверяем все аппараты с ручной датой
-  //   const machineKeys = Object.keys(machineItemExpiry).filter(key =>
-  //     key.endsWith(`_${itemName}`),
-  //   );
-
-  //   let hasMachineDate = false;
-  //   let isAnyCritical = false;
-
-  //   machineKeys.forEach(key => {
-  //     const dateStr = machineItemExpiry[key];
-  //     if (!dateStr) return;
-  //     hasMachineDate = true;
-  //     const expiryDate = parseISO(dateStr);
-  //     if (!isValid(expiryDate)) return;
-  //     const daysLeft = differenceInDays(expiryDate, new Date());
-  //     if (daysLeft <= 14) {
-  //       isAnyCritical = true;
-  //     }
-  //   });
-
-  //   // Если есть критический срок в любом аппарате — возвращаем 'critical'
-  //   if (isAnyCritical) return 'critical';
-
-  //   // Если есть даты в аппаратах, но все они > 14 дней — 'ok'
-  //   if (hasMachineDate) return 'ok';
-
-  //   // 2. Если нет дат в аппаратах — проверяем дату со склада
-  //   const dateStr = expirationDates[itemName];
-  //   if (!dateStr) return 'empty';
-  //   const expiryDate = parseISO(dateStr);
-  //   if (!isValid(expiryDate)) return 'empty';
-  //   const daysLeft = differenceInDays(expiryDate, new Date());
-  //   if (daysLeft <= 14) return 'critical';
-  //   return 'ok';
-  // };
-
-  const getExpiryStatus = (itemName: string) => {
-  if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
-
-  // Группы — берём самую критичную из составляющих
-  const groupItems = PRODUCT_GROUPS[itemName];
-  if (groupItems) {
-    const statuses = groupItems.map(gi => getExpiryStatus(gi));
-    if (statuses.includes('critical')) return 'critical';
-    if (statuses.includes('empty')) return 'empty';
-    return 'ok';
-  }
-
-  // Только дата склада
-  const dateStr = expirationDates[itemName];
-  if (!dateStr) return 'empty';
-  const expiryDate = parseISO(dateStr);
-  if (!isValid(expiryDate)) return 'empty';
-  const daysLeft = differenceInDays(expiryDate, new Date());
-  return daysLeft <= 14 ? 'critical' : 'ok';
-};
+const getExpiryStatus = (itemName: string) =>
+  getExpiryStatusBase(itemName, {
+    ignoreMachineDates: true,
+    expirationDates,
+    machineItemExpiry,
+  });
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -775,13 +723,18 @@ export const InventoryManager = () => {
                 <TableBody>
                   {displayCatalog.map((item, index) => {
                     const isGroup = !!PRODUCT_GROUPS[item];
+                    const warehouseDate = resolveExpiryDate(item, {
+  ignoreMachineDates: true,
+  expirationDates,
+  machineItemExpiry,
+});
                     const isMatch =
                       searchQuery.trim() !== '' &&
                       item.toLowerCase().includes(searchQuery.toLowerCase());
                     const isCurrentMatch =
                       isMatch && matches[matchIndex] === index;
                     const expiryStatus = getExpiryStatus(item);
-                    const expiryDate = expirationDates[item];
+                    const expiryDate = warehouseDate;
 
                     return (
                       <TableRow
@@ -839,7 +792,7 @@ export const InventoryManager = () => {
                             <ExpiryPicker
                               itemName={item}
                               status={expiryStatus}
-                              dateStr={expiryDate}
+                              dateStr={warehouseDate ? warehouseDate.toISOString() : undefined}
                               onDateSelect={d => handleExpiryChange(item, d)}
                             />
                           )}
@@ -888,7 +841,7 @@ export const InventoryManager = () => {
                                         Срок до:{' '}
                                         <span className='font-mono font-bold text-red-500'>
                                           {format(
-                                            parseISO(expiryDate!),
+                                            expiryDate!,
                                             'dd.MM.yy',
                                           )}
                                         </span>
@@ -937,6 +890,18 @@ export const InventoryManager = () => {
                                                   'dd.MM.yy',
                                                 )}
                                               </span>
+                                              <Button
+  variant='ghost'
+  size='icon'
+  className='h-5 w-5 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10'
+  onClick={e => {
+    e.stopPropagation();
+    setMachineItemExpiryDate(machineId, item, null);
+  }}
+  title='Удалить ручную дату'
+>
+  <X className='h-3 w-3' />
+</Button>
                                             </div>
                                           );
                                         })}
@@ -963,7 +928,7 @@ export const InventoryManager = () => {
                                             )}
                                           >
                                             {format(
-                                              parseISO(expiryDate),
+                                              expiryDate,
                                               'dd.MM.yy',
                                             )}
                                           </span>
@@ -993,7 +958,7 @@ export const InventoryManager = () => {
                                     : 'text-muted-foreground',
                                 )}
                               >
-                                до {format(parseISO(expiryDate), 'dd.MM.yy')}
+                                до {format(warehouseDate, 'dd.MM.yy')}
                               </span>
                             )}
                             {isGroup && (

@@ -41,6 +41,10 @@ import {
   PRODUCT_GROUPS,
 } from '@/lib/data';
 import {
+  getExpiryStatus as getExpiryStatusBase,
+  resolveExpiryDate,
+} from '@/lib/expiry-utils';
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -65,39 +69,10 @@ type CombinedListItem = {
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
-// // Кофейные ингредиенты — для них срок не показываем
-// const ALL_COFFEE_INGREDIENTS = new Set(
-//   Object.values(machineIngredients).flatMap(modelIngs =>
-//     modelIngs.map(ing => normalize(ing.name)),
-//   ),
-// );
-
-// // Добавляем динамические имена (стаканы большие/малые, крышки, сиропы)
-// Object.values(machineIngredients).forEach(modelIngredients => {
-//   modelIngredients.forEach(ing => {
-//     if (ing.size) {
-//       const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
-//       ALL_COFFEE_INGREDIENTS.add(
-//         normalize(`${prefix} ${ing.size === 'big' ? 'большие' : 'малые'}`),
-//       );
-//     } else if (ing.hasSizes) {
-//       const prefix = ing.name.includes('крышк') ? 'крышки' : 'стаканы';
-//       ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} большие`));
-//       ALL_COFFEE_INGREDIENTS.add(normalize(`${prefix} малые`));
-//     } else if (ing.syrupOptions) {
-//       ing.syrupOptions.forEach(syrup => {
-//         ALL_COFFEE_INGREDIENTS.add(normalize(`сироп ${syrup.name}`));
-//       });
-//     }
-//   });
-// });
-
 export const GroupedShoppingLists = ({
   machineIds,
   specialMachineDates,
   aaMachineIds,
-  // stockOnHand,
-  // onStockChange,
 }: GroupedShoppingListsProps) => {
   const { machineItemExpiry, setMachineItemExpiryDate } = useScheduleState();
   const { getValue, setValue, increment, decrement } = useStockCounter();
@@ -168,43 +143,12 @@ export const GroupedShoppingLists = ({
     }, 500);
   };
 
-// 
-const getExpiryStatus = (itemName: string) => {
-  if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
-
-  const warehouseDateStr = expirationDates?.[itemName];
-  const warehouseDate = warehouseDateStr ? parseISO(warehouseDateStr) : null;
-  const warehouseValid = warehouseDate && isValid(warehouseDate);
-
-  let anyDate = false;
-  let anyCritical = false;
-
-  machineIdsToProcess.forEach(machineId => {
-    const key = `${machineId}_${itemName}`;
-    const machineDateStr = machineItemExpiry[key];
-
-    let effectiveDate: Date | null = null;
-
-    if (machineDateStr) {
-      const d = parseISO(machineDateStr);
-      if (isValid(d)) effectiveDate = d;
-    }
-
-    if (!effectiveDate && warehouseValid) {
-      effectiveDate = warehouseDate!;
-    }
-
-    if (effectiveDate) {
-      anyDate = true;
-      const daysLeft = differenceInDays(effectiveDate, new Date());
-      if (daysLeft <= 14) anyCritical = true;
-    }
-  });
-
-  if (anyCritical) return 'critical';
-  if (anyDate) return 'ok';
-  return 'empty';
-};
+  const getExpiryStatus = (itemName: string) =>
+    getExpiryStatusBase(itemName, {
+      machineIdsFilter: machineIdsToProcess,
+      expirationDates,
+      machineItemExpiry,
+    });
 
   const getCupsName = (
     apiName: string,
@@ -907,7 +851,7 @@ const getExpiryStatus = (itemName: string) => {
     if (!constituents) return '';
 
     const sum = constituents.reduce((acc, constituent) => {
-            return acc + getValue(constituent)
+      return acc + getValue(constituent);
     }, 0);
 
     return sum.toString();
@@ -1219,190 +1163,154 @@ const getExpiryStatus = (itemName: string) => {
                                   {item.name}
                                 </span>
                               </PopoverTrigger>
-                              {/* <PopoverContent className='w-[80vw] p-3'>
-                                {item.expiryStatus === 'critical' ? (
-                                  <div className='space-y-2'>
-                                    <div className='flex items-center justify-between border-b pb-2'>
-                                      <h4 className='font-medium text-sm'>
-                                        Проверка срока: {item.name}
-                                      </h4>
-                                      <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        className='h-6 w-6 rounded-full'
-                                        onClick={e => {
-                                          e.stopPropagation();
-                                          setActiveHints(prev => ({
-                                            ...prev,
-                                            activeHint: null,
-                                          }));
-                                        }}
-                                      >
-                                        <X className='h-3 w-3' />
-                                      </Button>
-                                    </div>
-                                    <div className='grid gap-1'>
-                                      {Object.entries(item.breakdown).map(
-                                        ([machineId, details]) => {
-                                          const expiryKey = `${machineId}_${item.name}`;
-                                          const expiryDateStr =
-                                            machineItemExpiry[expiryKey];
-                                          let isExpiryOk = false;
-                                          if (expiryDateStr) {
-                                            const expiryDate =
-                                              parseISO(expiryDateStr);
-                                            if (isValid(expiryDate)) {
-                                              const daysLeft = differenceInDays(
-                                                expiryDate,
-                                                new Date(),
-                                              );
-                                              isExpiryOk = daysLeft > 14;
-                                            }
-                                          }
-                                          return (
-                                            <div
-                                              key={machineId}
-                                              className={cn(
-                                                'flex items-center gap-2 p-1 rounded',
-                                                expiryDateStr
-                                                  ? isExpiryOk
-                                                    ? 'bg-green-500/10'
-                                                    : 'bg-red-500/10'
-                                                  : 'bg-red-500/10',
-                                              )}
-                                            >
-                                              <div
-                                                className={cn(
-                                                  'h-3 w-3 rounded-full flex-shrink-0',
-                                                  expiryDateStr
-                                                    ? isExpiryOk
-                                                      ? 'bg-green-500'
-                                                      : 'bg-red-500'
-                                                    : 'bg-red-500',
-                                                )}
-                                              />
-                                              <span className='text-xs truncate'>
-                                                {details.name} (#{machineId})
-                                              </span>
-                                              {expiryDateStr && (
-                                                <span
-                                                  className={cn(
-                                                    'text-[10px] ml-auto',
-                                                    isExpiryOk
-                                                      ? 'text-green-400'
-                                                      : 'text-red-400',
-                                                  )}
-                                                >
-                                                  {format(
-                                                    parseISO(expiryDateStr),
-                                                    'dd.MM.yy',
-                                                  )}
-                                                </span>
-                                              )}
-                                            </div>
-                                          );
-                                        },
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className='space-y-1'>
-                                    <p className='font-medium text-sm'>
-                                      {item.name}
-                                    </p>
-                                  </div>
-                                )}{' '}
-                              </PopoverContent> */}
                               <PopoverContent className='w-[80vw] p-3'>
-  <div className='space-y-2'>
-    <div className='flex items-center justify-between border-b pb-2'>
-      <h4 className='font-medium text-sm'>Проверка срока: {item.name}</h4>
-      <Button
-        variant='ghost'
-        size='icon'
-        className='h-6 w-6 rounded-full'
-        onClick={e => {
-          e.stopPropagation();
-          setActiveHints(prev => ({ ...prev, activeHint: null }));
-        }}
-      >
-        <X className='h-3 w-3' />
-      </Button>
-    </div>
+                                <div className='space-y-2'>
+                                  <div className='flex items-center justify-between border-b pb-2'>
+                                    <h4 className='font-medium text-sm'>
+                                      Проверка срока: {item.name}
+                                    </h4>
+                                    <Button
+                                      variant='ghost'
+                                      size='icon'
+                                      className='h-6 w-6 rounded-full'
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        setActiveHints(prev => ({
+                                          ...prev,
+                                          activeHint: null,
+                                        }));
+                                      }}
+                                    >
+                                      <X className='h-3 w-3' />
+                                    </Button>
+                                  </div>
 
-    {/* Складская дата — показываем один раз сверху, для информации */}
-    {expirationDates?.[item.name] && (
-      <div className='flex items-center gap-2 p-1 rounded bg-muted/40'>
-        <div className='h-3 w-3 rounded-full flex-shrink-0 bg-blue-400' />
-        <span className='text-xs truncate'>Склад</span>
-        <span className='text-[10px] ml-auto font-mono text-muted-foreground'>
-          {format(parseISO(expirationDates[item.name]), 'dd.MM.yy')}
-        </span>
-      </div>
-    )}
+                                  {(() => {
+                                    const warehouseDate = resolveExpiryDate(
+                                      item.name,
+                                      {
+                                        ignoreMachineDates: true,
+                                        expirationDates,
+                                        machineItemExpiry,
+                                      },
+                                    );
+                                    if (!warehouseDate) return null;
 
-    {/* Аппараты заявки — только machineIdsToProcess */}
-    {Object.keys(item.breakdown).map(machineId => {
-      const key = `${machineId}_${item.name}`;
-      const machineDateStr = machineItemExpiry[key];
-      const machine = allMachines.find(m => m.id === machineId);
+                                    const daysLeft = differenceInDays(
+                                      warehouseDate,
+                                      new Date(),
+                                    );
+                                    const isOk = daysLeft > 14;
 
-      const isManual = !!machineDateStr;
-      const dateStr = machineDateStr ?? expirationDates?.[item.name];
-      const effectiveDate = dateStr ? parseISO(dateStr) : null;
-      const daysLeft =
-        effectiveDate && isValid(effectiveDate)
-          ? differenceInDays(effectiveDate, new Date())
-          : null;
-      const isOk = daysLeft !== null ? daysLeft > 14 : true;
+                                    return (
+                                      <div className='flex items-center gap-2 p-1 rounded bg-muted/40'>
+                                        <div
+                                          className={cn(
+                                            'h-3 w-3 rounded-full flex-shrink-0',
+                                            isOk ? 'bg-blue-400' : 'bg-red-500',
+                                          )}
+                                        />
+                                        <span className='text-xs truncate'>
+                                          Склад
+                                        </span>
+                                        <span
+                                          className={cn(
+                                            'text-[10px] ml-auto font-mono',
+                                            isOk
+                                              ? 'text-muted-foreground'
+                                              : 'text-red-400',
+                                          )}
+                                        >
+                                          {format(warehouseDate, 'dd.MM.yy')}
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
 
-      return (
-        <div
-          key={machineId}
-          className={cn(
-            'flex items-center gap-2 p-1 rounded',
-            isOk ? 'bg-green-500/10' : 'bg-red-500/10',
-          )}
-        >
-          <div
-            className={cn(
-              'h-3 w-3 rounded-full flex-shrink-0',
-              isOk ? 'bg-green-500' : 'bg-red-500',
-            )}
-          />
-          <span className='text-xs truncate'>
-            {machine?.name || machineId} (#{machineId})
-            {!isManual && ' · склад'}
-          </span>
-          {effectiveDate && (
-            <span
-              className={cn(
-                'text-[10px] ml-auto font-mono',
-                isOk ? 'text-green-400' : 'text-red-400',
-              )}
-            >
-              {format(effectiveDate, 'dd.MM.yy')}
-            </span>
-          )}
-          {isManual && (
-            <Button
-              variant='ghost'
-              size='icon'
-              className='h-5 w-5 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10'
-              onClick={e => {
-                e.stopPropagation();
-                setMachineItemExpiryDate(machineId, item.name, null);
-              }}
-              title='Удалить ручную дату'
-            >
-              <X className='h-3 w-3' />
-            </Button>
-          )}
-        </div>
-      );
-    })}
-  </div>
-</PopoverContent>
+                                  {Object.keys(item.breakdown).map(
+                                    machineId => {
+                                      const machine = allMachines.find(
+                                        m => m.id === machineId,
+                                      );
+                                      const manual =
+                                        machineItemExpiry[
+                                          `${machineId}_${item.name}`
+                                        ];
+                                      const isManual = !!manual;
+
+                                      const effective = resolveExpiryDate(
+                                        item.name,
+                                        {
+                                          machineId,
+                                          expirationDates,
+                                          machineItemExpiry,
+                                        },
+                                      );
+                                      if (!effective) return null;
+
+                                      const daysLeft = differenceInDays(
+                                        effective,
+                                        new Date(),
+                                      );
+                                      const isOk = daysLeft > 14;
+
+                                      return (
+                                        <div
+                                          key={machineId}
+                                          className={cn(
+                                            'flex items-center gap-2 p-1 rounded',
+                                            isOk
+                                              ? 'bg-green-500/10'
+                                              : 'bg-red-500/10',
+                                          )}
+                                        >
+                                          <div
+                                            className={cn(
+                                              'h-3 w-3 rounded-full flex-shrink-0',
+                                              isOk
+                                                ? 'bg-green-500'
+                                                : 'bg-red-500',
+                                            )}
+                                          />
+                                          <span className='text-xs truncate'>
+                                            {machine?.name || machineId} (#
+                                            {machineId})
+                                            {!isManual && ' · склад'}
+                                          </span>
+                                          <span
+                                            className={cn(
+                                              'text-[10px] ml-auto font-mono',
+                                              isOk
+                                                ? 'text-green-400'
+                                                : 'text-red-400',
+                                            )}
+                                          >
+                                            {format(effective, 'dd.MM.yy')}
+                                          </span>
+                                          {isManual && (
+                                            <Button
+                                              variant='ghost'
+                                              size='icon'
+                                              className='h-5 w-5 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10'
+                                              onClick={e => {
+                                                e.stopPropagation();
+                                                setMachineItemExpiryDate(
+                                                  machineId,
+                                                  item.name,
+                                                  null,
+                                                );
+                                              }}
+                                              title='Удалить ручную дату'
+                                            >
+                                              <X className='h-3 w-3' />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              </PopoverContent>
                             </Popover>
                             {isGroup && (
                               <span className='text-[8px] text-primary/60 font-medium uppercase tracking-tighter mt-0.5'>

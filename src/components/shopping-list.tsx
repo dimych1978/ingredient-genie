@@ -13,6 +13,10 @@ import {
   calculateShoppingList,
   type SortType,
 } from '@/lib/shopping-calculator';
+import {
+  getExpiryStatus as getExpiryStatusBase,
+  resolveExpiryDate,
+} from '@/lib/expiry-utils';
 import type {
   TelemetronSalesResponse,
   TelemetronSaleItem,
@@ -781,27 +785,12 @@ export const ShoppingList = ({
     URL.revokeObjectURL(url);
   };
 
-  const getItemExpiryStatus = (itemName: string) => {
-    // Сначала проверяем machineItemExpiry для этого аппарата
-    const machineKey = `${machineIds[0]}_${itemName}`;
-    const machineDateStr = machineItemExpiry[machineKey];
-
-    if (machineDateStr) {
-      const expiryDate = parseISO(machineDateStr);
-      if (isValid(expiryDate)) {
-        const daysLeft = differenceInDays(expiryDate, new Date());
-        return daysLeft <= 14 ? 'critical' : 'ok';
-      }
-    }
-
-    // Если нет даты в machineItemExpiry — смотрим expirationDates
-    const dateStr = expirationDates?.[itemName];
-    if (!dateStr) return 'ok';
-    const expiryDate = parseISO(dateStr);
-    if (!isValid(expiryDate)) return 'ok';
-    const daysLeft = differenceInDays(expiryDate, new Date());
-    return daysLeft <= 14 ? 'critical' : 'ok';
-  };
+  const getItemExpiryStatus = (itemName: string) =>
+    getExpiryStatusBase(itemName, {
+      machineId: machineIds[0],
+      expirationDates,
+      machineItemExpiry,
+    });
 
   const extractProductName = (
     planogramName: string | null,
@@ -999,7 +988,12 @@ export const ShoppingList = ({
                     const deficit = item.previousDeficit || 0;
                     const hasDeficit = deficit > 0;
                     const hasSurplus = deficit < 0;
-
+                    const resolved = resolveExpiryDate(item.name, {
+                      machineId: machineIds[0],
+                      expirationDates,
+                      machineItemExpiry,
+                    });
+                    const status = getItemExpiryStatus(item.name);
                     const infoParts: React.ReactNode[] = [];
                     if (hasSales) {
                       infoParts.push(
@@ -1097,7 +1091,7 @@ export const ShoppingList = ({
                             !isLastDuplicate &&
                             'animated-dash-full opacity-90',
                           isDuplicate && isLastDuplicate && 'holy-glow',
-                          getItemExpiryStatus(item.name) === 'critical' &&
+                          status === 'critical' &&
                             'border-red-500 bg-[#E90F44]/60',
                         )}
                       >
@@ -1198,15 +1192,9 @@ export const ShoppingList = ({
                                   size='sm'
                                   className={cn(
                                     'h-6 w-6 p-0 transition-colors',
-                                    getItemExpiryStatus(item.name) ===
-                                      'critical'
+                                    status === 'critical'
                                       ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
-                                      : getItemExpiryStatus(item.name) ===
-                                            'ok' &&
-                                          (machineItemExpiry[
-                                            `${machineIds[0]}_${item.name}`
-                                          ] ||
-                                            expirationDates?.[item.name])
+                                      : status === 'ok' && resolved
                                         ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
                                         : 'text-gray-400 hover:bg-gray-700/50',
                                   )}
@@ -1220,31 +1208,13 @@ export const ShoppingList = ({
                               >
                                 <Calendar
                                   mode='single'
-                                  dateStr={(() => {
-                                    const machineKey = `${machineIds[0]}_${item.name}`;
-                                    return (
-                                      machineItemExpiry[machineKey] ??
-                                      expirationDates?.[item.name]
-                                    );
-                                  })()}
-                                  selected={(() => {
-                                    const machineKey = `${machineIds[0]}_${item.name}`;
-                                    const dateStr =
-                                      machineItemExpiry[machineKey] ??
-                                      expirationDates?.[item.name];
-                                    return dateStr
-                                      ? new Date(dateStr)
-                                      : undefined;
-                                  })()}
-                                  defaultMonth={(() => {
-                                    const machineKey = `${machineIds[0]}_${item.name}`;
-                                    const dateStr =
-                                      machineItemExpiry[machineKey] ??
-                                      expirationDates?.[item.name];
-                                    return dateStr
-                                      ? new Date(dateStr)
-                                      : new Date();
-                                  })()}
+                                  dateStr={
+                                    resolved
+                                      ? resolved.toISOString()
+                                      : undefined
+                                  }
+                                  selected={resolved ?? undefined}
+                                  defaultMonth={resolved ?? new Date()}
                                   onSelect={date => {
                                     setMachineItemExpiryDate(
                                       machineIds[0],
