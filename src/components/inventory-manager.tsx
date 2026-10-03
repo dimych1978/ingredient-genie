@@ -516,45 +516,66 @@ export const InventoryManager = () => {
     return sum.toString();
   };
 
+  // const getExpiryStatus = (itemName: string) => {
+  //   // Кофейные ингредиенты без срока
+  //   if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
+
+  //   // 1. Проверяем все аппараты с ручной датой
+  //   const machineKeys = Object.keys(machineItemExpiry).filter(key =>
+  //     key.endsWith(`_${itemName}`),
+  //   );
+
+  //   let hasMachineDate = false;
+  //   let isAnyCritical = false;
+
+  //   machineKeys.forEach(key => {
+  //     const dateStr = machineItemExpiry[key];
+  //     if (!dateStr) return;
+  //     hasMachineDate = true;
+  //     const expiryDate = parseISO(dateStr);
+  //     if (!isValid(expiryDate)) return;
+  //     const daysLeft = differenceInDays(expiryDate, new Date());
+  //     if (daysLeft <= 14) {
+  //       isAnyCritical = true;
+  //     }
+  //   });
+
+  //   // Если есть критический срок в любом аппарате — возвращаем 'critical'
+  //   if (isAnyCritical) return 'critical';
+
+  //   // Если есть даты в аппаратах, но все они > 14 дней — 'ok'
+  //   if (hasMachineDate) return 'ok';
+
+  //   // 2. Если нет дат в аппаратах — проверяем дату со склада
+  //   const dateStr = expirationDates[itemName];
+  //   if (!dateStr) return 'empty';
+  //   const expiryDate = parseISO(dateStr);
+  //   if (!isValid(expiryDate)) return 'empty';
+  //   const daysLeft = differenceInDays(expiryDate, new Date());
+  //   if (daysLeft <= 14) return 'critical';
+  //   return 'ok';
+  // };
+
   const getExpiryStatus = (itemName: string) => {
-    // Кофейные ингредиенты без срока
-    if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
+  if (ALL_COFFEE_INGREDIENTS.has(normalize(itemName))) return 'ok';
 
-    // 1. Проверяем все аппараты с ручной датой
-    const machineKeys = Object.keys(machineItemExpiry).filter(key =>
-      key.endsWith(`_${itemName}`),
-    );
-
-    let hasMachineDate = false;
-    let isAnyCritical = false;
-
-    machineKeys.forEach(key => {
-      const dateStr = machineItemExpiry[key];
-      if (!dateStr) return;
-      hasMachineDate = true;
-      const expiryDate = parseISO(dateStr);
-      if (!isValid(expiryDate)) return;
-      const daysLeft = differenceInDays(expiryDate, new Date());
-      if (daysLeft <= 14) {
-        isAnyCritical = true;
-      }
-    });
-
-    // Если есть критический срок в любом аппарате — возвращаем 'critical'
-    if (isAnyCritical) return 'critical';
-
-    // Если есть даты в аппаратах, но все они > 14 дней — 'ok'
-    if (hasMachineDate) return 'ok';
-
-    // 2. Если нет дат в аппаратах — проверяем дату со склада
-    const dateStr = expirationDates[itemName];
-    if (!dateStr) return 'empty';
-    const expiryDate = parseISO(dateStr);
-    if (!isValid(expiryDate)) return 'empty';
-    const daysLeft = differenceInDays(expiryDate, new Date());
-    if (daysLeft <= 14) return 'critical';
+  // Группы — берём самую критичную из составляющих
+  const groupItems = PRODUCT_GROUPS[itemName];
+  if (groupItems) {
+    const statuses = groupItems.map(gi => getExpiryStatus(gi));
+    if (statuses.includes('critical')) return 'critical';
+    if (statuses.includes('empty')) return 'empty';
     return 'ok';
-  };
+  }
+
+  // Только дата склада
+  const dateStr = expirationDates[itemName];
+  if (!dateStr) return 'empty';
+  const expiryDate = parseISO(dateStr);
+  if (!isValid(expiryDate)) return 'empty';
+  const daysLeft = differenceInDays(expiryDate, new Date());
+  return daysLeft <= 14 ? 'critical' : 'ok';
+};
 
   const clearSearch = () => {
     setSearchQuery('');
