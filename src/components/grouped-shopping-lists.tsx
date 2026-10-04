@@ -1258,7 +1258,7 @@ export const GroupedShoppingLists = ({
                                         <div
                                           key={machineId}
                                           className={cn(
-                                            'flex items-center gap-2 p-1 rounded',
+                                            'flex items-start gap-2 p-1 rounded',
                                             isOk
                                               ? 'bg-green-500/10'
                                               : 'bg-red-500/10',
@@ -1266,32 +1266,34 @@ export const GroupedShoppingLists = ({
                                         >
                                           <div
                                             className={cn(
-                                              'h-3 w-3 rounded-full flex-shrink-0',
+                                              'h-3 w-3 rounded-full flex-shrink-0 mt-0.5',
                                               isOk
                                                 ? 'bg-green-500'
                                                 : 'bg-red-500',
                                             )}
                                           />
-                                          <span className='text-xs truncate'>
-                                            {machine?.name || machineId} (#
-                                            {machineId})
-                                            {!isManual && ' · склад'}
-                                          </span>
-                                          <span
-                                            className={cn(
-                                              'text-[10px] ml-auto font-mono',
-                                              isOk
-                                                ? 'text-green-400'
-                                                : 'text-red-400',
-                                            )}
-                                          >
-                                            {format(effective, 'dd.MM.yy')}
-                                          </span>
+                                          <div className='flex flex-col min-w-0 flex-1'>
+                                            <span className='text-xs truncate'>
+                                              {machine?.name || machineId} (#
+                                              {machineId})
+                                              {!isManual && ' · склад'}
+                                            </span>
+                                            <span
+                                              className={cn(
+                                                'text-[10px] font-mono leading-tight',
+                                                isOk
+                                                  ? 'text-green-400'
+                                                  : 'text-red-400',
+                                              )}
+                                            >
+                                              {format(effective, 'dd.MM.yy')}
+                                            </span>
+                                          </div>
                                           {isManual && (
                                             <Button
                                               variant='ghost'
                                               size='icon'
-                                              className='h-5 w-5 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10'
+                                              className='h-5 w-5 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10 flex-shrink-0'
                                               onClick={e => {
                                                 e.stopPropagation();
                                                 setMachineItemExpiryDate(
