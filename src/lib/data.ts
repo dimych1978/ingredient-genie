@@ -1666,6 +1666,7 @@ export const MASTER_MACHINE_IDS = [
   '38566',
   '33351',
   '65645',
+  '33417',
 ];
 
 export const planogramsHardCode: Record<string, string[]> = {
@@ -2567,6 +2568,8 @@ const SPECIAL_MODELS = [
   'koro',
   'phedra',
   'jetinno',
+  'LE Vending',
+
   'LE Vending',
 ];
 
