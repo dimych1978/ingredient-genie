@@ -143,9 +143,8 @@ export const GroupedShoppingLists = ({
     }, 500);
   };
 
-  const getExpiryStatus = (itemName: string) =>
-    getExpiryStatusBase(itemName, {
-      machineIdsFilter: machineIdsToProcess,
+  const getExpiryStatus = (itemName: string,itemMachineIds: string [] ) =>    getExpiryStatusBase(itemName, {
+      machineIdsFilter: itemMachineIds ??  machineIdsToProcess,
       expirationDates,
       machineItemExpiry,
     });
@@ -794,7 +793,7 @@ export const GroupedShoppingLists = ({
             unit: value.unit,
             isCoffeeIngredient: value.isCoffeeIngredient ?? false,
             breakdown: value.breakdown,
-            expiryStatus: getExpiryStatus(name),
+            expiryStatus: getExpiryStatus(name, Object.keys(value.breakdown)),
             checkedMachines,
           });
         }

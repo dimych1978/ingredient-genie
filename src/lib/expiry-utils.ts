@@ -39,6 +39,7 @@ export const resolveExpiryDate = (
   // 1) Ручные даты
   if (!ignoreMachineDates) {
     if (machineId) {
+      console.log('[resolve] branch: machineId');
       const manual = machineItemExpiry[`${machineId}_${itemName}`];
       if (manual) {
         const d = parseISO(manual);
