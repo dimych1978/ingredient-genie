@@ -45,26 +45,35 @@ export const resolveExpiryDate = (
         if (isValid(d)) return d;
       }
     } else if (machineIdsFilter && machineIdsFilter.length) {
+      // Складская дата (fallback для аппаратов без ручной)
+      const warehouseByName = expirationDates[itemName];
+      const warehouseByGroup = (() => {
+        const parentGroup = Object.entries(PRODUCT_GROUPS).find(([, items]) =>
+          items.some(c => normalize(c) === normalize(itemName)),
+        )?.[0];
+        return parentGroup ? expirationDates[parentGroup] : undefined;
+      })();
+      const warehouseStr = warehouseByName ?? warehouseByGroup;
+
       const dates: Date[] = [];
+
       machineIdsFilter.forEach(id => {
         const manual = machineItemExpiry[`${id}_${itemName}`];
-        if (!manual) return;
-        const d = parseISO(manual);
-        if (isValid(d)) dates.push(d);
+
+        if (manual) {
+          const d = parseISO(manual);
+          if (isValid(d)) {
+            dates.push(d);
+            return;
+          }
+        }
+
+        // ручной нет → берём складскую
+        if (warehouseStr) {
+          const d = parseISO(warehouseStr);
+          if (isValid(d)) dates.push(d);
+        }
       });
-
-      if (expirationDates[itemName]) {
-        const d = parseISO(expirationDates[itemName]);
-        if (isValid(d)) dates.push(d);
-      }
-
-      const parentGroup = Object.entries(PRODUCT_GROUPS).find(([, items]) =>
-        items.some(c => normalize(c) === normalize(itemName)),
-      )?.[0];
-      if (parentGroup && expirationDates[parentGroup]) {
-        const d = parseISO(expirationDates[parentGroup]);
-        if (isValid(d)) dates.push(d);
-      }
 
       if (dates.length) {
         return dates.reduce((a, b) => (a < b ? a : b));
