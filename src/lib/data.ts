@@ -2568,9 +2568,7 @@ const SPECIAL_MODELS = [
   'koro',
   'phedra',
   'jetinno',
-  'LE Vending',
-
-  'LE Vending',
+  'le vending',
 ];
 
 export const isSpecialMachine = (machine: Machine | undefined): boolean => {
