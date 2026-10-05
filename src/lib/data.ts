@@ -979,6 +979,12 @@ export const allMachines: Machine[] = [
     location: 'Невский пассаж корнер\n ул. Льва Толстого, д. 1',
     model: 'Jetinno, JL28',
   },
+   {
+    id: '70562',
+    name: 'Национальный театр корнер',
+    location: 'Национальный театр корнер\nКарла Маркса, д. 19',
+    model: 'Jetinno, JL28',
+  },
   {
     id: '47743',
     name: 'Озон кофе 246',
