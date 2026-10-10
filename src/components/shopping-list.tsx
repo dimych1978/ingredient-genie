@@ -53,7 +53,7 @@ import {
   CalendarDays,
   Calendar as CalendarIcon,
 } from 'lucide-react';
-import { differenceInDays, format, isValid, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -330,6 +330,7 @@ export const ShoppingList = ({
 
   const planogramCache = useRef<{
     machineId: string;
+    dateFrom: string;
     data: {
       planogram: string[];
       salesThisPeriod: Map<string, number>;
@@ -375,11 +376,14 @@ export const ShoppingList = ({
     let isMounted = true;
     setPlanogramDataReady(false);
 
+    const dateFromKey = format(dateFrom, 'yyyy-MM-dd');
+
     const loadPlanogram = async () => {
       const machineId = machineIds[0];
       if (
         planogramCache.current &&
         planogramCache.current.machineId === machineId &&
+        planogramCache.current.dateFrom === dateFromKey &&
         Date.now() - planogramCache.current.timestamp < CACHE_TTL
       ) {
         if (isMounted) {
@@ -393,11 +397,14 @@ export const ShoppingList = ({
       }
 
       try {
-        const result = await stableLoadPlanogramData(machineId);
+        const result = await stableLoadPlanogramData(machineId, {
+          dateFromOverride: dateFrom,
+        });
 
         if (isMounted) {
           planogramCache.current = {
             machineId,
+            dateFrom: dateFromKey,
             data: result,
             timestamp: Date.now(),
           };
@@ -417,7 +424,7 @@ export const ShoppingList = ({
     return () => {
       isMounted = false;
     };
-  }, [machineIds.join('-'), stableLoadPlanogramData]);
+  }, [machineIds.join('-'), dateFrom, stableLoadPlanogramData]);
 
   const loadShoppingList = useCallback(async () => {
     // ТОЛЬКО проверка на machineIds

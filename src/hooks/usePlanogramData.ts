@@ -27,13 +27,13 @@ export const usePlanogramData = () => {
   const { getSalesByProducts } = useTelemetronApi();
 
   const loadPlanogramData = useCallback(
-    async (vmId: string): Promise<PlanogramData> => {
-      console.log('=== usePlanogramData.loadPlanogramData для аппарата', vmId);
-
+    async (
+      vmId: string,
+      options?: { dateFromOverride?: Date },
+    ): Promise<PlanogramData> => {
       const machine = allMachines.find(m => m.id === vmId);
       const machineType = machine ? getMachineType(machine) : 'snack';
 
-      console.log('🚀 ~ usePlanogramData ~ machineType:', machineType);
       if (machineType === 'bottle') {
         return {
           planogram: planogramsHardCode.bottle.map(
@@ -79,10 +79,15 @@ export const usePlanogramData = () => {
         }
       }
 
-      // 3. Загружаем продажи за 30 дней (период планограммы)
+      // 3. Загружаем продажи за период планограммы
       const dateTo = new Date();
-      const dateFrom = new Date();
-      dateFrom.setDate(dateFrom.getDate() - 30);
+      let dateFrom = new Date();
+
+      if (options?.dateFromOverride) {
+        dateFrom = options.dateFromOverride;
+      } else {
+        dateFrom.setDate(dateFrom.getDate() - 30);
+      }
 
       let salesData: TelemetronSalesResponse;
 
@@ -221,19 +226,16 @@ export const usePlanogramData = () => {
           isLoading: false,
           error: null,
         };
-      } // 4. Проверка для кофейных аппаратов
+      }
+      // 4. Проверка для кофейных аппаратов
       if (machineType === 'coffee') {
         const hasSnackSales = salesData.data.some(
           item =>
             !item.planogram?.ingredients ||
             item.planogram.ingredients.length === 0,
         );
-        console.log('🚀 ~ usePlanogramData ~ hasSnackSales:', hasSnackSales);
 
         if (!hasSnackSales) {
-          console.log(
-            'Неспаренный кофейный аппарат - возвращаем пустую планограмму',
-          );
           return {
             planogram: [],
             coffeeProductNumbers: [],

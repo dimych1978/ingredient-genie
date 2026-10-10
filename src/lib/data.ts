@@ -56,6 +56,12 @@ export interface GroupedShoppingListsProps {
 
 export const allMachines: Machine[] = [
   {
+    id: '33418',
+    name: 'Офис из Глостер',
+    location: 'Склад',
+    model: 'Necta Kikko ES6',
+  },
+  {
     id: '58899',
     name: 'Автовокзал 2 этаж корнер 41',
     location: 'Автовокзал 2 этаж корнер\nул. Чапаева, д. 3',
@@ -1715,8 +1721,8 @@ export const productReplacements: Record<string, string[]> = {
 
 export const alternativeDisplayNames: Record<string, string> = {
   'Круассаны Яшкино 45г': 'Круассаны Яшкино 45г || Степ',
-  'Пирожное basker wheels панкейк 36гр':
-    'Пирожное basker wheels панкейк 36гр || Орион Чоко-пай',
+  // 'Пирожное basker wheels панкейк 36гр':
+  //   'Пирожное basker wheels панкейк 36гр || Орион Чоко-пай',
 };
 
 export const getMachineType = (
