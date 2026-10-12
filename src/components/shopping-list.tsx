@@ -99,6 +99,7 @@ interface ShoppingListProps {
   title?: string;
   description?: string;
   dateFrom: Date;
+  isDateOverridden?: boolean;
   showControls?: boolean;
   forceLoad?: boolean;
   specialMachineDates?: Record<string, string>;
@@ -280,6 +281,7 @@ export const ShoppingList = ({
   title = 'Shopping List',
   description,
   dateFrom,
+  isDateOverridden = false,
   showControls = true,
   forceLoad = false,
   onDateChange,
@@ -376,7 +378,7 @@ export const ShoppingList = ({
     let isMounted = true;
     setPlanogramDataReady(false);
 
-    const dateFromKey = format(dateFrom, 'yyyy-MM-dd');
+    const dateFromKey = isDateOverridden ? format(dateFrom, 'yyyy-MM-dd') : 'default';
 
     const loadPlanogram = async () => {
       const machineId = machineIds[0];
@@ -397,9 +399,9 @@ export const ShoppingList = ({
       }
 
       try {
-        const result = await stableLoadPlanogramData(machineId, {
-          dateFromOverride: dateFrom,
-        });
+        const result = await stableLoadPlanogramData(machineId, 
+          isDateOverridden ? { dateFromOverride: dateFrom } : undefined
+        );
 
         if (isMounted) {
           planogramCache.current = {
@@ -424,7 +426,7 @@ export const ShoppingList = ({
     return () => {
       isMounted = false;
     };
-  }, [machineIds.join('-'), dateFrom, stableLoadPlanogramData]);
+  }, [machineIds.join('-'), isDateOverridden, dateFrom, stableLoadPlanogramData]);
 
   const loadShoppingList = useCallback(async () => {
     // ТОЛЬКО проверка на machineIds

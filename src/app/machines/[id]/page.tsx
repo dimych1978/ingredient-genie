@@ -62,6 +62,7 @@ export default function MachineStatusPage() {
   const [isManualDate, setIsManualDate] = useState(false);
   const [isCalendarOpen, setCalendarOpen] = useState(false);
   const [hasUnsavedDate, setHasUnsavedDate] = useState(false);
+  const [isDateOverridden, setIsDateOverridden] = useState(false);
 
   const { getMachineOverview } = useTelemetronApi();
   const { toast } = useToast();
@@ -74,6 +75,7 @@ export default function MachineStatusPage() {
     setIsLoading(true);
     setError(null);
     setHasUnsavedDate(false);
+    setIsDateOverridden(false);
 
     try {
       const overviewResult = await getMachineOverview(id);
@@ -132,6 +134,7 @@ export default function MachineStatusPage() {
       const isoDate = date.toISOString();
       setEffectiveStartDate(isoDate);
       setHasUnsavedDate(true);
+      setIsDateOverridden(true);
     },
     [id, machineData, toast],
   );
@@ -272,23 +275,6 @@ export default function MachineStatusPage() {
 
         <div className='space-y-6'>
           <div className='mb-6'>
-            {/* <div className='flex items-center space-x-2'>
-              <input
-                type='checkbox'
-                id='serviced'
-                checked={isServiced}
-                onChange={e => setIsServiced(e.target.checked)}
-                className='h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
-              />
-              <label htmlFor='serviced' className='text-sm font-medium'>
-                Аппарат обслужен (нажата кнопка Telemetron)
-              </label>
-            </div> */}
-            {/* {isServiced && (
-              <p className='text-sm text-green-600 mt-1'>
-                ✅ Следующее обслуживание будет рассчитываться от текущей даты
-              </p>
-            )} */}
           </div>
           {isSpecialMachine(machineData) && !effectiveStartDate && (
             <div className='mb-6 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg'>
@@ -315,6 +301,7 @@ export default function MachineStatusPage() {
                 : 'Список расходников на основе продаж'
             }
             dateFrom={new Date(effectiveStartDate)}
+            isDateOverridden={isDateOverridden}
             showControls={false}
             forceLoad={true}
             specialMachineDates={{ [id]: effectiveStartDate }}
