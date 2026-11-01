@@ -128,12 +128,6 @@ export const allMachines: Machine[] = [
     model: 'Necta Kikko ES6',
   },
   {
-    id: '33341',
-    name: 'Автоколонна проходная 165/2',
-    location: 'Автоколонна проходная 165/2\nПутейская улица, 5',
-    model: 'Necta Kikko ES6',
-  },
-  {
     id: '41789',
     name: 'Дом отдыха локомотивных бригад кофе 237/ Дом отдыха локомотивных бригад',
     location: 'Дом отдыха локомотивных бригад кофе 237\nПутейская улица, 5',
@@ -248,7 +242,7 @@ export const allMachines: Machine[] = [
     model: 'Necta Krea Touch',
   },
   {
-    id: '33496',
+    id: '33341',
     name: 'Автосервис Петродок 137',
     location: 'Автосервис Петродок 137\nул. Зайцева, д. 64А',
     model: 'Necta Kikko ES6',
