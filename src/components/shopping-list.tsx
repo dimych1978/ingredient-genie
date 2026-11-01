@@ -1077,7 +1077,7 @@ export const ShoppingList = ({
                       .includes('krea');
                     const ingredientConfig = getIngredientConfig(
                       item.name,
-                      machine?.model,
+                      machine,
                     );
                     const hasSizes = ingredientConfig?.hasSizes === true;
                     const isSpecialKreaItem = isKreaMachine && hasSizes;

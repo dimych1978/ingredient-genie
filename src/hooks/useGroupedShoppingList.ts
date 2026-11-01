@@ -97,7 +97,7 @@ export const useGroupedShoppingList = () => {
             sale.planogram.ingredients.forEach(ingredient => {
               const config = getIngredientConfig(
                 ingredient.name,
-                machine?.model
+                machine
               );
               if (config) {
                 const key = config.name;

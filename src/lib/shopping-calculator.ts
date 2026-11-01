@@ -109,7 +109,7 @@ export const calculateShoppingList = (
         const productNumber = match[1];
         const name = match[2];
 
-        const config = getIngredientConfig(name, machineModel);
+        const config = getIngredientConfig(name, machine);
         if (!itemMap.has(productNumber)) {
           itemMap.set(productNumber, {
             name: name,
@@ -158,7 +158,7 @@ export const calculateShoppingList = (
     // Кофейные напитки
     if (sale.planogram.ingredients && sale.planogram.ingredients.length > 0) {
       sale.planogram.ingredients.forEach(apiIngredient => {
-        const config = getIngredientConfig(apiIngredient.name, machineModel);
+        const config = getIngredientConfig(apiIngredient.name, machine);
         if (config) {
           const item = Array.from(itemMap.values()).find(
             i => i.name === config.name

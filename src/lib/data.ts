@@ -27,17 +27,17 @@ export const COFFEE_TYPES = {
 export const getCoffeeType = (machineModel?: string): 'kamora' | 'jardin' => {
   if (!machineModel) return 'jardin';
 
-  const modelLower = machineModel.toLowerCase();
-  const kamoraModels = COFFEE_TYPES.kamora.machines;
-  const jardinModels = COFFEE_TYPES.jardin.machines;
+  // const modelLower = machineModel.toLowerCase();
+  // const kamoraModels = COFFEE_TYPES.kamora.machines;
+  // const jardinModels = COFFEE_TYPES.jardin.machines;
 
   // Проверяем, содержит ли модель аппарата ключевые слова для Каморы
-  if (kamoraModels.some(m => modelLower.includes(m))) {
-    return 'kamora';
-  }
-  if (jardinModels.some(m => modelLower.includes(m))) {
-    return 'jardin';
-  }
+  // if (kamoraModels.some(m => modelLower.includes(m))) {
+  //   return 'kamora';
+  // }
+  // if (jardinModels.some(m => modelLower.includes(m))) {
+  //   return 'jardin';
+  // }
 
   return 'jardin';
 };
@@ -305,7 +305,7 @@ export const allMachines: Machine[] = [
     id: '64228',
     name: 'Акватика кофе',
     location: 'Акватика кофе\nул. Пушкинская д. 7',
-    model: 'Jetinno JL300',
+    model: 'Jetinno, JL300',
   },
   {
     id: '55133',
@@ -389,7 +389,7 @@ export const allMachines: Machine[] = [
     id: '65336',
     name: 'Бета Онего корнер 18',
     location: 'Бета Онего корнер\nул. Лыжная, д. 3',
-    model: 'Necta Krea Touch',
+    model: 'Jetinno, JL28 65336',
   },
   {
     id: '64907',
@@ -497,7 +497,7 @@ export const allMachines: Machine[] = [
     id: '65065',
     name: 'Гостиница Северная корнер',
     location: 'Гостиница Северная корнер\nпр. Ленина, д. 21',
-    model: 'Jetinno JL28',
+    model: 'Jetinno, JL28',
   },
   {
     id: '65061',
@@ -671,7 +671,7 @@ export const allMachines: Machine[] = [
     id: '48889',
     name: 'К-Моторс Чери корнер',
     location: 'К-Моторс Чери корнер\nЛесной проспект, 55',
-    model: 'Jetinno JL28',
+    model: 'Jetinno, JL28',
   },
   {
     id: '52353',
@@ -785,7 +785,7 @@ export const allMachines: Machine[] = [
     id: '65320',
     name: 'Лемана Про зона касс кофе 262',
     location: 'Лемана Про зона касс кофе\nЛесной просп., 49',
-    model: 'Jetinno JL300',
+    model: 'Jetinno, JL300',
   },
   {
     id: '51236',
@@ -806,10 +806,10 @@ export const allMachines: Machine[] = [
     model: 'Saeco Cristallo 600',
   },
   {
-    id: '67254',
+    id: '68992',
     name: 'Лемана Про столовая корнер',
     location: 'Лемана Про столовая корнер\nЛесной проспект, 49',
-    model: 'Jetinno, JL28',
+    model: 'Jetinno, JL28 68992',
   },
   {
     id: '33405',
@@ -828,6 +828,12 @@ export const allMachines: Machine[] = [
     name: 'Лестех 229',
     location: 'Лестех\nул. Калинина, д.41',
     model: 'Necta Opera',
+  },
+  {
+    id: '70423',
+    name: 'Лестех корнер',
+    location: 'Лестех корнер\nул. Калинина, д.41',
+    model: 'Jetinno, JL28 70423',
   },
   {
     id: '33407',
@@ -926,10 +932,10 @@ export const allMachines: Machine[] = [
     model: 'Unicum FoodBox',
   },
   {
-    id: '34287',
+    id: '70115',
     name: 'Муз. школа Синисало 54',
     location: 'Музыкальная школа Синисало 54\nул. Московская. 12',
-    model: 'Necta Kikko Max',
+    model: 'Jetinno, JL300 70115',
   },
   {
     id: '33793',
@@ -989,7 +995,7 @@ export const allMachines: Machine[] = [
     id: '70562',
     name: 'Национальный театр корнер',
     location: 'Национальный театр корнер\nКарла Маркса, д. 19',
-    model: 'Jetinno, JL28',
+    model: 'Jetinno, JL28 70562',
   },
   {
     id: '47743',
@@ -1110,6 +1116,12 @@ export const allMachines: Machine[] = [
     name: 'Перинатальный корнер 224',
     location: 'Перинатальный корнер 224\nул. Сыктывкарская, д. 9',
     model: 'Necta Krea Touch',
+  },
+  {
+    id: '70088',
+    name: 'Перинатальный центр 1-й этаж корнер',
+    location: 'Перинатальный центр 1-й этаж корнер\nул. Сыктывкарская, д. 9',
+    model: 'Jetinno, JL28 70088',
   },
   {
     id: '33350',
@@ -1539,7 +1551,7 @@ export const allMachines: Machine[] = [
     id: '52209',
     name: 'ФОК кофе',
     location: 'ФОК кофе\nул. Ключевая, 10',
-    model: 'Jetinno JL300',
+    model: 'Jetinno, JL300',
   },
   {
     id: '33488',
@@ -1721,6 +1733,7 @@ export const productReplacements: Record<string, string[]> = {
 
 export const alternativeDisplayNames: Record<string, string> = {
   'Круассаны Яшкино 45г': 'Круассаны Яшкино 45г || Степ',
+  'Батончик Смарт Формула, 40гр || Протеин': 'Козинак || Протеин'
   // 'Пирожное basker wheels панкейк 36гр':
   //   'Пирожное basker wheels панкейк 36гр || Орион Чоко-пай',
 };
@@ -1754,62 +1767,254 @@ export const getMachineType = (
   return 'snack';
 };
 
+/**
+ * Override ингредиентов по ID конкретного аппарата.
+ * Приоритет выше, чем поиск по модели.
+ * Здесь только отличия — остальное подтянется из общего конфига по модели.
+ */
+
+const operaCups: Ingredient[] = [
+  {
+    name: 'стаканы opera',
+    apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+    unit: 'шт',
+    type: 'auto',
+    packSize: 50,
+  },
+];
+
+const kiselOverride: Ingredient[] = [
+  { name: 'кисель', apiNames: ['Кисель', 'кисель'], unit: 'г', type: 'auto' },
+];
+
+export const INGREDIENT_OVERRIDES_BY_ID: Record<string, Ingredient[]> = {
+ '65336': operaCups,
+  '70088': operaCups,
+  '70423': operaCups,
+  '70562': operaCups,
+  '70115': operaCups,
+    '68992': operaCups,
+'58739': kiselOverride,
+};
+
 export const machineIngredients: MachineIngredients = {
-  'Saeco Cristallo 600 58739': [
-    { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
-    {
-      name: 'кофе',
-      apiNames: ['Кофе зерновой', 'кофе'],
-      unit: 'г',
-      type: 'auto',
-    },
-    {
-      name: 'сливки',
-      apiNames: ['Сливки сухие', 'сливки'],
-      unit: 'г',
-      type: 'auto',
-    },
-    { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
-    {
-      name: 'ваниль',
-      apiNames: ['Капучино Ваниль', 'ваниль'],
-      unit: 'г',
-      type: 'auto',
-    },
-    {
-      name: 'кисель',
-      apiNames: ['Кисель'],
-      unit: 'г',
-      type: 'auto',
-    },
-    {
-      name: 'чай',
-      apiNames: ['Чай', 'чай фруктовый'],
-      unit: 'г',
-      type: 'auto',
-    },
-    {
-      name: 'стаканы 150',
-      apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
-      unit: 'шт',
-      type: 'auto',
-      packSize: 100,
-    },
-    {
-      name: 'размешиватели 105',
-      apiNames: ['Размешиватель'],
-      unit: 'шт',
-      type: 'auto',
-      packSize: 100,
-    },
-    { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
-    {
-      name: 'ёршик',
-      apiNames: [],
-      unit: 'шт',
-      type: 'checkbox',
-    },
-  ],
+  // 'Saeco Cristallo 600 58739': [
+  //   { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
+  //   {
+  //     name: 'кофе',
+  //     apiNames: ['Кофе зерновой', 'кофе'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сливки',
+  //     apiNames: ['Сливки сухие', 'сливки'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   { name: 'шоколад', apiNames: ['Шоколад'], unit: 'г', type: 'auto' },
+  //   {
+  //     name: 'ваниль',
+  //     apiNames: ['Капучино Ваниль', 'ваниль'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'кисель',
+  //     apiNames: ['Кисель'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'чай',
+  //     apiNames: ['Чай', 'чай фруктовый'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'стаканы 150',
+  //     apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+  //     unit: 'шт',
+  //     type: 'auto',
+  //     packSize: 100,
+  //   },
+  //   {
+  //     name: 'размешиватели 105',
+  //     apiNames: ['Размешиватель'],
+  //     unit: 'шт',
+  //     type: 'auto',
+  //     packSize: 100,
+  //   },
+  //   { name: 'сахар', apiNames: ['Сахар'], unit: 'г', type: 'auto' },
+  //   {
+  //     name: 'ёршик',
+  //     apiNames: [],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //   },
+  // ],
+  // 'Jetinno, JL28 70562': [
+  //   {
+  //     name: 'вода',
+  //     apiNames: ['Вода'],
+  //     unit: 'мл',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'кофе',
+  //     apiNames: ['Кофе зерновой', 'кофе'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сливки',
+  //     apiNames: ['Сливки сухие', 'сливки'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'шоколад',
+  //     apiNames: ['Шоколад'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   { name: 'Пломбир', apiNames: ['раф сливки'], unit: 'г', type: 'auto' },
+  //   {
+  //     name: 'клубника',
+  //     apiNames: ['клубника', 'раф клубника'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сахар',
+  //     apiNames: ['Сахар'],
+  //     unit: 'г',
+  //     type: 'checkbox',
+  //   },
+  //   {
+  //     name: 'стаканы opera',
+  //     apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+  //     unit: 'шт',
+  //     type: 'auto',
+  //     packSize: 50,
+  //   },
+  //   {
+  //     name: 'крышки',
+  //     apiNames: ['Крышки', 'крышка', 'крышки 80'],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //     size: 'small',
+  //   },
+  //   {
+  //     name: 'размешиватели',
+  //     apiNames: ['Размешиватель', 'размешиватели'],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //   },
+  //   {
+  //     name: 'ёршик',
+  //     apiNames: [],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //   },
+  //   {
+  //     name: 'сироп',
+  //     apiNames: ['Сироп'],
+  //     unit: 'мл',
+  //     type: 'select',
+  //     syrupOptions: [
+  //       { id: 'banana', name: 'банан', selected: false },
+  //       { id: 'vanilla', name: 'ваниль', selected: false },
+  //       { id: 'coconut', name: 'кокос', selected: false },
+  //       { id: 'caramel', name: 'карамель', selected: false },
+  //     ],
+  //   },
+  // ],
+  // 'Jetinno, JL300 70115': [
+  //   {
+  //     name: 'вода',
+  //     apiNames: ['Вода'],
+  //     unit: 'мл',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'кофе',
+  //     apiNames: ['Кофе зерновой', 'кофе'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сливки',
+  //     apiNames: ['Сливки сухие', 'сливки'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'шоколад',
+  //     apiNames: ['Шоколад'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   { name: 'Пломбир', apiNames: ['раф сливки'], unit: 'г', type: 'auto' },
+  //   {
+  //     name: 'клубника',
+  //     apiNames: ['клубника', 'раф клубника'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сироп мохито',
+  //     apiNames: ['Сироп Мохито'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сироп апельсин',
+  //     apiNames: ['Сироп Апельсин'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'сироп лесной орех',
+  //     apiNames: ['Сироп лесной орех'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   { name: 'клубника', apiNames: ['Раф клубника'], unit: 'г', type: 'auto' },
+  //   { name: 'банан', apiNames: ['Раф Банан'], unit: 'г', type: 'auto' },
+  //   {
+  //     name: 'сахар',
+  //     apiNames: ['Сахар'],
+  //     unit: 'г',
+  //     type: 'auto',
+  //   },
+  //   {
+  //     name: 'стаканы opera',
+  //     apiNames: ['Стаканчик', 'Стакан', 'стаканы 300', 'стаканы'],
+  //     unit: 'шт',
+  //     type: 'auto',
+  //     packSize: 50,
+  //   },
+  //   {
+  //     name: 'крышки',
+  //     apiNames: ['Крышки', 'крышка', 'крышки 80'],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //     size: 'small',
+  //   },
+  //   {
+  //     name: 'размешиватели',
+  //     apiNames: ['Размешиватель', 'размешиватели'],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //   },
+  //   {
+  //     name: 'ёршик',
+  //     apiNames: [],
+  //     unit: 'шт',
+  //     type: 'checkbox',
+  //   },
+  // ],
   opera: [
     { name: 'вода', apiNames: ['Вода'], unit: 'мл', type: 'auto' },
     {
@@ -1954,7 +2159,7 @@ export const machineIngredients: MachineIngredients = {
       ],
     },
   ],
-  jetinno: [
+  'jetinno, jl28': [
     {
       name: 'вода',
       apiNames: ['Вода'],
@@ -2032,7 +2237,7 @@ export const machineIngredients: MachineIngredients = {
       ],
     },
   ],
-  'Jetinno, JL300': [
+  'jetinno, jl300': [
     {
       name: 'вода',
       apiNames: ['Вода'],
@@ -2562,16 +2767,6 @@ export const PRODUCT_GROUPS: Record<string, string[]> = {
   ],
 };
 
-export const weeklySchedule: { [key: number]: string[] } = {
-  0: [], // Sunday
-  1: [], // Monday
-  2: [], // Tuesday
-  3: [], // Wednesday
-  4: [], // Thursday
-  5: [], // Friday
-  6: [], // Saturday
-};
-
 const SPECIAL_MODELS = [
   'krea',
   'tcn',
@@ -2591,9 +2786,10 @@ export const isSpecialMachine = (machine: Machine | undefined): boolean => {
 
 export const getIngredientConfig = (
   apiName: string,
-  machineModel?: string,
+  machine?: Machine,
 ): Ingredient | undefined => {
   const normalizedApiName = apiName.toLowerCase().trim();
+
   if (normalizedApiName === 'кофе' || normalizedApiName === 'кофе зерновой') {
     return {
       name: 'кофе',
@@ -2603,47 +2799,58 @@ export const getIngredientConfig = (
     };
   }
 
-  if (machineModel) {
+  // 1) Override по ID аппарата
+  if (machine && INGREDIENT_OVERRIDES_BY_ID[machine.id]) {
+    const override = INGREDIENT_OVERRIDES_BY_ID[machine.id];
+
+    const byName = override.find(
+      i => i.name.toLowerCase() === normalizedApiName,
+    );
+    if (byName) return byName;
+
+    const byApi = override.find(i =>
+      i.apiNames.some(n => n.toLowerCase().trim() === normalizedApiName),
+    );
+    if (byApi) return byApi;
+  }
+
+  // 2) По модели
+  if (machine?.model) {
+    const modelLower = machine.model.toLowerCase();
     const modelKeys = Object.keys(machineIngredients).sort(
       (a, b) => b.length - a.length,
     );
 
-    const modelKey = modelKeys.find(model =>
-      machineModel.toLowerCase().includes(model.toLowerCase()),
+    const modelKey = modelKeys.find(m =>
+      modelLower.includes(m.toLowerCase()),
     );
 
     if (modelKey) {
-      // 🔥 Сначала ищем по ТОЧНОМУ СОВПАДЕНИЮ с name (приоритет!)
-      const foundByName = machineIngredients[modelKey].find(
-        ing => ing.name.toLowerCase() === normalizedApiName,
+      const byName = machineIngredients[modelKey].find(
+        i => i.name.toLowerCase() === normalizedApiName,
       );
-      if (foundByName) return foundByName;
+      if (byName) return byName;
 
-      // Потом по apiNames
-      const foundByApi = machineIngredients[modelKey].find(ingredient =>
-        ingredient.apiNames.some(
-          name => name.toLowerCase().trim() === normalizedApiName,
-        ),
+      const byApi = machineIngredients[modelKey].find(i =>
+        i.apiNames.some(n => n.toLowerCase().trim() === normalizedApiName),
       );
-      if (foundByApi) return foundByApi;
+      if (byApi) return byApi;
     }
   }
 
-  // Глобальный поиск: сначала по name, потом по apiNames
-  for (const modelKey in machineIngredients) {
-    const foundByName = machineIngredients[modelKey].find(
-      ing => ing.name.toLowerCase() === normalizedApiName,
+  // 3) Глобальный поиск
+  for (const key in machineIngredients) {
+    const byName = machineIngredients[key].find(
+      i => i.name.toLowerCase() === normalizedApiName,
     );
-    if (foundByName) return foundByName;
+    if (byName) return byName;
   }
 
-  for (const modelKey in machineIngredients) {
-    const foundByApi = machineIngredients[modelKey].find(ingredient =>
-      ingredient.apiNames.some(
-        name => name.toLowerCase().trim() === normalizedApiName,
-      ),
+  for (const key in machineIngredients) {
+    const byApi = machineIngredients[key].find(i =>
+      i.apiNames.some(n => n.toLowerCase().trim() === normalizedApiName),
     );
-    if (foundByApi) return foundByApi;
+    if (byApi) return byApi;
   }
 
   return undefined;

@@ -37,6 +37,7 @@ import {
   getCoffeeType,
   getIngredientConfig,
   GroupedShoppingListsProps,
+  Machine,
   machineIngredients,
   PRODUCT_GROUPS,
 } from '@/lib/data';
@@ -151,15 +152,15 @@ export const GroupedShoppingLists = ({
 
   const getCupsName = (
     apiName: string,
-    machineModel?: string,
+    machine?: Machine,
     ingredientConfig?: ReturnType<typeof getIngredientConfig>,
   ) => {
     const config =
-      ingredientConfig || getIngredientConfig(apiName, machineModel);
+      ingredientConfig || getIngredientConfig(apiName, machine);
     if (!config) return apiName;
 
     if (config.name === 'кофе' || config.name.includes('кофе')) {
-      const coffeeType = getCoffeeType(machineModel);
+      const coffeeType = getCoffeeType(machine?.model);
       return coffeeType === 'kamora' ? 'кофе камора' : 'кофе жардин';
     }
 
@@ -261,11 +262,11 @@ export const GroupedShoppingLists = ({
           sale.planogram.ingredients.forEach(apiIngredient => {
             const config = getIngredientConfig(
               apiIngredient.name,
-              machine?.model,
+              machine,
             );
             const displayName = getCupsName(
               apiIngredient.name,
-              machine.model,
+              machine,
               config,
             );
 
@@ -348,7 +349,7 @@ export const GroupedShoppingLists = ({
           (machine.model.toLowerCase().includes('krea') ||
             machine.model.toLowerCase().includes('jetinno'))
         ) {
-          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const ingredientConfig = getIngredientConfig(name, machine);
           if (name !== 'сироп' || !ingredientConfig?.syrupOptions) {
             continue;
           }
@@ -356,10 +357,10 @@ export const GroupedShoppingLists = ({
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ СТАКАНОВ
         if (name.includes('стаканы')) {
-          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const ingredientConfig = getIngredientConfig(name, machine);
           const displayName = getCupsName(
             name,
-            machine?.model,
+            machine,
             ingredientConfig,
           );
           const selectedSizes = override.selectedSizes || [];
@@ -478,7 +479,7 @@ export const GroupedShoppingLists = ({
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ КРЫШЕК
         if (name === 'крышки') {
-          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const ingredientConfig = getIngredientConfig(name, machine);
 
           // Если есть hasSizes — Krea, разбиваем на большие/малые
           if (ingredientConfig?.hasSizes) {
@@ -543,7 +544,7 @@ export const GroupedShoppingLists = ({
 
         // 🔥 СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ РАЗМЕШИВАТЕЛЕЙ
         if (name.includes('размешивател')) {
-          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const ingredientConfig = getIngredientConfig(name, machine);
 
           if (ingredientConfig?.type === 'checkbox') {
             const isChecked = override.checked === true;
@@ -600,7 +601,7 @@ export const GroupedShoppingLists = ({
         if (name === 'сироп') {
           const selectedSyrups = override.selectedSyrups || [];
           // Все возможные сиропы — берём из конфига или определяем здесь
-          const ingredientConfig = getIngredientConfig(name, machine?.model);
+          const ingredientConfig = getIngredientConfig(name, machine);
           const allSyrups = ingredientConfig?.syrupOptions || [];
 
           allSyrups.forEach(syrup => {
@@ -632,7 +633,7 @@ export const GroupedShoppingLists = ({
         let carryOver = override.carryOver || 0;
         if (carryOver < 0) carryOver = 0;
 
-        const ingredientConfig = getIngredientConfig(name, machine?.model);
+        const ingredientConfig = getIngredientConfig(name, machine);
 
         // 🔥 Если есть packSize — делим carryOver на packSize и округляем вверх
         let adjustedCarryOver = carryOver;
@@ -645,7 +646,7 @@ export const GroupedShoppingLists = ({
         if (name.includes('кофе')) {
           const coffeeName = getCupsName(
             name,
-            machine?.model,
+            machine,
             ingredientConfig,
           );
           const current = coffeeIngredientsMap.get(coffeeName) || {
@@ -711,10 +712,10 @@ export const GroupedShoppingLists = ({
         for (const [mId, details] of Object.entries(value.breakdown)) {
           const machine = allMachines.find(m => m.id === mId);
 
-          let config = getIngredientConfig(name, machine?.model);
+          let config = getIngredientConfig(name, machine);
           if (!config && machine?.model) {
             const baseName = name.split(' ')[0];
-            config = getIngredientConfig(baseName, machine?.model);
+            config = getIngredientConfig(baseName, machine);
           }
 
           if (config?.packSize) {
